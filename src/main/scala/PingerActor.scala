@@ -18,7 +18,7 @@ object PingerActor {
 
   case class Ping(host: InetPair)
 
-  case object Ready
+  case class Ready(on: InetSocketAddress)
 
   def createhasher = new {
     val random = new Random
@@ -37,7 +37,7 @@ class PingerActor(listener: ActorRef) extends Actor with ActorLogging {
 
   import PingerActor._
 
-  val myAddress = new InetSocketAddress("0.0.0.0", 6568)
+  val myAddress = new InetSocketAddress("0.0.0.0", 0)
 
   import context.system
 
@@ -47,7 +47,7 @@ class PingerActor(listener: ActorRef) extends Actor with ActorLogging {
     case Udp.Bound(boundTo) =>
       log.debug("Pinger client bound to socket {}", boundTo)
       val socket = sender
-      listener ! Ready
+      listener ! Ready(boundTo)
       context.become(ready(socket))
   }
 
@@ -123,7 +123,6 @@ class PingerActor(listener: ActorRef) extends Actor with ActorLogging {
           )
       }
     case Udp.Received(otherBytes, fromWho) =>
-      println(fromWho, inet2pair, inet2pair contains fromWho)
       log.warning("Message from UDP host  {} does not match an acceptable format: {}", fromWho, otherBytes)
   }
 

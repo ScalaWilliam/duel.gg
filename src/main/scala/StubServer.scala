@@ -7,6 +7,7 @@ import scala.util.Random
 /** 01/02/14 */
 object StubServer extends App {
 
+
   lazy val mappings: PartialFunction[List[Int], List[List[Int]]] = {
     // server
     case 1 :: 1 :: 1 :: _ =>

@@ -1,14 +1,21 @@
+import org.slf4j.LoggerFactory
 
 /** 01/02/14 */
 object SauerbratenProtocol {
 
+
+  lazy val logger = LoggerFactory.getLogger(getClass)
+
   val matchers: PartialFunction[List[Byte], Any] = {
-    case GetPlayerExtInfo(x) => x
+//    case GetPlayerExtInfo(x) => x
+    case GetRelaxedPlayerExtInfo(x) => x
     case GetServerInfoReply(x) => x
     case GetPlayerCns(x) => x
     case GetHopmodUptime(x) => x
     case GetTeamScores(x) => x
     case GetUptime(x) => x
+    case GetThomasModExtInfo(x) => x
+    case CheckOlderClient(x) => x
   }
 
   object GetUChar {
@@ -163,8 +170,82 @@ object SauerbratenProtocol {
 
   val >~: = GetIp
 
+  object GetThomasModExtInfo {
+    def unapply(list: List[Byte]): Option[ThomasExt] = list match {
+
+      case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: (rest @ (-3 >>: _)) =>
+        rest match {
+          case GetThomasExt(thomasR) =>
+            Option(thomasR)
+          case x =>
+            None
+        }
+      case x =>
+        None
+    }
+  }
+
+  case class ThomasExt(ds: List[ThomasD], r: ThomasR)
+  object GetThomasExt {
+
+    def getDs(bytes: List[Byte]): List[(ThomasD, List[Byte])] = {
+      bytes match {
+        case GetD(value, rest) => (value, rest) :: getDs(rest)
+        case _ => Nil
+      }
+    }
+    def unapply(list: List[Byte]): Option[ThomasExt] = list match {
+      case stuff =>
+        val gd = getDs(stuff)
+        val allDs = gd.map(_._1)
+        val leftOver = gd.last._2
+        val (thomasR, lefties) = GetR.unapply(leftOver).get
+        Option(ThomasExt(allDs, thomasR))
+    }
+  }
+  case class ThomasD(data: List[Int])
+  object GetD {
+    def unapply(list: List[Byte]): Option[(ThomasD, List[Byte])] = list match {
+      case -3 >>: rest =>
+        val ints = GetInts.ints(rest).take(7)
+        val listOfInts = ints.map(_._1)
+        val leftOver = ints.last._2
+        Option(ThomasD(listOfInts), leftOver)
+      case _ => None
+    }
+  }
+
+  case class ThomasR(s1: Option[String], s2: String, data: List[Int])
+  object GetR {
+    def unapply(list: List[Byte]): Option[(ThomasR, List[Byte])] = list match {
+      case s1 >>:: s2 >>:: rest =>
+        val ints = GetInts.ints(rest).take(13)
+        val listOfInts = ints.map(_._1)
+        val leftOver = ints.last._2
+        Option(ThomasR(Option(s1), s2, listOfInts), leftOver)
+      case s >>:: rest =>
+        val ints = GetInts.ints(rest).take(13)
+        val listOfInts = ints.map(_._1)
+        val leftOver = ints.last._2
+        Option(ThomasR(None, s, listOfInts), leftOver)
+      case x =>
+        println(s"WHuT? $x")
+        None
+    }
+  }
+
+  case class OlderClient()
+  object CheckOlderClient {
+    def unapply(list: List[Byte]): Option[OlderClient] = list match {
+      case 0 >>: _ >>: -1 >>: -1 >>: 105 >>: Nil =>
+        Option(OlderClient())
+      case _ => None
+    }
+  }
+
+
   object GetPlayerExtInfo {
-    def unapply(List: List[Byte]): Option[PlayerExtInfo] = List match {
+    def unapply(list: List[Byte]): Option[PlayerExtInfo] = list match {
       case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: -11 >>:
         cn >>: ping >>: name >>:: team >>:: frags >>: flags >>: deaths >>:
         teamkills >>: accuracy >>: health >>: armour >>: gun >>: privilege >>: state
@@ -173,8 +254,23 @@ object SauerbratenProtocol {
           gun, privilege, state, ip))
       case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: -11 >>:
         cn >>: ping >>: name >>:: team >>:: rest =>
-        println(">>>", cn, ping, name, team, rest)
+        //      case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: -11 >>:
+        //        cn >>: ping >>: name >>:: team >>:: frags >>: flags >>: deaths >>:
+        //        teamkills >>: accuracy >>: health >>: armour >>: gun >>: privilege >>: state
+        //        >>: ip >~: rest =>
         None
+      case _ => None
+    }
+  }
+
+  object GetRelaxedPlayerExtInfo {
+    def unapply(list: List[Byte]): Option[PlayerExtInfo] = list match {
+      case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: -11 >>:
+        cn >>: ping >>: name >>:: team >>:: frags >>: flags >>: deaths >>:
+        teamkills >>: accuracy >>: health >>: armour >>: gun >>: privilege >>: state
+        >>: ip >~: _ =>
+        Option(PlayerExtInfo(version, cn, ping, name, team, frags, deaths, teamkills, accuracy, health, armour,
+          gun, privilege, state, ip))
       case _ => None
     }
   }

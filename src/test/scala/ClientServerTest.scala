@@ -53,7 +53,7 @@ with WordSpecLike with Matchers with BeforeAndAfterAll {
       } should have length 1
 
       val output = re.groupBy {
-        case (_, b) => b.getClass
+        case (fromHost, b) => b.getClass
       }.map {
         case (clazz, items) => (clazz, items.size)
       }

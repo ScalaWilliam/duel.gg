@@ -11,7 +11,9 @@ object MasterserverClient {
   val parseServerLine: PartialFunction[String, (String, Int)] =
     { case serverRegex(host, port) => (host, port.toInt) }
 
-  def getServers(masterServer: (String, Int)): List[(String, Int)] = {
+  val sauerMasterserver = ("sauerbraten.org", 28787)
+
+  def getServers(masterServer: (String, Int)): Set[(String, Int)] = {
     val socket = new Socket(masterServer._1, masterServer._2)
     try {
       val dataOutputStream = new DataOutputStream(socket.getOutputStream)
@@ -24,7 +26,7 @@ object MasterserverClient {
             def getLine = Try(Option(dataInputStream.readLine)).toOption.flatten.filterNot{_ == '\0'.toString}
             val contents = Stream.continually(getLine).takeWhile(_ != None).flatten.toList
             try {
-              contents map parseServerLine
+              (contents map parseServerLine).toSet
             } catch {
               case NonFatal(e) => throw new ParseException(s"Failed to parse contents due to '$e' - contents: '$contents'")
             }
