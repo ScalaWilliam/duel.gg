@@ -9,6 +9,7 @@
         <module>pinger-client</module>
         <module>pinger-common</module>
         <module>pinger-service</module>
+        <module>alternator</module>
     </modules>
 
     <packaging>pom</packaging>
