@@ -13,3 +13,6 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "2.0"
 libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.2.0-RC1"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.0.9"
+
+libraryDependencies += "javax.servlet" % "javax.servlet-api" % "3.0.1"
+

@@ -1,6 +1,5 @@
 import java.io.{BufferedReader, InputStreamReader, DataOutputStream}
 import java.net.Socket
-import scala.tools.cmd.Parser.ParseException
 import scala.util.control.NonFatal
 import scala.util.Try
 
@@ -28,7 +27,7 @@ object MasterserverClient {
             try {
               (contents map parseServerLine).toSet
             } catch {
-              case NonFatal(e) => throw new ParseException(s"Failed to parse contents due to '$e' - contents: '$contents'")
+              case NonFatal(e) => throw new MatchError(s"Failed to parse contents due to '$e' - contents: '$contents'")
             }
           } finally {
             dataInputStream.close()

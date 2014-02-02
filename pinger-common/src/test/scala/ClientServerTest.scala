@@ -17,7 +17,7 @@ with WordSpecLike with Matchers with BeforeAndAfterAll {
     val SimpleUdpServer.Ready(on) = expectMsgClass(classOf[SimpleUdpServer.Ready])
 
     val pingerActor = _system.actorOf(Props(classOf[PingerActor], self))
-    expectMsg(PingerActor.Ready)
+    val PingerActor.Ready(how) = expectMsgClass(classOf[PingerActor.Ready])
 
     pingerActor ! PingerActor.Ping("127.0.0.1", on.getPort - 1)
 

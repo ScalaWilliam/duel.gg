@@ -123,7 +123,7 @@ class PingerActor(listener: ActorRef) extends Actor with ActorLogging {
           )
       }
     case Udp.Received(otherBytes, fromWho) =>
-      log.warning("Message from UDP host  {} does not match an acceptable format: {}", fromWho, otherBytes)
+      log.warning("Message from UDP host {} does not match an acceptable format: {}", fromWho, otherBytes)
   }
 
 }
