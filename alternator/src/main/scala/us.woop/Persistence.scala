@@ -7,62 +7,61 @@ import us.woop.PongProcessing.ProcessedMessage
 import us.woop.SauerbratenPinger.Ping
 import us.woop.SauerbratenPinger.ReceivedBadMessage
 import us.woop.SauerbratenPinger.ReceivedMessage
-import us.woop.SauerbratenProtocol._
-import us.woop.SauerbratenProtocol.HopmodUptime
-import us.woop.SauerbratenProtocol.PlayerCns
-import us.woop.SauerbratenProtocol.PlayerExtInfo
-import us.woop.SauerbratenProtocol.ServerInfoReply
+import us.woop.SauerbratenProtocol.Data._
+import org.iq80.leveldb.DB
 
 object Persistence {
   case object Replay
   case class Replayed(key: Array[Byte], value: Array[Byte])
-}
-class Persistence extends Actor {
+  def database = {
+    import org.iq80.leveldb.Options
+    import java.io.File
+    import org.fusesource.leveldbjni.JniDBFactory._
 
-  import org.iq80.leveldb.Options
-  import java.io.File
-  import org.fusesource.leveldbjni.JniDBFactory._
-
-  val database = {
     val options = new Options {
       createIfMissing(true)
     }
     val file = new File("stuff")
     factory.open(file, options)
   }
+  implicit class PutObjectImplicit[T](what: T)(implicit db: DB) {
 
-  def put[T](what: T) {
     import scala.pickling._
     import binary._
-    val key = what.getClass.getSimpleName + ":" + com.github.nscala_time.time.Imports.DateTime.now.toDateTimeISO.toString
-    database.put(key.getBytes, what.pickle.value)
+    def put() {
+      val key = what.getClass.getSimpleName + ":" + com.github.nscala_time.time.Imports.DateTime.now.toDateTimeISO.toString
+      db.put(key.getBytes, what.pickle.value)
+    }
   }
-
+}
+class Persistence extends Actor {
+  import Persistence._
+  implicit val db = database
   def receive = {
     case message: ReceivedMessage =>
-      put(message)
+      message.put()
     case message: ReceivedBadMessage =>
-      put(message)
-    case ping: Ping =>
-      put(ping)
+      message.put()
+    case message: Ping =>
+      message.put()
     case message: ProcessedMessage[PlayerExtInfo] =>
-      put(message)
+      message.put()
     case message: ProcessedMessage[ServerInfoReply] =>
-      put(message)
+      message.put()
     case message: ProcessedMessage[PlayerCns] =>
-      put(message)
+      message.put()
     case message: ProcessedMessage[PlayerExtInfo] =>
-      put(message)
+      message.put()
     case message: ProcessedMessage[HopmodUptime] =>
-      put(message)
+      message.put()
     case message: ProcessedMessage[TeamScores] =>
-      put(message)
+      message.put()
     case message: ProcessedMessage[Uptime] =>
-      put(message)
+      message.put()
     case message: ProcessedMessage[ThomasExt] =>
-      put(message)
+      message.put()
     case message: ProcessedMessage[OlderClient] =>
-      put(message)
+      message.put()
     case Replay =>
       val backTo = sender
       val snapshot = database.getSnapshot

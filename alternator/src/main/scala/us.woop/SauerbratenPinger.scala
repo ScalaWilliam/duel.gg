@@ -28,6 +28,26 @@ object SauerbratenPinger {
     }
   }
 
+  val outboundMessages = Map(
+    'askForServerInfo -> ByteString(1, 1, 1),
+    'askForServerUptime -> ByteString(0, 0, -1),
+    'askForPlayerStats -> ByteString(0, 1, -1),
+    'askForTeamStats -> ByteString(0, 2, -1)
+  )
+  
+  object Acceptable {
+    def unapply(stream: ByteString): Option[(ByteString, ByteString)] = {
+      if ( stream.length > 13 ) {
+        val head = stream.take(3)
+        val theirHash = stream.drop(3).take(10)
+        val message = stream.drop(3).drop(10)
+        val recombined = head ++ message
+        Option(theirHash, recombined)
+      } else {
+        None
+      }
+    }
+  }
 }
 
 class SauerbratenPinger extends Actor with ActorLogging with Stash {
@@ -57,15 +77,8 @@ class SauerbratenPinger extends Actor with ActorLogging with Stash {
   val pair2inet = scala.collection.mutable.HashMap[InetPair, InetSocketAddress]()
   val hasher = createhasher
 
-  val outboundMessages = Map(
-    'askForServerInfo -> ByteString(1, 1, 1),
-    'askForServerUptime -> ByteString(0, 0, -1),
-    'askForPlayerStats -> ByteString(0, 1, -1),
-    'askForTeamStats -> ByteString(0, 2, -1)
-  )
 
   val targets = scala.collection.mutable.HashSet[InetPair]()
-
   def ready(send: ActorRef): Receive = {
     case Ping(who@InetPair(host, port)) =>
       val inetAddress = pair2inet.getOrElseUpdate(who, new InetSocketAddress(host, port + 1))
@@ -82,24 +95,19 @@ class SauerbratenPinger extends Actor with ActorLogging with Stash {
         send ! Udp.Send(byteString, inetAddress)
       }
 
-    case Udp.Received(receivedBytes, fromWho) if (receivedBytes.length > 13) && (inet2pair contains fromWho) =>
+    case Udp.Received(Acceptable(theirHash, message), fromWho) if inet2pair contains fromWho =>
       val hostPair = inet2pair(fromWho)
       val expectedHash = hashes(hostPair)
 
-      val head = receivedBytes.take(3)
-      val theirHash = receivedBytes.drop(3).take(10)
-      val message = receivedBytes.drop(3).drop(10)
-      val recombined = head ++ message
-
       theirHash match {
         case `expectedHash` =>
-          context.parent ! ReceivedMessage(hostPair, recombined)
+          context.parent ! ReceivedMessage(hostPair, message)
           
         case wrongHash =>
-          context.parent ! ReceivedBadMessage(hostPair, receivedBytes)
+          context.parent ! ReceivedBadMessage(hostPair, message)
           log.warning(
             "Received wrong hash from server {}. Detail: {}", hostPair,
-            Map('head -> head, 'messageToParse -> recombined, 'expectedHash -> expectedHash, 'wrongHash -> wrongHash, 'originalMessage -> receivedBytes)
+            Map('message -> message, 'expectedHash -> expectedHash, 'wrongHash -> wrongHash)
           )
       }
     case Udp.Received(otherBytes, fromWho) =>
