@@ -4,7 +4,7 @@ import akka.actor.{Actor, Props, ActorSystem}
 import akka.testkit.{TestActorRef, TestKit, ImplicitSender}
 import java.net.InetSocketAddress
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike, Matchers}
-import us.woop.pinger.SauerbratenProtocol
+import us.woop.pinger.SauerbratenServerData
 import us.woop.pinger.testutil.{SimpleUdpServer, StubServer}
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
@@ -63,11 +63,11 @@ with WordSpecLike with Matchers with BeforeAndAfterAll {
       }
 
       output should contain only(
-        classOf[SauerbratenProtocol.ServerInfoReply] -> 1,
-        classOf[SauerbratenProtocol.PlayerExtInfo] -> 5,
-        classOf[SauerbratenProtocol.PlayerCns] -> 1,
-        classOf[SauerbratenProtocol.TeamScores] -> 1,
-        classOf[SauerbratenProtocol.HopmodUptime] -> 1,
+        classOf[SauerbratenServerData.ServerInfoReply] -> 1,
+        classOf[SauerbratenServerData.PlayerExtInfo] -> 5,
+        classOf[SauerbratenServerData.PlayerCns] -> 1,
+        classOf[SauerbratenServerData.TeamScores] -> 1,
+        classOf[SauerbratenServerData.HopmodUptime] -> 1,
         classOf[PingerClient.CannotParse] -> 1
       )
 

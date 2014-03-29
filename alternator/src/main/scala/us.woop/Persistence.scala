@@ -44,7 +44,7 @@ class Persistence extends Actor {
       message.put()
     case message: Ping =>
       message.put()
-    case message: ProcessedMessage[PlayerExtInfo] =>
+    case message @ ProcessedMessage(time, _: PlayerExtInfo) =>
       message.put()
     case message: ProcessedMessage[ServerInfoReply] =>
       message.put()

@@ -1,6 +1,7 @@
 package us.woop
 
 import org.slf4j.LoggerFactory
+import akka.util.ByteString
 
 /** 01/02/14 */
 object SauerbratenProtocol {
@@ -149,7 +150,7 @@ object SauerbratenProtocol {
   val ack = -1
 
   object GetHopmodUptime {
-    def unapply(List: List[Byte]): Option[HopmodUptime] = List match {
+    def unapply(List: ByteString): Option[HopmodUptime] = List.toList match {
       case 0 >>: 0 >>: -1 >>: `ack` >>: version >>: totalsecs >>: isHopmod >>: hopmodVersion >>: hopmodRevision >>: buildTime >>:: Nil =>
         Option(HopmodUptime(Uptime(version, totalsecs), hopmodVersion, hopmodRevision, buildTime))
       case _ => None

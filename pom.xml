@@ -6,10 +6,9 @@
     <artifactId>ladder-sauer</artifactId>
     <version>1.0</version>
     <modules>
-        <module>pinger-client</module>
-        <module>pinger-common</module>
         <module>pinger-service</module>
-        <module>alternator</module>
+        <module>pinger-common</module>
+        <!--<module>alternator</module>-->
     </modules>
 
     <packaging>pom</packaging>

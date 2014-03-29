@@ -2,10 +2,6 @@ package us.woop.pinger
 
 import com.typesafe.scalalogging.slf4j.Logging
 import us.woop.pinger.SauerbratenServerData._
-import us.woop.pinger.SauerbratenServerData.ServerInfoReply
-import us.woop.pinger.SauerbratenServerData.ThomasR
-import us.woop.pinger.SauerbratenServerData.TeamScore
-import us.woop.pinger.SauerbratenServerData.HopmodUptime
 
 /** 01/02/14 */
 object SauerbratenProtocol extends Logging {

@@ -2,8 +2,8 @@ package us.woop.pinger.testutil
 
 
 import us.woop.pinger.SauerbratenProtocol
-import SauerbratenProtocol._
 import akka.util.ByteString
+import us.woop.pinger.SauerbratenServerData._
 
 /** 01/02/14 */
 object Mappings {
