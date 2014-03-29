@@ -5,7 +5,7 @@
         <groupId>ladder.sauer</groupId>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>pinger-service</artifactId>
+    <artifactId>pinger-client</artifactId>
     <version>1.0</version>
     <properties>
         <jdk.version>1.7.0</jdk.version>
@@ -19,14 +19,25 @@
             <version>2.3.0</version>
         </dependency>
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.0.13</version>
-        </dependency>
-        <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>2.10.3</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>ladder.sauer</groupId>
+            <artifactId>pinger-common</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe</groupId>
+            <artifactId>scalalogging-slf4j_2.10</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.0.13</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -38,12 +49,10 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-slf4j_2.10</artifactId>
             <version>2.3.0</version>
+            <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>ladder.sauer</groupId>
-            <artifactId>pinger-client</artifactId>
-            <version>1.0</version>
-        </dependency>
+
+
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_2.10</artifactId>

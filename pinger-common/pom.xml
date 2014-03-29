@@ -5,7 +5,7 @@
         <groupId>ladder.sauer</groupId>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>pinger-service</artifactId>
+    <artifactId>pinger-common</artifactId>
     <version>1.0</version>
     <properties>
         <jdk.version>1.7.0</jdk.version>
@@ -14,9 +14,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_2.10</artifactId>
-            <version>2.3.0</version>
+            <groupId>com.typesafe</groupId>
+            <artifactId>scalalogging-slf4j_2.10</artifactId>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -30,36 +30,21 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-contrib_2.10</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-slf4j_2.10</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        <dependency>
-            <groupId>ladder.sauer</groupId>
-            <artifactId>pinger-client</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_2.10</artifactId>
             <version>2.1.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-testkit_2.10</artifactId>
-            <version>2.3.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.0.17.Final</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
