@@ -95,6 +95,29 @@ class PingerServiceSpec extends {
       system.stop(secondary)
       expectNoMsg()
     }
+    "Doesn't remove a schedule when one of two subscribers quits" in {
+      val pinger = system.actorOf(Props(classOf[PingerService], testActor))
+      pinger ! ChangeRate(Server("abcd", 123), 5.seconds)
+      pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
+      import akka.actor.ActorDSL._
+      val willQuit = actor(new Act{become{case anything => testActor forward anything}})
+      val willNotQuit = actor(new Act{become{case anything => testActor forward anything}})
+      val willQuit2 = actor(new Act{become{case anything => testActor forward anything}})
+      pinger.tell(Subscribe(Server("abcd", 123)), willQuit)
+      pinger.tell(Subscribe(Server("abcd", 123)), willQuit2)
+      pinger.tell(Subscribe(Server("abcd", 123)), willNotQuit)
+      expectMsg(6.seconds, Ping("abcd", 123))
+      pinger.tell((("abcd", 123), "hello"), testActor)
+      expectMsgClass(1.second, classOf[SauerbratenPong])
+      expectMsgClass(1.second, classOf[SauerbratenPong])
+      expectMsgClass(1.second, classOf[SauerbratenPong])
+      system.stop(willQuit)
+      system.stop(willQuit2)
+      expectMsg(6.seconds, Ping("abcd", 123))
+
+      system.stop(willNotQuit)
+      expectNoMsg()
+    }
   }
 
 }
