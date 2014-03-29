@@ -5,7 +5,10 @@ import akka.actor.{PoisonPill, Kill, Props, ActorSystem}
 import akka.testkit.TestKitBase
 import us.woop.pinger.PingerService.{ChangeRate, Unsubscribe, Server, Subscribe}
 import us.woop.pinger.PingerClient.{Ready, Ping}
+import org.scalatest.junit.JUnitRunner
+import org.junit.runner.RunWith
 
+@RunWith(classOf[JUnitRunner])
 class PingerServiceSpec extends {
   implicit val system = ActorSystem("pingerServiceActorTestSystem")
 } with TestKitBase with WordSpecLike with Matchers {
