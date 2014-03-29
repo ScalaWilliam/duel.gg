@@ -1,7 +1,9 @@
-import java.io.{BufferedReader, InputStreamReader, DataOutputStream}
+package us.woop.pinger
+
 import java.net.Socket
-import scala.util.control.NonFatal
+import java.io.{BufferedReader, InputStreamReader, DataOutputStream}
 import scala.util.Try
+import scala.util.control.NonFatal
 
 /** 01/02/14 */
 object MasterserverClient {

@@ -1,7 +1,9 @@
+package us.woop.pinger.testutil
 
+
+import us.woop.pinger.SauerbratenProtocol
 import SauerbratenProtocol._
 import akka.util.ByteString
-import org.scalatest.Matchers._
 
 /** 01/02/14 */
 object Mappings {

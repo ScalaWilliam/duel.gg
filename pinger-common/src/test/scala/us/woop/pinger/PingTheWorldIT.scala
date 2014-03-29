@@ -1,24 +1,27 @@
+package us.woop.pinger
+
 import akka.actor.{Props, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import us.woop.pinger.MasterserverClient
 
 /** 01/02/14 */
-class PingTheWorldTest(_system: ActorSystem) extends TestKit(_system) with ImplicitSender
+class PingTheWorldIT(_system: ActorSystem) extends TestKit(_system) with ImplicitSender
 with WordSpecLike with Matchers with BeforeAndAfterAll {
   def this() = this(ActorSystem())
 
-  val pingerActor = _system.actorOf(Props(classOf[PingerActor], self))
+  val pingerActor = _system.actorOf(Props(classOf[PingerClient], self))
 
-  expectMsgClass(classOf[PingerActor.Ready])
+  expectMsgClass(classOf[PingerClient.Ready])
 
   val servers = MasterserverClient.getServers(MasterserverClient.sauerMasterserver)
 
-  for { server <- servers } pingerActor ! PingerActor.Ping(server)
-  //  pingerActor ! PingerActor.Ping("81.169.137.114", 30000)
+  for { server <- servers } pingerActor ! PingerClient.Ping(server)
+  //  pingerActor ! us.woop.pinger.PingerActor.Ping("81.169.137.114", 30000)
 
 
 
-//  pingerActor ! PingerActor.Ping("85.214.66.181",10000)
+//  pingerActor ! us.woop.pinger.PingerActor.Ping("85.214.66.181",10000)
 
   import scala.concurrent.duration._
 

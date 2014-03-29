@@ -1,6 +1,7 @@
-import akka.actor.ActorDSL._
+package us.woop.pinger.testutil
+
 import akka.actor.Actor.emptyBehavior
-import akka.actor.{ActorRef, Props, ActorSystem}
+import akka.actor.{ActorRef, ActorSystem}
 import java.net.InetSocketAddress
 import scala.util.Random
 

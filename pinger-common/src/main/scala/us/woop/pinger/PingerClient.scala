@@ -1,3 +1,5 @@
+package us.woop.pinger
+
 import akka.actor.{ActorLogging, Actor, ActorRef}
 import akka.io
 import akka.io.Udp
@@ -9,7 +11,7 @@ import scala.util.Random
 
 /** 01/02/14 */
 
-object PingerActor {
+object PingerClient {
   type InetPair = (String, Int)
 
   case class BadHash(bytes: List[Byte])
@@ -24,7 +26,7 @@ object PingerActor {
     val random = new Random
     val hasher = MessageDigest.getInstance("SHA")
 
-    def makeHash(address: PingerActor.InetPair): List[Byte] = {
+    def makeHash(address: PingerClient.InetPair): List[Byte] = {
       val inputBytes = s"${random.nextString(6)}$address".toCharArray.map(_.toByte)
       val hashedBytes = hasher.digest(inputBytes)
       val postfix = hashedBytes.toList.take(10)
@@ -33,9 +35,9 @@ object PingerActor {
   }
 }
 
-class PingerActor(listener: ActorRef) extends Actor with ActorLogging {
+class PingerClient(listener: ActorRef) extends Actor with ActorLogging {
 
-  import PingerActor._
+  import PingerClient._
 
   val myAddress = new InetSocketAddress("0.0.0.0", 0)
 

@@ -1,4 +1,7 @@
+package us.woop.pinger.testutil
+
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import us.woop.pinger.SauerbratenProtocol
 
 /** 01/02/14 */
 class ThomasTest extends WordSpecLike with Matchers with BeforeAndAfterAll {
@@ -10,8 +13,8 @@ class ThomasTest extends WordSpecLike with Matchers with BeforeAndAfterAll {
   //println(matchers(binput))
 
   val anotherInput = List(0, 1, -1, -1, 105, 0, -11, 16, 58, 77, 97, 108, 108, 97, 107, 107, 97, 0, 103, 111, 111, 100, 0, 0, 0, 0, 0, 0, 100, 0, 6, 0, 5, 47, 65, 13, -1, -2, 1, 0, 0, 0, 0, 0, 0, 0).map(_.toByte)
-  println(matchers(anotherInput))
+//  println(matchers(anotherInput))
 
   val olderClientInput = List(0, 2, -1, -1, 105).map(_.toByte)
-  println(matchers(olderClientInput))
+//  println(matchers(olderClientInput))
 }

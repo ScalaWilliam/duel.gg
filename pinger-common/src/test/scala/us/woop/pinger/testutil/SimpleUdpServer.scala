@@ -1,3 +1,5 @@
+package us.woop.pinger.testutil
+
 import akka.actor.Actor._
 import akka.actor.ActorDSL._
 import akka.actor.{ActorLogging, ActorSystem, ActorRef}
@@ -40,7 +42,7 @@ object SimpleUdpServer {
       become {
 
         case Udp.Bound(boundToAddress) =>
-          val socket = sender
+          val socket = sender()
           log.info(s"Server successfully bound to $boundToAddress")
           become(responding(socket) orElse orMore)
           status ! Ready(boundToAddress)

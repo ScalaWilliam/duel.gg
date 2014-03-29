@@ -1,13 +1,11 @@
-import org.slf4j.LoggerFactory
+package us.woop.pinger
+
+import com.typesafe.scalalogging.slf4j.Logging
 
 /** 01/02/14 */
-object SauerbratenProtocol {
+object SauerbratenProtocol extends Logging {
 
-
-  lazy val logger = LoggerFactory.getLogger(getClass)
-
-  val matchers: PartialFunction[List[Byte], Any] = {
-//    case GetPlayerExtInfo(x) => x
+  val matchers: PartialFunction[List[_], Any] = {
     case GetRelaxedPlayerExtInfo(x) => x
     case GetServerInfoReply(x) => x
     case GetPlayerCns(x) => x
@@ -27,7 +25,7 @@ object SauerbratenProtocol {
   }
 
   object GetInt {
-    def unapply(bytes: List[Byte]): Option[(Int, List[Byte])] = bytes match {
+    def unapply(bytes: List[_]): Option[(Int, List[Byte])] = bytes.asInstanceOf[List[Byte]] match {
       case -127 :: GetUChar(m) :: GetUChar(n) :: GetUChar(o) :: GetUChar(p) :: rest =>
         Option(((m | (n << 8)) | o << 16) | (p << 24), rest)
       case -128 :: GetUChar(m) :: n :: rest =>
@@ -41,26 +39,26 @@ object SauerbratenProtocol {
 
   object GetUchars {
 
-    def uchars(bytes: List[Byte]): List[(Int, List[Byte])] = {
+    def uchars(bytes: List[_]): List[(Int, List[Byte])] = {
       bytes match {
         case GetInt(GetUChar(value), rest) => (value, rest) :: uchars(rest)
         case Nil => Nil
       }
     }
 
-    def unapply(bytes: List[Byte]): Option[List[Int]] =
+    def unapply(bytes: List[_]): Option[List[Int]] =
       Option(uchars(bytes).map(_._1))
   }
 
   object GetInts {
-    def ints(bytes: List[Byte]): List[(Int, List[Byte])] = {
+    def ints(bytes: List[_]): List[(Int, List[Byte])] = {
       bytes match {
         case GetInt(value, rest) => (value, rest) :: ints(rest)
         case Nil => Nil
       }
     }
 
-    def unapply(bytes: List[Byte]): Option[List[Int]] =
+    def unapply(bytes: List[_]): Option[List[Int]] =
       Option(ints(bytes).map(_._1))
   }
 
@@ -91,7 +89,7 @@ object SauerbratenProtocol {
   object GetString {
     val mapper = (x: (Int, List[Byte])) => CubeString.mapping(x._1).toChar
 
-    def unapply(bytes: List[Byte]): Option[(String, List[Byte])] = bytes match {
+    def unapply(bytes: List[_]): Option[(String, List[Byte])] = bytes match {
       case Nil =>
         None
       case something =>
@@ -100,18 +98,15 @@ object SauerbratenProtocol {
     }
   }
 
-
   val >>:: = GetString
 
-
   val >>: = GetInt
-
 
   case class ServerInfoReply(clients: Int, protocol: Int, gamemode: Int, remain: Int, maxclients: Int,
                              gamepaused: Option[Int], gamespeed: Option[Int], mapname: String, desc: String)
 
   object GetServerInfoReply {
-    def unapply(List: List[Byte]): Option[ServerInfoReply] = List match {
+    def unapply(List: List[_]): Option[ServerInfoReply] = List match {
       case 1 >>: 1 >>: 1 >>: clients >>: numattrs >>: protocol >>: gamemode >>:
         remain >>: maxclients >>: pass >>: gamepaused >>:
         gamespeed >>: mapname >>:: desc >>:: rest if numattrs == 7 =>
@@ -130,13 +125,12 @@ object SauerbratenProtocol {
   case class HopmodUptime(uptime: Uptime, hopmodVersion: Int, hopmodRevision: Int, buildTime: String)
 
   object GetHopmodUptime {
-    def unapply(List: List[Byte]): Option[HopmodUptime] = List match {
+    def unapply(List: List[_]): Option[HopmodUptime] = List match {
       case 0 >>: 0 >>: -1 >>: `ack` >>: version >>: totalsecs >>: isHopmod >>: hopmodVersion >>: hopmodRevision >>: buildTime >>:: Nil =>
         Option(HopmodUptime(Uptime(version, totalsecs), hopmodVersion, hopmodRevision, buildTime))
       case _ => None
     }
   }
-
   object GetUptime {
     def unapply(List: List[Byte]): Option[Uptime] = List match {
       case 0 >>: 0 >>: -1 >>: `ack` >>: version >>: totalsecs >>: Nil =>
@@ -144,10 +138,7 @@ object SauerbratenProtocol {
       case _ => None
     }
   }
-
-
   case class PlayerCns(version: Int, cns: List[Int])
-
   object GetPlayerCns {
     def unapply(List: List[Byte]): Option[PlayerCns] = List match {
       case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: -10 >>: GetInts(ids) =>
@@ -167,12 +158,9 @@ object SauerbratenProtocol {
         None
     }
   }
-
   val >~: = GetIp
-
   object GetThomasModExtInfo {
     def unapply(list: List[Byte]): Option[ThomasExt] = list match {
-
       case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: (rest @ (-3 >>: _)) =>
         rest match {
           case GetThomasExt(thomasR) =>
@@ -229,7 +217,7 @@ object SauerbratenProtocol {
         val leftOver = ints.last._2
         Option(ThomasR(None, s, listOfInts), leftOver)
       case x =>
-        println(s"WHuT? $x")
+        // unknown protocol
         None
     }
   }

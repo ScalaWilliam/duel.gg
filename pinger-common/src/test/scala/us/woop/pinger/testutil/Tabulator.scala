@@ -1,3 +1,5 @@
+package us.woop.pinger.testutil
+
 object Tabulator {
 
   def format(rows: List[List[String]]) = {
