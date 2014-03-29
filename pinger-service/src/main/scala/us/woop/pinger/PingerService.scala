@@ -10,6 +10,7 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
 
   import PingerServiceData._
 
+  val settings = PingerServiceSettings(context.system)
   def this() = this(None)
   def this(injectedPingerClient: ActorRef) = this(Option(injectedPingerClient))
   val pingerClient = injectPingerClient.getOrElse{context.actorOf(Props(classOf[PingerClient], self), name = "pingerClient")}
@@ -19,7 +20,7 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
 
   /** A view of subscribers per each server based on subscriptions above **/
   def serversSubscribers = subscriptions.groupBy{_._1}.mapValues{_.map{_._2}}
-  val rates = scala.collection.mutable.Map[Server, FiniteDuration]().withDefault(serverName => 30.seconds)
+  val pingInterval = scala.collection.mutable.Map[Server, FiniteDuration]().withDefault(serverName => settings.defaultPingInterval)
 
   import context.dispatcher
   def receive = {
@@ -31,7 +32,7 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
       stash()
   }
 
-  val initialDelay = 1.second
+  val initialDelay = settings.subscribeToPingDelay
 
   override def postStop() {
     for { (server, schedule) <- schedules } {
@@ -43,8 +44,8 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
   def ready = LoggingReceive {
     case Subscribe(server) =>
       log.debug("Client {} wants to subscribe to {}", sender(), server)
-      log.debug("Updating schedule for {} at rate {}, initially in {}", server, rates(server), initialDelay)
-      schedules.getOrElseUpdate(server, context.system.scheduler.schedule(initialDelay, rates(server), pingerClient, Ping((server.ip, server.port))))
+      log.debug("Updating schedule for {} at rate {}, initially in {}", server, pingInterval(server), initialDelay)
+      schedules.getOrElseUpdate(server, context.system.scheduler.schedule(initialDelay, pingInterval(server), pingerClient, Ping((server.ip, server.port))))
       subscriptions += server -> sender()
       context.watch(sender())
     /**
@@ -68,13 +69,13 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
      */
     case ChangeRate(server, rate) =>
       log.debug("Client {} wants to change {} rate to {}", sender(), server, rate)
-      rates += server -> rate
+      pingInterval += server -> rate
       schedules get server match {
         case Some(schedule) =>
           log.debug("Canceling schedule {} for {}", schedule, server)
           schedule.cancel()
-          log.debug("Adding schedule for {} at rate {}, initially in {}", server, rates(server), initialDelay)
-          schedules += server -> context.system.scheduler.schedule(initialDelay, rates(server), pingerClient, Ping((server.ip, server.port)))
+          log.debug("Adding schedule for {} at rate {}, initially in {}", server, pingInterval(server), initialDelay)
+          schedules += server -> context.system.scheduler.schedule(initialDelay, pingInterval(server), pingerClient, Ping((server.ip, server.port)))
         case None =>
       }
 

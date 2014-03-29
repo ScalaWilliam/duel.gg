@@ -9,7 +9,14 @@ object PingerServiceRunner extends App {
 
   val woopServer = Server(InetAddress.getByName("sauer.woop.us").getHostAddress, 28785)
 
-  implicit val system = ActorSystem("WoopDeeDoo")
+
+  implicit val system = {
+    val config = ConfigFactory.parseString(
+    """us.woop.pinger.pinger-service.subscribe-to-ping-delay = 500ms
+      |us.woop.pinger.pinger-service.default-ping-interval = 30s""".stripMargin
+    )
+    ActorSystem("WoopDeeDoo", config)
+  }
   val pingerService = system.actorOf(Props(classOf[PingerService]))
 
   import akka.actor.ActorDSL._
@@ -46,7 +53,9 @@ object PingerServiceRunner extends App {
         |       mailbox-type = "akka.dispatch.UnboundedDequeBasedMailbox"
         |     }
         |   }
-        |}""".
+        |}
+        |us.woop.pinger.pinger-service.subscribe-to-ping-delay = 500ms
+        |us.woop.pinger.pinger-service.default-ping-interval = 30s""".
         stripMargin)
 
     ActorSystem("WoopDeeDoo", ConfigFactory.load(customConf))

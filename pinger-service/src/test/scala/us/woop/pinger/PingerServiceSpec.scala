@@ -13,10 +13,17 @@ import us.woop.pinger.PingerServiceData.Subscribe
 import us.woop.pinger.PingerServiceData.Unsubscribe
 import us.woop.pinger.PingerServiceData.ChangeRate
 import us.woop.pinger.PingerClient.Ready
+import com.typesafe.config.ConfigFactory
 
 @RunWith(classOf[JUnitRunner])
 class PingerServiceSpec extends {
-  implicit val system = ActorSystem("pingerServiceActorTestSystem")
+
+  val config = ConfigFactory.parseString(
+    """us.woop.pinger.pinger-service.subscribe-to-ping-delay = 100ms
+      |us.woop.pinger.pinger-service.default-ping-interval = 500ms
+      |""".stripMargin)
+
+  implicit val system = ActorSystem("pingerServiceActorTestSystem", config)
 } with TestKitBase with WordSpecLike with Matchers {
 
   import scala.concurrent.duration._
@@ -35,7 +42,7 @@ class PingerServiceSpec extends {
       // also shows that stash() is working
       pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
       expectMsg(Ping("abcd", 123))
-      expectNoMsg()
+      expectNoMsg(100.millis)
       system.stop(pinger)
     }
     "Send nothing when a subscription is made and cancelled" in {
@@ -43,7 +50,7 @@ class PingerServiceSpec extends {
       pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
       pinger.tell(Subscribe(Server("abcd", 123)), testActor)
       pinger.tell(Unsubscribe(Server("abcd", 123)), testActor)
-      expectNoMsg()
+      expectNoMsg(600.millis)
       system.stop(pinger)
     }
     "Passes a pinger client response back" in {
@@ -59,15 +66,7 @@ class PingerServiceSpec extends {
       val pinger = system.actorOf(Props(classOf[PingerService], testActor))
       pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
       pinger.tell((("abcd", 123), "hello"), testActor)
-      expectNoMsg()
-      system.stop(pinger)
-    }
-    "Does not pass a pinger client response back if not subscribed & ran with a rate change" in {
-      val pinger = system.actorOf(Props(classOf[PingerService], testActor))
-      pinger ! ChangeRate(Server("abcd", 123), 3.second)
-      pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
-      pinger.tell((("abcd", 123), "hello"), testActor)
-      expectNoMsg()
+      expectNoMsg(200.millis)
       system.stop(pinger)
     }
     "Send a ping twice after a rate is set" in {
@@ -76,11 +75,11 @@ class PingerServiceSpec extends {
       pinger.tell(ChangeRate(Server("abcd", 123), 3.seconds), testActor)
       pinger.tell(Subscribe(Server("abcd", 123)), testActor)
       expectMsg(Ping("abcd", 123))
-      expectNoMsg(2.seconds)
+      expectNoMsg(450.millis)
       expectMsg(Ping("abcd", 123))
-      expectNoMsg(2.seconds)
+      expectNoMsg(400.millis)
       system.stop(pinger)
-      expectNoMsg()
+      expectNoMsg(600.millis)
     }
     "Removes a subscription when an actor dies" in {
       val pinger = system.actorOf(Props(classOf[PingerService], testActor))
@@ -89,15 +88,14 @@ class PingerServiceSpec extends {
       import akka.actor.ActorDSL._
       val secondary = actor(new Act{become{case anything => testActor forward anything}})
       pinger.tell(Subscribe(Server("abcd", 123)), secondary)
-      expectMsg(6.seconds, Ping("abcd", 123))
+      expectMsg(Ping("abcd", 123))
       pinger.tell((("abcd", 123), "hello"), testActor)
-      expectMsgClass(1.second, classOf[SauerbratenPong])
+      expectMsgClass(classOf[SauerbratenPong])
       system.stop(secondary)
-      expectNoMsg()
+      expectNoMsg(600.millis)
     }
     "Doesn't remove a schedule when one of two subscribers quits" in {
       val pinger = system.actorOf(Props(classOf[PingerService], testActor))
-      pinger ! ChangeRate(Server("abcd", 123), 5.seconds)
       pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
       import akka.actor.ActorDSL._
       val willQuit = actor(new Act{become{case anything => testActor forward anything}})
@@ -106,14 +104,14 @@ class PingerServiceSpec extends {
       pinger.tell(Subscribe(Server("abcd", 123)), willQuit)
       pinger.tell(Subscribe(Server("abcd", 123)), willQuit2)
       pinger.tell(Subscribe(Server("abcd", 123)), willNotQuit)
-      expectMsg(6.seconds, Ping("abcd", 123))
+      expectMsg(Ping("abcd", 123))
       pinger.tell((("abcd", 123), "hello"), testActor)
-      expectMsgClass(1.second, classOf[SauerbratenPong])
-      expectMsgClass(1.second, classOf[SauerbratenPong])
-      expectMsgClass(1.second, classOf[SauerbratenPong])
+      expectMsgClass(classOf[SauerbratenPong])
+      expectMsgClass(classOf[SauerbratenPong])
+      expectMsgClass(classOf[SauerbratenPong])
       system.stop(willQuit)
       system.stop(willQuit2)
-      expectMsg(6.seconds, Ping("abcd", 123))
+      expectMsg(Ping("abcd", 123))
 
       system.stop(willNotQuit)
       expectNoMsg()

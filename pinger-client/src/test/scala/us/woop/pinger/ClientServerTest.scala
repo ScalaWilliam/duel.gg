@@ -30,7 +30,7 @@ with WordSpecLike with Matchers with BeforeAndAfterAll {
     import scala.concurrent.duration._
     "Return at least one bad hash" in {
 
-      val re = receiveWhile(3.seconds) {
+      val re = receiveWhile(500.millis) {
         case x => x
       }
       re.collect {
@@ -43,7 +43,7 @@ with WordSpecLike with Matchers with BeforeAndAfterAll {
 
       pingerActor ! PingerClient.Ping("127.0.0.1", on.getPort - 1)
 
-      val re = receiveWhile(3.seconds) {
+      val re = receiveWhile(500.millis) {
         case x => x
       }
 
