@@ -2,8 +2,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>ladder.sauer</groupId>
-    <artifactId>ladder-sauer</artifactId>
+    <groupId>us.woop.pinger</groupId>
+    <artifactId>root</artifactId>
     <version>1.0</version>
     <modules>
         <module>pinger-service</module>

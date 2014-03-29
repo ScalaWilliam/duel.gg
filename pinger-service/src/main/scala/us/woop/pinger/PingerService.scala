@@ -6,21 +6,11 @@ import scala.concurrent.duration._
 import us.woop.pinger.PingerClient.{Ready, Ping}
 import akka.event.LoggingReceive
 
-object PingerService {
-  case class Subscribe(server: Server)
-  case class Unsubscribe(server: Server)
-  case class Server(ip: String, port: Int)
-  object Server {
-    def unapply(from: (String, Int)): Option[Server] =
-      Option(Server(from._1, from._2))
-  }
-  case class ChangeRate(server: Server, rate: FiniteDuration)
-}
-
 class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor with ActorLogging with Stash {
 
-  import PingerService._
+  import PingerServiceData._
 
+  def this() = this(None)
   def this(injectedPingerClient: ActorRef) = this(Option(injectedPingerClient))
   val pingerClient = injectPingerClient.getOrElse{context.actorOf(Props(classOf[PingerClient], self), name = "pingerClient")}
 
@@ -33,7 +23,7 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
 
   import context.dispatcher
   def receive = {
-    case Ready =>
+    case Ready(_) =>
       log.debug("{} is now ready", sender())
       context.become(ready)
       unstashAll()
@@ -43,11 +33,20 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
 
   val initialDelay = 1.second
 
+  override def postStop() {
+    for { (server, schedule) <- schedules } {
+      log.debug("Canceling schedule {} for {}", schedule, server)
+      schedule.cancel()
+    }
+  }
+
   def ready = LoggingReceive {
     case Subscribe(server) =>
       log.debug("Client {} wants to subscribe to {}", sender(), server)
+      log.debug("Updating schedule for {} at rate {}, initially in {}", server, rates(server), initialDelay)
       schedules.getOrElseUpdate(server, context.system.scheduler.schedule(initialDelay, rates(server), pingerClient, Ping((server.ip, server.port))))
       subscriptions += server -> sender()
+      context.watch(sender())
     /**
       * Unsubscribe the subscriber from the server.
       * If the server has no more subscribers, it gets removed.
@@ -60,7 +59,10 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
         (server, schedule) <- schedules
         if serversSubscribers.get(server) == None
         schedule <- schedules remove server
-      } schedule.cancel()
+      } {
+        log.debug("Canceling schedule {} for {}", schedule, server)
+        schedule.cancel()
+      }
     /**
      * Change the polling rate of each server.
      */
@@ -69,17 +71,38 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
       rates += server -> rate
       schedules get server match {
         case Some(schedule) =>
+          log.debug("Canceling schedule {} for {}", schedule, server)
           schedule.cancel()
+          log.debug("Adding schedule for {} at rate {}, initially in {}", server, rates(server), initialDelay)
           schedules += server -> context.system.scheduler.schedule(initialDelay, rates(server), pingerClient, Ping((server.ip, server.port)))
         case None =>
       }
 
-    case message @ Tuple2((ip: String, port: Int), _) if sender() == pingerClient =>
+    case Terminated(subscriber) =>
+      log.debug("Watched subscriber {} has terminated", subscriber)
+      context.unwatch(subscriber)
+      val removeSubscriptions =
+        subscriptions.filter{_._2 == subscriber}
+      for { subscription <- removeSubscriptions }
+        subscriptions.remove(subscription)
+      for {
+        (server, schedule) <- schedules
+        if serversSubscribers.get(server) == None
+        schedule <- schedules remove server
+      } {
+        log.debug("Canceling schedule {} for {}", schedule, server)
+        schedule.cancel()
+      }
+
+    case message @ Tuple2((ip: String, port: Int), payload: Any) if sender() == pingerClient =>
       val server = Server(ip, port)
       for {
         subscribers <- serversSubscribers get server
         subscriber <- subscribers
-      } subscriber ! message
-
+      } subscriber ! SauerbratenPong (
+        unixTime = System.currentTimeMillis() / 1000L,
+        host = (ip, port),
+        payload = payload
+      )
   }
 }

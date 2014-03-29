@@ -48,7 +48,7 @@ class PingerClient(listener: ActorRef) extends Actor with ActorLogging {
   def receive = {
     case Udp.Bound(boundTo) =>
       log.debug("Pinger client bound to socket {}", boundTo)
-      val socket = sender
+      val socket = sender()
       listener ! Ready(boundTo)
       context.become(ready(socket))
   }

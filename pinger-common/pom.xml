@@ -5,6 +5,14 @@
         <groupId>ladder.sauer</groupId>
     <modelVersion>4.0.0</modelVersion>
 
+
+    <parent>
+        <groupId>us.woop.pinger</groupId>
+        <artifactId>root</artifactId>
+        <version>1.0</version>
+    </parent>
+    <packaging>jar</packaging>
+
     <artifactId>pinger-common</artifactId>
     <version>1.0</version>
     <properties>

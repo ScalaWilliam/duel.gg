@@ -3,10 +3,16 @@ package us.woop.pinger
 import org.scalatest.{WordSpecLike, Matchers, WordSpec}
 import akka.actor.{PoisonPill, Kill, Props, ActorSystem}
 import akka.testkit.TestKitBase
-import us.woop.pinger.PingerService.{ChangeRate, Unsubscribe, Server, Subscribe}
+import us.woop.pinger.PingerServiceData._
 import us.woop.pinger.PingerClient.{Ready, Ping}
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+import java.net.InetSocketAddress
+import us.woop.pinger.PingerClient.Ping
+import us.woop.pinger.PingerServiceData.Subscribe
+import us.woop.pinger.PingerServiceData.Unsubscribe
+import us.woop.pinger.PingerServiceData.ChangeRate
+import us.woop.pinger.PingerClient.Ready
 
 @RunWith(classOf[JUnitRunner])
 class PingerServiceSpec extends {
@@ -18,63 +24,76 @@ class PingerServiceSpec extends {
     "Send a ping when a subscription is made" in {
       val pinger = system.actorOf(Props(classOf[PingerService], testActor))
       pinger.tell(Subscribe(Server("abcd", 123)), testActor)
-      pinger ! Ready
+      pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
       expectMsg(Ping("abcd", 123))
-      pinger ! PoisonPill
+      system.stop(pinger)
     }
     "Send only one ping when a double subscription is made" in {
       val pinger = system.actorOf(Props(classOf[PingerService], testActor))
       pinger.tell(Subscribe(Server("abcd", 123)), testActor)
       pinger.tell(Subscribe(Server("abcd", 123)), testActor)
       // also shows that stash() is working
-      pinger ! Ready
+      pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
       expectMsg(Ping("abcd", 123))
       expectNoMsg()
-      pinger ! PoisonPill
+      system.stop(pinger)
     }
     "Send nothing when a subscription is made and cancelled" in {
       val pinger = system.actorOf(Props(classOf[PingerService], testActor))
-      pinger ! Ready
+      pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
       pinger.tell(Subscribe(Server("abcd", 123)), testActor)
       pinger.tell(Unsubscribe(Server("abcd", 123)), testActor)
       expectNoMsg()
-      pinger ! PoisonPill
+      system.stop(pinger)
+    }
+    "Passes a pinger client response back" in {
+      val pinger = system.actorOf(Props(classOf[PingerService], testActor))
+      pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
+      pinger.tell(Subscribe(Server("abcd", 123)), testActor)
+      expectMsg(Ping("abcd", 123))
+      pinger.tell((("abcd", 123), "hello"), testActor)
+      expectMsgClass(classOf[SauerbratenPong])
+      system.stop(pinger)
+    }
+    "Does not pass a pinger client response back if not subscribed" in {
+      val pinger = system.actorOf(Props(classOf[PingerService], testActor))
+      pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
+      pinger.tell((("abcd", 123), "hello"), testActor)
+      expectNoMsg()
+      system.stop(pinger)
+    }
+    "Does not pass a pinger client response back if not subscribed & ran with a rate change" in {
+      val pinger = system.actorOf(Props(classOf[PingerService], testActor))
+      pinger ! ChangeRate(Server("abcd", 123), 3.second)
+      pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
+      pinger.tell((("abcd", 123), "hello"), testActor)
+      expectNoMsg()
+      system.stop(pinger)
     }
     "Send a ping twice after a rate is set" in {
       val pinger = system.actorOf(Props(classOf[PingerService], testActor))
-      pinger ! Ready
+      pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
       pinger.tell(ChangeRate(Server("abcd", 123), 3.seconds), testActor)
       pinger.tell(Subscribe(Server("abcd", 123)), testActor)
       expectMsg(Ping("abcd", 123))
       expectNoMsg(2.seconds)
       expectMsg(Ping("abcd", 123))
       expectNoMsg(2.seconds)
-      pinger ! PoisonPill
-    }
-    "Passes a pinger client response back" in {
-      val pinger = system.actorOf(Props(classOf[PingerService], testActor))
-      pinger ! Ready
-      pinger.tell(Subscribe(Server("abcd", 123)), testActor)
-      expectMsg(Ping("abcd", 123))
-      pinger.tell((("abcd", 123), "hello"), testActor)
-      expectMsg((("abcd", 123), "hello"))
-      ignoreMsg{ case _ => true }
-      pinger ! PoisonPill
-    }
-    "Does not pass a pinger client response back if not subscribed" in {
-      val pinger = system.actorOf(Props(classOf[PingerService], testActor))
-      pinger ! Ready
-      pinger.tell((("abcd", 123), "hello"), testActor)
+      system.stop(pinger)
       expectNoMsg()
-      pinger ! PoisonPill
     }
-    "Does not pass a pinger client response back if not subscribed & ran with a rate change" in {
+    "Removes a subscription when an actor dies" in {
       val pinger = system.actorOf(Props(classOf[PingerService], testActor))
-      pinger ! ChangeRate(Server("abcd", 123), 3.second)
-      pinger ! Ready
+      pinger ! ChangeRate(Server("abcd", 123), 5.seconds)
+      pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
+      import akka.actor.ActorDSL._
+      val secondary = actor(new Act{become{case anything => testActor forward anything}})
+      pinger.tell(Subscribe(Server("abcd", 123)), secondary)
+      expectMsg(6.seconds, Ping("abcd", 123))
       pinger.tell((("abcd", 123), "hello"), testActor)
+      expectMsgClass(1.second, classOf[SauerbratenPong])
+      system.stop(secondary)
       expectNoMsg()
-      pinger ! PoisonPill
     }
   }
 
