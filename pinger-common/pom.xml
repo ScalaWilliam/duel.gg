@@ -9,7 +9,6 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>ladder.sauer</groupId>
     <artifactId>pinger-common</artifactId>
     <version>1.0</version>
     <properties>
