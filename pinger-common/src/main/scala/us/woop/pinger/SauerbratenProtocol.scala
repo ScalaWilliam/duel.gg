@@ -1,6 +1,11 @@
 package us.woop.pinger
 
 import com.typesafe.scalalogging.slf4j.Logging
+import us.woop.pinger.SauerbratenServerData._
+import us.woop.pinger.SauerbratenServerData.ServerInfoReply
+import us.woop.pinger.SauerbratenServerData.ThomasR
+import us.woop.pinger.SauerbratenServerData.TeamScore
+import us.woop.pinger.SauerbratenServerData.HopmodUptime
 
 /** 01/02/14 */
 object SauerbratenProtocol extends Logging {
@@ -102,9 +107,6 @@ object SauerbratenProtocol extends Logging {
 
   val >>: = GetInt
 
-  case class ServerInfoReply(clients: Int, protocol: Int, gamemode: Int, remain: Int, maxclients: Int,
-                             gamepaused: Option[Int], gamespeed: Option[Int], mapname: String, desc: String)
-
   object GetServerInfoReply {
     def unapply(List: List[_]): Option[ServerInfoReply] = List match {
       case 1 >>: 1 >>: 1 >>: clients >>: numattrs >>: protocol >>: gamemode >>:
@@ -119,11 +121,6 @@ object SauerbratenProtocol extends Logging {
   }
 
   val ack = -1
-
-  case class Uptime(version: Int, totalsecs: Int)
-
-  case class HopmodUptime(uptime: Uptime, hopmodVersion: Int, hopmodRevision: Int, buildTime: String)
-
   object GetHopmodUptime {
     def unapply(List: List[_]): Option[HopmodUptime] = List match {
       case 0 >>: 0 >>: -1 >>: `ack` >>: version >>: totalsecs >>: isHopmod >>: hopmodVersion >>: hopmodRevision >>: buildTime >>:: Nil =>
@@ -138,7 +135,6 @@ object SauerbratenProtocol extends Logging {
       case _ => None
     }
   }
-  case class PlayerCns(version: Int, cns: List[Int])
   object GetPlayerCns {
     def unapply(List: List[Byte]): Option[PlayerCns] = List match {
       case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: -10 >>: GetInts(ids) =>
@@ -146,9 +142,6 @@ object SauerbratenProtocol extends Logging {
       case _ => None
     }
   }
-
-  case class PlayerExtInfo(version: Int, cn: Int, ping: Int, name: String, team: String, frags: Int,
-                           deaths: Int, teamkills: Int, accuracy: Int, health: Int, armour: Int, gun: Int, privilege: Int, state: Int, ip: String)
 
   object GetIp {
     def unapply(List: List[Byte]): Option[(String, List[Byte])] = List match {
@@ -173,7 +166,6 @@ object SauerbratenProtocol extends Logging {
     }
   }
 
-  case class ThomasExt(ds: List[ThomasD], r: ThomasR)
   object GetThomasExt {
 
     def getDs(bytes: List[Byte]): List[(ThomasD, List[Byte])] = {
@@ -191,7 +183,6 @@ object SauerbratenProtocol extends Logging {
         Option(ThomasExt(allDs, thomasR))
     }
   }
-  case class ThomasD(data: List[Int])
   object GetD {
     def unapply(list: List[Byte]): Option[(ThomasD, List[Byte])] = list match {
       case -3 >>: rest =>
@@ -203,7 +194,6 @@ object SauerbratenProtocol extends Logging {
     }
   }
 
-  case class ThomasR(s1: Option[String], s2: String, data: List[Int])
   object GetR {
     def unapply(list: List[Byte]): Option[(ThomasR, List[Byte])] = list match {
       case s1 >>:: s2 >>:: rest =>
@@ -222,7 +212,6 @@ object SauerbratenProtocol extends Logging {
     }
   }
 
-  case class OlderClient()
   object CheckOlderClient {
     def unapply(list: List[Byte]): Option[OlderClient] = list match {
       case 0 >>: _ >>: -1 >>: -1 >>: 105 >>: Nil =>
@@ -263,8 +252,6 @@ object SauerbratenProtocol extends Logging {
     }
   }
 
-  case class TeamScores(version: Int, gamemode: Int, remain: Int, scores: List[TeamScore])
-
   object GetTeamScores {
     def unapply(List: List[Byte]): Option[Any] = List match {
       case 0 >>: 2 >>: -1 >>: `ack` >>: version >>: 1 >>: gamemode >>: remain >>: Nil =>
@@ -277,8 +264,6 @@ object SauerbratenProtocol extends Logging {
         None
     }
   }
-
-  case class TeamScore(name: String, score: Int, baseMap: Boolean, baseScores: List[Int])
 
   object GetTeamScore {
     def ints(bytes: List[Byte]): List[(Int, List[Byte])] = {
