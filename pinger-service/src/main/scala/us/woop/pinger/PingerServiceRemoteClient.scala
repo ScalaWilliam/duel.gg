@@ -48,6 +48,10 @@ object PingerServiceRemoteClient extends App {
       |     }
       |   }
       |}
+      |akka.remote {
+      |secure-cookie = "C802510E1ECC5A7C18AC4DFE489CEAB231D97AAF"
+      |require-cookie = on
+      |}
       |
       |
     """.stripMargin
@@ -55,15 +59,18 @@ object PingerServiceRemoteClient extends App {
   implicit val cool = ActorSystem("Bon",config)
   import akka.actor.ActorDSL._
 
+  val servahs = List(10000, 20000, 30000, 40000, 50000, 60000).map{Server(getByName("effic.me"), _)}
+
   val ac = actor(new Act{
     val pingerServiceSelection =
-      context.actorSelection("""akka.tcp://PingerService@127.0.0.1:2552/user/pingerService""")
+      context.actorSelection("""akka.tcp://PingerService@188.226.161.13:2552/user/pingerService""")
     pingerServiceSelection ! Identify(None)
     import scala.concurrent.duration._
     become {
       case ActorIdentity(_, Some(pingerService)) =>
         context watch pingerService
         pingerService ! Subscribe(woopServer, 3.seconds)
+        for { server <- servahs } pingerService ! Subscribe(server, 3.seconds)
         become {
           case Terminated(`pingerService`) =>
             throw new RuntimeException("Pinger service has disappeared!")

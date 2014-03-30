@@ -30,7 +30,9 @@ us.woop.pinger.pinger-service.subscribe-to-ping-delay=500ms
 us.woop.pinger.pinger-service.default-ping-interval=10s
     """
 
-  val customConf = ConfigFactory.systemProperties().withFallback(ConfigFactory.parseString(config))
+  val clConfig = ConfigFactory.defaultReference(getClass.getClassLoader)
+  val customConf = ConfigFactory.systemProperties().withFallback(ConfigFactory.parseString(config).withFallback(clConfig))
+
 
   implicit val actorSystem = ActorSystem("PingerService", customConf)
 
