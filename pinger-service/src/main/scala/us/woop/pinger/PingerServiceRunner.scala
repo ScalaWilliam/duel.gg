@@ -7,10 +7,36 @@ import com.typesafe.config.ConfigFactory
 
 object PingerServiceRunner extends App {
 
-  val woopServer = Server(InetAddress.getByName("sauer.woop.us").getHostAddress, 28785)
+//  val woopServer = Server(InetAddress.getByName("sauer.woop.us").getHostAddress, 28785)
+  val woopServer = Server("81.169.137.114", 30000)
 
 
-  implicit val system = {
+  implicit lazy val system = {
+    val customConf = ConfigFactory.parseString(
+      """akka {
+        |  #  loglevel = "DEBUG"
+        |    actor {
+        |      #  debug {
+        |      #      receive = on
+        |      #      autoreceive = on
+        |      #      lifecycle = on
+        |      #  }
+        |    }
+        |     loggers = ["akka.event.slf4j.Slf4jLogger"]
+        |   actor {
+        |     my-custom-dispatcher {
+        |       mailbox-type = "akka.dispatch.UnboundedDequeBasedMailbox"
+        |     }
+        |   }
+        |}
+        |us.woop.pinger.pinger-service.subscribe-to-ping-delay = 500ms
+        |us.woop.pinger.pinger-service.default-ping-interval = 30s""".
+        stripMargin)
+
+    ActorSystem("WoopDeeDoo", ConfigFactory.load(customConf))
+  }
+
+  lazy val xsystem = {
     val config = ConfigFactory.parseString(
     """us.woop.pinger.pinger-service.subscribe-to-ping-delay = 500ms
       |us.woop.pinger.pinger-service.default-ping-interval = 30s""".stripMargin
@@ -28,37 +54,11 @@ object PingerServiceRunner extends App {
     pingerService ! Subscribe(woopServer)
 
     import scala.concurrent.duration._
-    pingerService ! ChangeRate(woopServer, 5.seconds)
+    pingerService ! ChangeRate(woopServer, 3.seconds)
 
     import context.dispatcher
     context.system.scheduler.scheduleOnce(20.seconds, pingerService, Unsubscribe(woopServer))
 
   }}
-
-  lazy val debuggedSystem = {
-    val customConf = ConfigFactory.parseString(
-      """akka {
-        |    loglevel = "DEBUG"
-        |    actor {
-        |        debug {
-        |            receive = on
-        |            autoreceive = on
-        |            lifecycle = on
-        |        }
-        |    }
-        |     loggers = ["akka.event.slf4j.Slf4jLogger"]
-        |    loglevel = "DEBUG"
-        |   actor {
-        |     my-custom-dispatcher {
-        |       mailbox-type = "akka.dispatch.UnboundedDequeBasedMailbox"
-        |     }
-        |   }
-        |}
-        |us.woop.pinger.pinger-service.subscribe-to-ping-delay = 500ms
-        |us.woop.pinger.pinger-service.default-ping-interval = 30s""".
-        stripMargin)
-
-    ActorSystem("WoopDeeDoo", ConfigFactory.load(customConf))
-  }
 
 }

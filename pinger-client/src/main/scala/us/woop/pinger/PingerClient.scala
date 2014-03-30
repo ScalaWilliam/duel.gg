@@ -83,13 +83,16 @@ class PingerClient(listener: ActorRef) extends Actor with ActorLogging {
       val hash = hasher.makeHash(who)
       hashes += who -> hash
       for {
-        (_, message) <- outboundMessages
+        ((_, message), idx) <- outboundMessages.zipWithIndex
         hashedMessage = message ::: hash
         hashedArray = hashedMessage.toArray
         byteString = ByteString(hashedArray)
       } {
         log.debug("Sending to {} ({}) data {}", who, inetAddress, byteString)
-        send ! Udp.Send(byteString, inetAddress)
+        import scala.concurrent.duration._
+        import context.dispatcher
+        context.system.scheduler.scheduleOnce((idx * 50).millis, send, Udp.Send(byteString, inetAddress))
+//        send ! Udp.Send(byteString, inetAddress)
       }
 
     case Udp.Received(receivedBytes, fromWho) if (receivedBytes.length > 13) && (inet2pair contains fromWho) =>

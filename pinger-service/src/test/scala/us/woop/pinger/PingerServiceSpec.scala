@@ -17,13 +17,7 @@ import com.typesafe.config.ConfigFactory
 
 @RunWith(classOf[JUnitRunner])
 class PingerServiceSpec extends {
-
-  val config = ConfigFactory.parseString(
-    """us.woop.pinger.pinger-service.subscribe-to-ping-delay = 100ms
-      |us.woop.pinger.pinger-service.default-ping-interval = 500ms
-      |""".stripMargin)
-
-  implicit val system = ActorSystem("pingerServiceActorTestSystem", config)
+  implicit val system = ActorSystem("pingerServiceActorTestSystem")
 } with TestKitBase with WordSpecLike with Matchers {
 
   import scala.concurrent.duration._

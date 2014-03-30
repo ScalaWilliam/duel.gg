@@ -3,7 +3,7 @@ package us.woop.pinger
 object SauerbratenServerData {
 
   case class ServerInfoReply(clients: Int, protocol: Int, gamemode: Int, remain: Int, maxclients: Int,
-                             gamepaused: Option[Int], gamespeed: Option[Int], mapname: String, desc: String)
+                             gamepaused: Option[Int], gamespeed: Option[Int], mapname: String, description: String)
 
 
   case class Uptime(version: Int, totalsecs: Int)

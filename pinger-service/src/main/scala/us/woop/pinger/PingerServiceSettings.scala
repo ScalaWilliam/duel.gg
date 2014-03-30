@@ -5,7 +5,7 @@ import akka.actor.ExtensionId
 import akka.actor.ExtensionIdProvider
 import akka.actor.ExtendedActorSystem
 import scala.concurrent.duration._
-import com.typesafe.config.Config
+import com.typesafe.config.{ConfigFactory, Config}
 import java.util.concurrent.TimeUnit
 class PingerServiceSettingsImpl(config: Config) extends Extension {
   val subscribeToPingDelay = config.getDuration("us.woop.pinger.pinger-service.subscribe-to-ping-delay",
@@ -18,7 +18,7 @@ object PingerServiceSettings extends ExtensionId[PingerServiceSettingsImpl] with
   override def lookup() = PingerServiceSettings
 
   override def createExtension(system: ExtendedActorSystem) =
-    new PingerServiceSettingsImpl(system.settings.config)
+    new PingerServiceSettingsImpl(system.settings.config.withFallback(ConfigFactory.systemProperties()))
 
   override def get(system: ActorSystem) = super.get(system)
 }
