@@ -75,7 +75,7 @@ class PingerClient(listener: ActorRef) extends Actor with ActorLogging {
   val targets = scala.collection.mutable.HashSet[InetPair]()
 
   def ready(send: ActorRef): Receive = {
-    case Ping(who@(host, port)) =>
+    case Ping(who@(host:String, port: Int)) =>
       val inetAddress = pair2inet.getOrElseUpdate(who, new InetSocketAddress(host, port + 1))
       inet2pair.getOrElseUpdate(inetAddress, who)
       targets += who

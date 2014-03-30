@@ -1,10 +1,9 @@
 package us.woop.pinger
 
-import akka.actor.{Actor, Props, ActorSystem}
-import akka.testkit.{TestActorRef, TestKit, ImplicitSender}
+import akka.actor.{Props, ActorSystem}
+import akka.testkit.{TestKit, ImplicitSender}
 import java.net.InetSocketAddress
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike, Matchers}
-import us.woop.pinger.SauerbratenServerData
 import us.woop.pinger.testutil.{SimpleUdpServer, StubServer}
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
@@ -17,7 +16,6 @@ with WordSpecLike with Matchers with BeforeAndAfterAll {
 
   "Pinger-Stub system" must {
     val as = ActorSystem("heloo")
-    import akka.actor.ActorDSL._
 
     val stubActor = StubServer.makeStub(new InetSocketAddress("127.0.0.1", 1230), self)(_system)
     val SimpleUdpServer.Ready(on) = expectMsgClass(classOf[SimpleUdpServer.Ready])

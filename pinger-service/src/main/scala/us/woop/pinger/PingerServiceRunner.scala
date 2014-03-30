@@ -47,14 +47,13 @@ object PingerServiceRunner extends App {
 
   import akka.actor.ActorDSL._
   val akk = actor("hey"){new Act {
+    import scala.concurrent.duration._
     println("Trololol")
     become {
       case any => println(any)
     }
-    pingerService ! Subscribe(woopServer)
+    pingerService ! Subscribe(woopServer, 3.seconds)
 
-    import scala.concurrent.duration._
-    pingerService ! ChangeRate(woopServer, 3.seconds)
 
     import context.dispatcher
     context.system.scheduler.scheduleOnce(20.seconds, pingerService, Unsubscribe(woopServer))

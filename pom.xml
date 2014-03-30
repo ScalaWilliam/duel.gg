@@ -10,10 +10,22 @@
         <module>pinger-client</module>
         <module>pinger-common</module>
         <module>pinger-global-aggregator</module>
-        <!--<module>alternator</module>-->
     </modules>
-
     <packaging>pom</packaging>
-
-
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>3.1.6</version>
+                <configuration>
+                    <recompileMode>incremental</recompileMode>
+                    <useZincServer>true</useZincServer>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
