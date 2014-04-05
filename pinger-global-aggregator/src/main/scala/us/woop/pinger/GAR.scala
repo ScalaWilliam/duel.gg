@@ -4,6 +4,7 @@ import com.datastax.driver.core.{PreparedStatement, Cluster}
 import us.woop.pinger.SauerbratenServerData._
 import us.woop.pinger.PingerServiceData._
 import scala.util.control.NonFatal
+import akka.actor.{ActorRef, ActorSelection}
 
 object GAR extends App {
 
@@ -18,16 +19,10 @@ object GAR extends App {
 
   session.createDefaultTables
 
-//  def someWhat[T<:Product]: PartialFunction[SauerbratenPong, Seq[(String, Seq[Any])] = {
-//    case pong@SauerbratenPong(_, _, payload: T) => prepare(pong, payload)
-//  }
-
-
   {
 
     import us.woop.pinger.persistence.InputProcessor.inputProcessor
     val sp = SauerbratenPong(1396726979,("95.85.28.218",40000),ServerInfoReply(0,259,5,549,16,None,None,"corruption","effic.me 4"))
-
 
     val inputs = List(ServerInfoReply(5, 259, 3, 451, 17, None, None, "frozen", "sauer.woop.us"),
     PlayerCns(105, List(0, 1, 4, 5, 2)),
@@ -56,6 +51,57 @@ object GAR extends App {
 
     val outputs = boundStatements foreach session.execute
     println(outputs)
+
+    import akka.actor.ActorDSL._
+    val masterServerClient = actor("masterServerClient")(new Act {
+      import akka.pattern._
+      case object Refresh
+      case class Servers(servers: Set[(String, Int)])
+      case class ServerGone(server: (String, Int))
+      case class ServerAdded(server: (String, Int))
+      var previousServers = Set[(String, Int)]()
+      become {
+        case Refresh =>
+          import scala.concurrent.future
+          import concurrent.ExecutionContext.global
+          future {
+            Servers(MasterserverClient.getServers(MasterserverClient.sauerMasterserver))
+          } pipeTo self
+        case Servers(servers) =>
+          val newServers = servers.diff(previousServers)
+          val goneServers = previousServers.diff(servers)
+          for { server <- goneServers } {
+            context.parent ! ServerGone(server)
+          }
+          if ( previousServers.nonEmpty ) {
+            for {server <- newServers} context.parent ! ServerAdded(server)
+          }
+          previousServers = servers
+          context.parent ! servers
+      }
+    })
+
+    val rateController = actor("rateController")(new Act{
+      val pingerService: ActorRef = ???
+      import scala.concurrent.duration._
+      def rateTo(server: (String, Int), duration: FiniteDuration) {
+        pingerService.!(Subscribe(Server(server._1, server._2), 30.seconds))(context.parent)
+      }
+      become {
+        case SauerbratenPong(_, server, reply: ServerInfoReply) if reply.clients > 6 =>
+          rateTo(server, 5.seconds)
+        case SauerbratenPong(_, server, reply: ServerInfoReply) if reply.clients == 0 =>
+          rateTo(server, 30.seconds)
+        case SauerbratenPong(_, server, reply: ServerInfoReply) if reply.clients > 2 =>
+          rateTo(server, 10.seconds)
+      }
+    })
+    val mainController = actor("hey")(new Act{
+      // TODO take care of bad hashes
+      // TODO Connect with the master server
+      // TODO Deal with messages for two purposes - or prehaps do the rate stuff in another actor as well?
+
+    })
 
 //
 //    val result = inputProcessor apply sp
@@ -97,7 +143,16 @@ object GAR extends App {
 //
 //    for {
 //      servers <- getServers
-//      (server, num) <- servers.zipWithIndex
+//      (server, num) <- servers.zipWsystem.scheduler.scheduleOnce(startIn, pingerService, subscribe)
+//    }
+//
+//    val push: PartialFunction[BoundStatement, Unit] = {
+//      case null =>
+//      case s => session.executeAsync(s)
+//    }
+//    case object ClearBadHashLog
+//    import scala.concurrent.duration._
+//    context.system.scheduler.scheduleithIndex
 //      subscribe = Subscribe(Server(server._1, server._2))
 //      startIn  = (pingInterval * ((num + 1) / servers.size.toFloat)).asInstanceOf[FiniteDuration]
 //    } {

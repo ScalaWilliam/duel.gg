@@ -11,7 +11,7 @@ object StatementGeneration {
     case m: MethodSymbol if m.isCaseAccessor => m
   }.toList
 
-  abstract class StatementGenerator[OfType <: Product](implicit tt: TypeTag[OfType]) {
+  abstract class StatementGenerator[OfType <: Product](val tableName: String)(implicit tt: TypeTag[OfType]) {
 
     protected def typeFields = getMethods[OfType]
 
@@ -34,8 +34,6 @@ object StatementGeneration {
     {
       payloadFields
     }
-
-    def tableName: String
 
     def headerFields = List("id" -> "uuid", "serverip" -> "text", "serverport" -> "int", "time" -> "bigint")
 

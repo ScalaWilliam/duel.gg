@@ -5,11 +5,13 @@ import us.woop.pinger.PingerServiceData.SauerbratenPong
 
 object InputProcessor {
 
-  import PayloadFlatteningImplicits.prepare
+  /** This turns a sauer pong into a sequence of insert statements and corresponding binds **/
+  /** Could be simplified, I'm sure - but needs better understanding of the type system for me **/
 
   def inputProcessor: PartialFunction[SauerbratenPong, Seq[(String, Seq[Any])]] = {
    import StatementGeneratorImplicits._
     import PayloadFlatteningImplicits._
+
     {
       case pong@SauerbratenPong(_, _, payload: PlayerCns) =>
         prepare(pong, payload)

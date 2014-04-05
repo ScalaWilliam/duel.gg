@@ -3,39 +3,29 @@ package us.woop.pinger.persistence
 import us.woop.pinger.SauerbratenServerData._
 import us.woop.pinger.SauerbratenServerData.Conversions._
 import us.woop.pinger.PingerServiceData.SauerbratenPong
-import us.woop.pinger.persistence.PayloadFlattening.Identity
-import us.woop.pinger.persistence.PayloadFlattening.Process
+import us.woop.pinger.persistence.PayloadFlattening.{ProcessToDifferent, ProcessToMany, Identity, Process}
 import us.woop.pinger.persistence.StatementGeneration.StatementGenerator
 
+/** These are the implicits that flatten objects if they have nested contents. **/
 object PayloadFlatteningImplicits {
 
-  implicit object a extends Identity[PlayerCns]
+  implicit object FlattenUptime extends Identity[Uptime]
 
-  implicit object b extends Process[ServerInfoReply, ConvertedServerInfoReply] {
-    override def process(input: ServerInfoReply) =
-      Seq(ConvertedServerInfoReply.convert(input))
-  }
+  implicit object PlayerCnsFlatten extends Identity[PlayerCns]
 
-  implicit object c extends Process[ThomasExt, ConvertedThomasExt] {
-    override def process(input: ThomasExt) =
-      ConvertedThomasExt.convert(input)
-  }
+  implicit object FlattenPlayerExtInfo extends Identity[PlayerExtInfo]
 
-  implicit object d extends Process[TeamScores, ConvertedTeamScore] {
-    override def process(input: TeamScores) =
-      ConvertedTeamScore.convert(input)
-  }
+  implicit object FlattenHopmodUptime extends ProcessToDifferent(ConvertedHopmodUptime.convert)
 
-  implicit object e extends Identity[Uptime]
+  implicit object FlattenServerInfoReply extends ProcessToDifferent(ConvertedServerInfoReply.convert)
 
-  implicit object f extends Process[HopmodUptime, ConvertedHopmodUptime] {
-    override def process(input: HopmodUptime) =
-      Seq(ConvertedHopmodUptime.convert(input))
-  }
+  implicit object FlattenThomasExt extends ProcessToMany(ConvertedThomasExt.convert)
 
-  implicit object g extends Identity[PlayerExtInfo]
+  implicit object FlattenTeamScore extends ProcessToMany(ConvertedTeamScore.convert)
 
+  /** Convert a pong (with the same pong as is inside) into a Seq of (Sql Query --> Bind parameters) **/
   def prepare[V <: Product, U](pong: SauerbratenPong, payload: U)(implicit ev: Process[U, V], evv: StatementGenerator[V]): Seq[(String, List[Any])] = {
     implicitly[Process[U, V]].intoPair(pong, payload)
   }
+
 }

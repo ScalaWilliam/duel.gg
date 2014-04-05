@@ -6,31 +6,31 @@ import us.woop.pinger.persistence.StatementGeneration.StatementGenerator
 
 object StatementGeneratorImplicits {
 
-  implicit object ResolveServerInfoReply extends StatementGenerator[ConvertedServerInfoReply] {
-    override val tableName = "simplex.serverinforeply"
-  }
+  implicit object ResolveServerInfoReply extends StatementGenerator[ConvertedServerInfoReply](
+    tableName = "simplex.serverinforeply"
+  )
 
-  implicit object ResolveThomasExt extends StatementGenerator[ConvertedThomasExt] {
-    override val tableName = "simplex.thomasext"
-  }
+  implicit object ResolveThomasExt extends StatementGenerator[ConvertedThomasExt](
+    tableName = "simplex.thomasext"
+  )
 
-  implicit object ResolveTeamScore extends StatementGenerator[ConvertedTeamScore] {
-    override val tableName = "simplex.teamscore"
-  }
+  implicit object ResolveTeamScore extends StatementGenerator[ConvertedTeamScore](
+    tableName = "simplex.teamscore"
+  )
 
-  implicit object ResolvePlayerCns extends StatementGenerator[PlayerCns] {
-    override val tableName = "simplex.playercns"
-  }
+  implicit object ResolvePlayerCns extends StatementGenerator[PlayerCns](
+    tableName = "simplex.playercns"
+  )
 
-  implicit object ResolveUptime extends StatementGenerator[Uptime] {
-    override val tableName = "simplex.uptime"
-  }
+  implicit object ResolveUptime extends StatementGenerator[Uptime](
+    tableName = "simplex.uptime"
+  )
 
-  implicit object ResolveHopmodUptime extends StatementGenerator[ConvertedHopmodUptime] {
-    override val tableName = "simplex.hopmoduptime"
-  }
+  implicit object ResolveHopmodUptime extends StatementGenerator[ConvertedHopmodUptime](
+    tableName = "simplex.hopmoduptime"
+  )
 
-  implicit object ResolvePlayerExtInfo extends StatementGenerator[PlayerExtInfo] {
-    override val tableName = "simplex.playerextinfo"
-  }
+  implicit object ResolvePlayerExtInfo extends StatementGenerator[PlayerExtInfo](
+    tableName = "simplex.playerextinfo"
+  )
 }
