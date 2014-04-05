@@ -64,7 +64,7 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
       } yield subscription
       subscriptionsToRemove foreach removeSubscription
       if (firehose remove subscriber) {
-        log.debug("{} requested firehose access")
+        log.debug("{} firehose was removed")
       }
 
     case Firehose =>

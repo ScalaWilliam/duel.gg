@@ -64,7 +64,7 @@
             <configuration>
               <transformers>
                 <transformer>
-                  <resource>resource.conf</resource>
+                  <resource>reference.conf</resource>
                 </transformer>
               </transformers>
             </configuration>
