@@ -69,6 +69,10 @@ object PingerClient {
     def this(ref: ActorRef) = this(Option(ref))
   }
 
+  trait PingerConversions {
+    this: PingerClient =>
+      override def autoConversions = true
+  }
 }
 
 /**
@@ -78,10 +82,23 @@ object PingerClient {
  * — BadHash
  * — CannotParse
  * — ParsedMessage
- *
+ *    -- Uptime
+ *    -- PlayerCns
+ *    -- PlayerExtInfo
+ *    -- OlderClient
+ *    -- HopmodUptime
+ *    -- ConvertedHopmodUptime
+ *    -- ServerInfoReply
+ *    -- ConvertedServerInfoReply
+ *    -- TeamScores
+ *    -- ConvertedTeamScore
+ *    -- ThomasExt
+ *    -- ConvertedThomasExt
  */
 
 abstract class PingerClient(val listenerRequested: Option[ActorRef] = None) extends Actor with ActorLogging with OutboundMessages {
+
+  def autoConversions = false
 
   def this() = this(None)
 
@@ -164,7 +181,7 @@ abstract class PingerClient(val listenerRequested: Option[ActorRef] = None) exte
             val items = extract apply recombined
             for { item <- items } {
               val parsedMessage = ParsedMessage(hostPair, recombined, item)
-              log.debug("Received result: {}", parsedMessage)
+//              log.debug("Received result: {}", parsedMessage)
               listener ! parsedMessage
             }
           } catch {
@@ -182,6 +199,7 @@ abstract class PingerClient(val listenerRequested: Option[ActorRef] = None) exte
             "Received wrong hash from server {}. Detail: {}", hostPair,
             Map('head -> head, 'expectedHash -> expectedHash, 'wrongHash -> wrongHash,'messageToParse -> recombined,  'originalMessage -> receivedBytes)
           )
+
       }
     case Udp.Received(otherBytes, fromWho) =>
       log.warning("Message from UDP host {} does not match an acceptable format: {}", fromWho, otherBytes)
