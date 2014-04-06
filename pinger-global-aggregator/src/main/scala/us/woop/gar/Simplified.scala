@@ -30,12 +30,13 @@ object Simplified extends App {
 val targetServer = Server("188.226.169.46", PingerServiceData.defaultSauerbratenPort)
   sealed abstract class Pollrate(val every: FiniteDuration)
 
-  class ServerDesc(var rate: Pollrate, var clients: Int, var respondedLast: BigInt, var cannotParse: Int, var badHashes: Int, var totalMessages: Int) {
+  class ServerDesc(var rate: Pollrate, var clients: Int, var respondedLast: BigInt, var cannotParse: Int, var badHashes: Int, var totalMessages: Int, var lastReset: BigInt) {
 
     def reset() {
       cannotParse = 0
       badHashes = 0
       totalMessages = 0
+      lastReset = System.currentTimeMillis()
     }
 
     def dump = Map('rate -> rate, 'clients -> clients, 'respondedLast -> respondedLast, 'cannotParse -> cannotParse, 'badHashes -> badHashes, 'totalMessages -> totalMessages)
@@ -159,10 +160,11 @@ val targetServer = Server("188.226.169.46", PingerServiceData.defaultSauerbraten
 
         become {
           case 'PreventSpam =>
+            val now = System.currentTimeMillis()
             for {
               (server, desc) <- activeServers
-              messagesPerSecond = desc.totalMessages / desc.rate.every.toSeconds
-              if messagesPerSecond > 900
+              messagesPerSecond = desc.totalMessages * 1000 / (now - desc.lastReset)
+              if messagesPerSecond > 100
             } {
               desc.rate = Stopped
               log.warning("Server {} stopped - total {} messages (ratio {})!", server, desc.totalMessages, messagesPerSecond)
@@ -214,7 +216,7 @@ val targetServer = Server("188.226.169.46", PingerServiceData.defaultSauerbraten
             pinger ! Ping((server.ip, server.port))
 
           case server: Server =>
-            servers += server -> new ServerDesc(Medium, 0, System.currentTimeMillis, 0, 0, 0)
+            servers += server -> new ServerDesc(Medium, 0, System.currentTimeMillis, 0, 0, 0, System.currentTimeMillis())
             self ! server
           case MasterServers(addServers) =>
             for { server <- addServers } self ! Server(server._1, server._2)
