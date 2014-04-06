@@ -13,6 +13,7 @@ import us.woop.pinger.SauerbratenServerData.PlayerCns
 import us.woop.pinger.SauerbratenServerData.ServerInfoReply
 import us.woop.pinger.SauerbratenServerData.PlayerExtInfo
 import us.woop.pinger.SauerbratenServerData.HopmodUptime
+import us.woop.pinger.client.SauerbratenProtocol
 
 @RunWith(classOf[JUnitRunner])
 class MappingParsingTest extends WordSpecLike with Matchers with Inspectors {

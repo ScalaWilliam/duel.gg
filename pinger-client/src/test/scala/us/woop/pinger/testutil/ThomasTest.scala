@@ -1,7 +1,7 @@
 package us.woop.pinger.testutil
 
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-import us.woop.pinger.SauerbratenProtocol
+import us.woop.pinger.client.SauerbratenProtocol
 
 /** 01/02/14 */
 class ThomasTest extends WordSpecLike with Matchers with BeforeAndAfterAll {

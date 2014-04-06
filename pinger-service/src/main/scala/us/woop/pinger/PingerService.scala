@@ -3,8 +3,9 @@ package us.woop.pinger
 import akka.actor._
 
 import scala.concurrent.duration._
-import us.woop.pinger.PingerClient.{FullPingerClient, Ready, Ping}
+import us.woop.pinger.client.PingerClient.{FullPingerClient, Ready, Ping}
 import akka.event.LoggingReceive
+import us.woop.pinger.client.PingerClient
 
 class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor with ActorLogging with Stash with PingerServiceMixin {
 

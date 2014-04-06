@@ -1,4 +1,4 @@
-package us.woop.pinger
+package us.woop.pinger.client
 
 import com.typesafe.scalalogging.slf4j.Logging
 import us.woop.pinger.SauerbratenServerData._

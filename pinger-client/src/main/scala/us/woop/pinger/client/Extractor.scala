@@ -1,7 +1,6 @@
-package us.woop.pinger
+package us.woop.pinger.client
 
-import us.woop.pinger.SauerbratenProtocol._
-
+import SauerbratenProtocol._
 
 object Extractor {
 

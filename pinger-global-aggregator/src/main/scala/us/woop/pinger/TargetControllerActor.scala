@@ -6,7 +6,7 @@ import akka.actor.ActorLogging
 import scala.concurrent.duration.FiniteDuration
 import us.woop.pinger.PingerServiceData.{SauerbratenPong, Unsubscribe, Server, Subscribe}
 import us.woop.pinger.SauerbratenServerData.{OlderClient, ServerInfoReply}
-import us.woop.pinger.PingerClient.BadHash
+import us.woop.pinger.client.PingerClient.BadHash
 import MasterserverClientActor._
 import akka.event.LoggingReceive
 import us.woop.pinger.WoopMonitoring.MonitorMessage

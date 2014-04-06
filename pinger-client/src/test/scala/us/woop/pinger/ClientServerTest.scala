@@ -7,7 +7,8 @@ import org.scalatest.{BeforeAndAfterAll, WordSpecLike, Matchers}
 import us.woop.pinger.testutil.{SimpleUdpServer, StubServer}
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
-import us.woop.pinger.PingerClient.{FullPingerClient, AllOutboundMessages, CannotParse, ParsedMessage}
+import us.woop.pinger.client.PingerClient
+import us.woop.pinger.client.PingerClient.{FullPingerClient, AllOutboundMessages, CannotParse, ParsedMessage}
 
 @RunWith(classOf[JUnitRunner])
 class ClientServerTest(_system: ActorSystem) extends TestKit(_system) with ImplicitSender

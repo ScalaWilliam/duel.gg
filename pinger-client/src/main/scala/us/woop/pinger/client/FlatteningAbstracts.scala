@@ -1,4 +1,4 @@
-package us.woop.pinger
+package us.woop.pinger.client
 
 object FlatteningAbstracts {
 

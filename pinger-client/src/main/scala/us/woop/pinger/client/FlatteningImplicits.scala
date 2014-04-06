@@ -1,7 +1,7 @@
-package us.woop.pinger
+package us.woop.pinger.client
 
 import us.woop.pinger.SauerbratenServerData.Conversions.{ConvertedTeamScore, ConvertedThomasExt, ConvertedServerInfoReply, ConvertedHopmodUptime}
-import us.woop.pinger.FlatteningAbstracts.{ProcessToDifferent, ProcessToMany, Process}
+import FlatteningAbstracts.{ProcessToDifferent, ProcessToMany, Process}
 
 object FlatteningImplicits {
 

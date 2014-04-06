@@ -1,8 +1,8 @@
 package us.woop.pinger.testutil
 
 import akka.actor._
-import us.woop.pinger.{MasterserverClient, PingerClient}
-import us.woop.pinger.PingerClient.Ready
+import us.woop.pinger.MasterserverClient
+import us.woop.pinger.client.PingerClient
 
 /** 31/01/14 */
 object Parpa extends App {

@@ -3,6 +3,7 @@ package us.woop.pinger
 import akka.actor.{Props, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import us.woop.pinger.client.PingerClient
 
 /** 01/02/14 */
 class PingTheWorldIT(_system: ActorSystem) extends TestKit(_system) with ImplicitSender

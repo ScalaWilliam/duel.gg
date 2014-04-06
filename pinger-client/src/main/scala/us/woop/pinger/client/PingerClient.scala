@@ -1,4 +1,4 @@
-package us.woop.pinger
+package us.woop.pinger.client
 
 import akka.actor.{ActorLogging, Actor, ActorRef}
 import akka.io
@@ -8,7 +8,9 @@ import java.net.InetSocketAddress
 import java.security.MessageDigest
 import scala.util.control.NonFatal
 import scala.util.Random
-import us.woop.pinger.PingerClient.OutboundMessages
+import us.woop.pinger.client.Extractor
+import us.woop.pinger.client.PingerClient.OutboundMessages
+import concurrent.duration._
 
 /** 01/02/14 */
 
@@ -141,7 +143,6 @@ abstract class PingerClient(val listenerRequested: Option[ActorRef] = None) exte
         byteString = ByteString(hashedArray)
       } {
         log.debug("Sending to {} ({}) data {}", who, inetAddress, byteString)
-        import scala.concurrent.duration._
         import context.dispatcher
         context.system.scheduler.scheduleOnce((idx * 5).millis, send, Udp.Send(byteString, inetAddress))
       }
