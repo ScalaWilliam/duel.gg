@@ -4,16 +4,16 @@ import org.scalatest.{WordSpecLike, Matchers, WordSpec}
 import akka.actor._
 import akka.testkit.TestKitBase
 import us.woop.pinger.PingerServiceData._
-import us.woop.pinger.PingerClient.{Ready, Ping}
+import us.woop.pinger.PingerClient._
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 import java.net.InetSocketAddress
-import us.woop.pinger.PingerClient.Ping
 import us.woop.pinger.PingerServiceData.Subscribe
 import us.woop.pinger.PingerServiceData.Unsubscribe
 import us.woop.pinger.PingerServiceData.ChangeRate
-import us.woop.pinger.PingerClient.Ready
 import com.typesafe.config.ConfigFactory
+import us.woop.pinger.PingerServiceData.Unsubscribe
+import us.woop.pinger.PingerServiceData.SauerbratenPong
 import us.woop.pinger.PingerClient.Ping
 import us.woop.pinger.PingerServiceData.Unsubscribe
 import us.woop.pinger.PingerServiceData.SauerbratenPong
@@ -56,14 +56,14 @@ class PingerServiceSpec extends {
       pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
       pinger.tell(Subscribe(Server("abcd", 123)), testActor)
       expectMsg(Ping("abcd", 123))
-      pinger.tell((("abcd", 123), "hello"), testActor)
+      pinger.tell(ParsedMessage(("abcd", 123), List.empty, "hello"), testActor)
       expectMsgClass(classOf[SauerbratenPong])
       system.stop(pinger)
     }
     "Does not pass a pinger client response back if not subscribed" in {
       val pinger = system.actorOf(Props(classOf[PingerService], testActor))
       pinger ! Ready(new InetSocketAddress("127.0.0.1", 0))
-      pinger.tell((("abcd", 123), "hello"), testActor)
+      pinger.tell(ParsedMessage(("abcd", 123), List.empty, "hello"), testActor)
       expectNoMsg(200.millis)
       system.stop(pinger)
     }
@@ -85,7 +85,7 @@ class PingerServiceSpec extends {
       val secondary = actor(new Act{become{case anything => testActor forward anything}})
       pinger.tell(Subscribe(Server("abcd", 123), 5.seconds), secondary)
       expectMsg(Ping("abcd", 123))
-      pinger.tell((("abcd", 123), "hello"), testActor)
+      pinger.tell(ParsedMessage(("abcd", 123), List.empty, "hello"), testActor)
       expectMsgClass(classOf[SauerbratenPong])
       system.stop(secondary)
       expectNoMsg(600.millis)
@@ -101,7 +101,7 @@ class PingerServiceSpec extends {
       pinger.tell(Subscribe(Server("abcd", 123)), willQuit2)
       pinger.tell(Subscribe(Server("abcd", 123)), willNotQuit)
       expectMsg(Ping("abcd", 123))
-      pinger.tell((("abcd", 123), "hello"), testActor)
+      pinger.tell(ParsedMessage(("abcd", 123), List.empty, "hello"), testActor)
       expectMsgClass(classOf[SauerbratenPong])
       expectMsgClass(classOf[SauerbratenPong])
       expectMsgClass(classOf[SauerbratenPong])
@@ -160,11 +160,11 @@ class PingerServiceSpec extends {
       pinger.tell(Subscribe(Server("abcd", 123), 1.second), firstClient)
       pinger.tell(Subscribe(Server("abcd", 125), 2.second), secondClient)
       pinger.tell(Firehose, firehoseClient)
-      pinger.tell((("abcd", 123), "hello"), testActor)
+      pinger.tell(ParsedMessage(("abcd", 123), List.empty, "hello"), testActor)
       val (firstActor, firstPong) = expectMsgClass(classOf[(ActorRef, SauerbratenPong)])
       val (secondActor, secondPong) = expectMsgClass(classOf[(ActorRef, SauerbratenPong)])
       List(firstActor, secondActor) should contain only (firstClient, firehoseClient)
-      pinger.tell((("abcd", 125), "hello"), testActor)
+      pinger.tell(ParsedMessage(("abcd", 125), List.empty, "hello"), testActor)
       val (thirdActor, thirdPong) = expectMsgClass(classOf[(ActorRef, SauerbratenPong)])
       val (fourthActor, fourthPong) = expectMsgClass(classOf[(ActorRef, SauerbratenPong)])
       List(thirdActor, fourthActor) should contain only (secondClient, firehoseClient)

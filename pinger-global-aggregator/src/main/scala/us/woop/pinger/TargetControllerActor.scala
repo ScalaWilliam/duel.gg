@@ -102,7 +102,7 @@ class TargetControllerActor extends Act with ActorLogging with WoopMonitoring {
       serverDesc.totalMessages = serverDesc.totalMessages + 1
 
     case ResetBadHashCounts =>
-      log.info("Resetting bad hash counts")
+      log.debug("Resetting bad hash counts")
       for { (_, serverDesc) <- serverRecords }
         serverDesc.badHashes = 0
 

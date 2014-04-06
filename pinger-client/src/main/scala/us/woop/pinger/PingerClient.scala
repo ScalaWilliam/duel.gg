@@ -8,17 +8,19 @@ import java.net.InetSocketAddress
 import java.security.MessageDigest
 import scala.util.control.NonFatal
 import scala.util.Random
+import us.woop.pinger.PingerClient.OutboundMessages
 
 /** 01/02/14 */
 
 object PingerClient {
+
   type InetPair = (String, Int)
 
   case class BadHash(host: InetPair, message: Udp.Received)
 
   case class CannotParse(host: InetPair, message: Udp.Received)
 
-  case class ParsedMessage(host: InetPair, recombined: List[Byte], transformed: Any)
+  case class ParsedMessage(host: InetPair, recombined: List[Byte], message: Any)
 
   case class Ping(host: InetPair)
 
@@ -35,6 +37,36 @@ object PingerClient {
       postfix
     }
   }
+
+  trait OutboundMessages {
+    protected val messages = collection.mutable.Set[List[Byte]]()
+    protected def add(list: List[Int]) = messages.add(list.map(_.toByte))
+    lazy val outboundMessages = messages
+  }
+
+  trait AllOutboundMessages extends OutboundMessages with AskForServerInfo with AskForServerUptime with AskForPlayerStats with AskForTeamStats
+
+  trait AskForServerInfo {
+    this: OutboundMessages =>
+      add(List(1,1,1))
+  }
+  trait AskForServerUptime extends OutboundMessages {
+    this: OutboundMessages =>
+      add(List(0, 0, -1))
+  }
+  trait AskForPlayerStats extends OutboundMessages {
+    this: OutboundMessages =>
+      add(List(0, 1, -1))
+  }
+  trait AskForTeamStats extends OutboundMessages {
+    this: OutboundMessages =>
+      add(List(0, 2, -1))
+  }
+  class FullPingerClient(val l: Option[ActorRef] = None) extends PingerClient(l) with AllOutboundMessages {
+    def this() = this(None)
+    def this(ref: ActorRef) = this(Option(ref))
+  }
+
 }
 
 /**
@@ -47,7 +79,7 @@ object PingerClient {
  *
  */
 
-class PingerClient(val listenerRequested: Option[ActorRef] = None) extends Actor with ActorLogging {
+abstract class PingerClient(val listenerRequested: Option[ActorRef] = None) extends Actor with ActorLogging with OutboundMessages {
 
   def this() = this(None)
 
@@ -91,17 +123,11 @@ class PingerClient(val listenerRequested: Option[ActorRef] = None) extends Actor
   val pair2inet = scala.collection.mutable.HashMap[InetPair, InetSocketAddress]()
   val hasher = createhasher
 
-  val outboundMessages = Map(
-    'askForServerInfo -> List(1, 1, 1).map(_.toByte),
-    'askForServerUptime -> List(0, 0, -1).map(_.toByte),
-    'askForPlayerStats -> List(0, 1, -1).map(_.toByte),
-    'askForTeamStats -> List(0, 2, -1).map(_.toByte)
-  )
 
   val targets = scala.collection.mutable.HashSet[InetPair]()
 
   def ready(send: ActorRef): Receive = {
-    case Ping(who@(host:String, port: Int)) =>
+    case Ping(who @ (host:String, port: Int)) =>
       val inetAddress = pair2inet.getOrElseUpdate(who, new InetSocketAddress(host, port + 1))
       inet2pair.getOrElseUpdate(inetAddress, who)
       targets += who
@@ -109,7 +135,7 @@ class PingerClient(val listenerRequested: Option[ActorRef] = None) extends Actor
       val hash = hasher.makeHash(who)
       hashes += who -> hash
       for {
-        ((_, message), idx) <- outboundMessages.zipWithIndex
+        (message, idx) <- outboundMessages.zipWithIndex
         hashedMessage = message ::: hash
         hashedArray = hashedMessage.toArray
         byteString = ByteString(hashedArray)

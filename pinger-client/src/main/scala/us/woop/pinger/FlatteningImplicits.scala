@@ -3,7 +3,6 @@ package us.woop.pinger
 import us.woop.pinger.SauerbratenServerData.Conversions.{ConvertedTeamScore, ConvertedThomasExt, ConvertedServerInfoReply, ConvertedHopmodUptime}
 import us.woop.pinger.FlatteningAbstracts.{ProcessToDifferent, ProcessToMany, Process}
 
-
 object FlatteningImplicits {
 
   implicit object FlattenHopmodUptime extends ProcessToDifferent(ConvertedHopmodUptime.convert)

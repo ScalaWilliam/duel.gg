@@ -7,7 +7,7 @@ import org.scalatest.{BeforeAndAfterAll, WordSpecLike, Matchers}
 import us.woop.pinger.testutil.{SimpleUdpServer, StubServer}
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
-import us.woop.pinger.PingerClient.{CannotParse, ParsedMessage}
+import us.woop.pinger.PingerClient.{FullPingerClient, AllOutboundMessages, CannotParse, ParsedMessage}
 
 @RunWith(classOf[JUnitRunner])
 class ClientServerTest(_system: ActorSystem) extends TestKit(_system) with ImplicitSender
@@ -16,12 +16,12 @@ with WordSpecLike with Matchers with BeforeAndAfterAll {
   def this() = this(ActorSystem())
 
   "Pinger-Stub system" must {
-    val as = ActorSystem("heloo")
 
     val stubActor = StubServer.makeStub(new InetSocketAddress("127.0.0.1", 1230), self)(_system)
     val SimpleUdpServer.Ready(on) = expectMsgClass(classOf[SimpleUdpServer.Ready])
 
-    val pingerActor = _system.actorOf(Props(classOf[PingerClient], self))
+    import akka.actor.ActorDSL._
+    val pingerActor = actor(_system)(new FullPingerClient(self))
     val PingerClient.Ready(how) = expectMsgClass(classOf[PingerClient.Ready])
 
     pingerActor ! PingerClient.Ping("127.0.0.1", on.getPort - 1)

@@ -12,8 +12,12 @@ import scala.Some
 import akka.actor.Identify
 
 object GAR extends App {
-
-  implicit val as = ActorSystem("Bonger")
+  import com.typesafe.config.ConfigFactory
+  val customConf = ConfigFactory.parseString("""
+     us.woop.pinger.pinger-service.subscribe-to-ping-delay = 100ms
+     us.woop.pinger.pinger-service.default-ping-interval = 500ms
+   """)
+  implicit val as = ActorSystem("Bonger", ConfigFactory.load(customConf))
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -22,7 +26,8 @@ object GAR extends App {
   val mainController = actor("hey")(new Act with ActorLogging {
 
     val masterserverClient: ActorRef = context.actorOf(Props[MasterserverClientActor], name = "masterserverClient")
-    val pingerServiceSelection = context.actorSelection("""akka.tcp://PingerService@188.226.161.13:2552/user/pingerService""")
+//    val pingerServiceSelection = context.actorSelection("""akka.tcp://PingerService@188.226.161.13:2552/user/pingerService""")
+    val pingerServiceSelection = context.actorOf(Props[PingerService], name="pingerService")
     val targetController: ActorRef = context.actorOf(Props[TargetControllerActor], name = "targetControllerActor")
     val dataProcessor = context.actorOf(Props[PersistenceActor], name = "dataProcessor")
     var masterserverSchedule: Option[Cancellable] = None
@@ -56,7 +61,6 @@ object GAR extends App {
           pingerServiceSelection !  Identify(None)
         }
     }
-
   })
 
 }

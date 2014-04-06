@@ -47,7 +47,8 @@ class PersistenceActor extends Act with ActorLogging with WoopMonitoring {
         val objectData = data.map{_.asInstanceOf[Object]}
         val boundStatement = statement.bind(objectData : _*)
         session.executeAsync(boundStatement)
-        inserts += message.host -> message.payload.getClass.getSimpleName
+        val className = message.payload.getClass.getName.split("\\$|\\.").last
+        inserts += message.host -> className
       } catch {
         case NonFatal(e) =>
           throw new RuntimeException(s"Failed execute for $cqlStatement due to $e", e)
