@@ -162,7 +162,7 @@ val targetServer = Server("188.226.169.46", PingerServiceData.defaultSauerbraten
             for {
               (server, desc) <- activeServers
               messagesPerSecond = desc.totalMessages / desc.rate.every.toSeconds
-              if messagesPerSecond > 600
+              if messagesPerSecond > 900
             } {
               desc.rate = Stopped
               log.warning("Server {} stopped - total {} messages (ratio {})!", server, desc.totalMessages, messagesPerSecond)
