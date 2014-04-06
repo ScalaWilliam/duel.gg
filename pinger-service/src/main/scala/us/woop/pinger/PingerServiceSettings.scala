@@ -8,9 +8,9 @@ import scala.concurrent.duration._
 import com.typesafe.config.{ConfigFactory, Config}
 import java.util.concurrent.TimeUnit
 class PingerServiceSettingsImpl(config: Config) extends Extension {
-  val subscribeToPingDelay = config.getDuration("us.woop.pinger.pinger-service.subscribe-to-ping-delay",
+  lazy val subscribeToPingDelay = config.getDuration("us.woop.pinger.pinger-service.subscribe-to-ping-delay",
       TimeUnit.MILLISECONDS).millis
-  val defaultPingInterval = config.getDuration("us.woop.pinger.pinger-service.default-ping-interval",
+  lazy val defaultPingInterval = config.getDuration("us.woop.pinger.pinger-service.default-ping-interval",
       TimeUnit.MILLISECONDS).millis
 }
 object PingerServiceSettings extends ExtensionId[PingerServiceSettingsImpl] with ExtensionIdProvider {

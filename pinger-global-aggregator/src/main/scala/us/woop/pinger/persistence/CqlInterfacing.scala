@@ -3,7 +3,7 @@ package us.woop.pinger.persistence
 import java.util.UUID
 import us.woop.pinger.PingerServiceData.SauerbratenPong
 
-object StatementGeneration {
+object CqlInterfacing {
 
   import reflect.runtime.universe._
 
@@ -11,7 +11,7 @@ object StatementGeneration {
     case m: MethodSymbol if m.isCaseAccessor => m
   }.toList
 
-  abstract class StatementGenerator[OfType <: Product](val tableName: String)(implicit tt: TypeTag[OfType]) {
+  abstract class AbstractCqlInterface[OfType <: Product](val tableName: String)(implicit tt: TypeTag[OfType]) {
 
     protected def typeFields = getMethods[OfType]
 

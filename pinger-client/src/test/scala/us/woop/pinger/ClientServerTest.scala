@@ -7,6 +7,7 @@ import org.scalatest.{BeforeAndAfterAll, WordSpecLike, Matchers}
 import us.woop.pinger.testutil.{SimpleUdpServer, StubServer}
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+import us.woop.pinger.PingerClient.{CannotParse, ParsedMessage}
 
 @RunWith(classOf[JUnitRunner])
 class ClientServerTest(_system: ActorSystem) extends TestKit(_system) with ImplicitSender
@@ -32,7 +33,7 @@ with WordSpecLike with Matchers with BeforeAndAfterAll {
         case x => x
       }
       re.collect {
-        case (fromHost, PingerClient.BadHash(whence)) => true
+        case PingerClient.BadHash(_, _) => true
       }.length should be > 0
     }
 
@@ -46,26 +47,31 @@ with WordSpecLike with Matchers with BeforeAndAfterAll {
       }
 
       re.collect {
-        case (fromHost, PingerClient.BadHash(whence)) => true
+        case PingerClient.BadHash(_, _) => true
       } should have length 0
 
       info("There should be one MatchError because stub sent one bad response")
-      re.collect {
-        case (fromHost, PingerClient.CannotParse(why)) => true
-      } should have length 1
+      val woo = re.collect {
+        case m @ PingerClient.CannotParse(_, _) => m
+      }
+      woo should have length 1
 
-      val output = re.groupBy {
-        case (fromHost, b) => b.getClass
-      }.map {
+      val output = re.collect {
+        case ParsedMessage(_, _, b) => b.getClass
+        case a: CannotParse => a.getClass
+      }.groupBy(identity).map {
         case (clazz, items) => (clazz, items.size)
       }
 
       output should contain only(
         classOf[SauerbratenServerData.ServerInfoReply] -> 1,
+        classOf[SauerbratenServerData.Conversions.ConvertedServerInfoReply] -> 1,
         classOf[SauerbratenServerData.PlayerExtInfo] -> 5,
         classOf[SauerbratenServerData.PlayerCns] -> 1,
         classOf[SauerbratenServerData.TeamScores] -> 1,
+        classOf[SauerbratenServerData.Conversions.ConvertedTeamScore] -> 1,
         classOf[SauerbratenServerData.HopmodUptime] -> 1,
+        classOf[SauerbratenServerData.Conversions.ConvertedHopmodUptime] -> 1,
         classOf[PingerClient.CannotParse] -> 1
       )
 

@@ -7,7 +7,7 @@ import us.woop.pinger.SauerbratenServerData.Conversions._
 
 object TableCreation {
 
-  import StatementGeneration.StatementGenerator
+  import CqlInterfacing.AbstractCqlInterface
 
   implicit class addCreationToSession(session: Session) {
     def createDefaultTables = {
@@ -22,8 +22,8 @@ object TableCreation {
       createTable[PlayerExtInfo]
     }
 
-    def createTable[T <: Product](implicit ev: StatementGenerator[T]) = {
-      val createQuery = implicitly[StatementGenerator[T]].makeCreateQuery
+    def createTable[T <: Product](implicit ev: AbstractCqlInterface[T]) = {
+      val createQuery = implicitly[AbstractCqlInterface[T]].makeCreateQuery
       try {
         session.execute(createQuery)
       } catch {

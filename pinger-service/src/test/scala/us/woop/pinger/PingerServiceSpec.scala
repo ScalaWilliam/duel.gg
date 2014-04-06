@@ -175,6 +175,7 @@ class PingerServiceSpec extends {
       system.stop(firehoseClient)
       expectNoMsg()
     }
+
   }
 
 }

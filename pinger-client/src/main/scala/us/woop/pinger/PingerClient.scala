@@ -14,9 +14,11 @@ import scala.util.Random
 object PingerClient {
   type InetPair = (String, Int)
 
-  case class BadHash(bytes: List[Byte])
+  case class BadHash(host: InetPair, message: Udp.Received)
 
-  case class CannotParse(bytes: List[Byte])
+  case class CannotParse(host: InetPair, message: Udp.Received)
+
+  case class ParsedMessage(host: InetPair, recombined: List[Byte], transformed: Any)
 
   case class Ping(host: InetPair)
 
@@ -35,7 +37,31 @@ object PingerClient {
   }
 }
 
-class PingerClient(listener: ActorRef) extends Actor with ActorLogging {
+/**
+ *
+ * Outputs the following messages:
+ * — Ready
+ * — BadHash
+ * — CannotParse
+ * — ParsedMessage
+ *
+ */
+
+class PingerClient(val listenerRequested: Option[ActorRef] = None) extends Actor with ActorLogging {
+
+  def this() = this(None)
+
+  def this(ref: ActorRef) = this(Option(ref))
+
+  var listener: ActorRef = _
+
+  override def preStart() {
+    super.preStart()
+    listener = listenerRequested match {
+      case Some(actor) => actor
+      case None => context.parent
+    }
+  }
 
   import PingerClient._
 
@@ -91,11 +117,10 @@ class PingerClient(listener: ActorRef) extends Actor with ActorLogging {
         log.debug("Sending to {} ({}) data {}", who, inetAddress, byteString)
         import scala.concurrent.duration._
         import context.dispatcher
-        context.system.scheduler.scheduleOnce((idx * 50).millis, send, Udp.Send(byteString, inetAddress))
-//        send ! Udp.Send(byteString, inetAddress)
+        context.system.scheduler.scheduleOnce((idx * 5).millis, send, Udp.Send(byteString, inetAddress))
       }
 
-    case Udp.Received(receivedBytes, fromWho) if (receivedBytes.length > 13) && (inet2pair contains fromWho) =>
+    case receivedMessage @ Udp.Received(receivedBytes, fromWho) if (receivedBytes.length > 13) && (inet2pair contains fromWho) =>
       val hostPair = inet2pair(fromWho)
       val expectedHash = hashes(hostPair)
 
@@ -108,12 +133,16 @@ class PingerClient(listener: ActorRef) extends Actor with ActorLogging {
         case `expectedHash` =>
           val fn: PartialFunction[List[Byte], Any] = SauerbratenProtocol.matchers
           try {
-            val result = (hostPair, fn(recombined))
-            log.debug("Received result: {}", result)
-            listener ! result
+            import Extractor.extract
+            val items = extract apply recombined
+            for { item <- items } {
+              val parsedMessage = ParsedMessage(hostPair, recombined, item)
+              log.debug("Received result: {}", parsedMessage)
+              listener ! parsedMessage
+            }
           } catch {
             case NonFatal(e) =>
-              listener !(hostPair, CannotParse(receivedBytes.toList))
+              listener ! CannotParse(hostPair, receivedMessage)
               log.error(e,
                 "Caught exception when parsing message from server {}. Detail: {}", hostPair,
                 Map('head -> head, 'messageToParse -> recombined, 'goodHash -> expectedHash, 'originalMessage -> receivedBytes)
@@ -121,10 +150,10 @@ class PingerClient(listener: ActorRef) extends Actor with ActorLogging {
           }
 
         case wrongHash =>
-          listener !(hostPair, BadHash(receivedBytes.toList))
+          listener ! BadHash(hostPair, receivedMessage)
           log.warning(
             "Received wrong hash from server {}. Detail: {}", hostPair,
-            Map('head -> head, 'messageToParse -> recombined, 'expectedHash -> expectedHash, 'wrongHash -> wrongHash, 'originalMessage -> receivedBytes)
+            Map('head -> head, 'expectedHash -> expectedHash, 'wrongHash -> wrongHash,'messageToParse -> recombined,  'originalMessage -> receivedBytes)
           )
       }
     case Udp.Received(otherBytes, fromWho) =>

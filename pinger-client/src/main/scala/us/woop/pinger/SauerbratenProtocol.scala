@@ -249,7 +249,7 @@ object SauerbratenProtocol extends Logging {
   }
 
   object GetTeamScores {
-    def unapply(List: List[Byte]): Option[Any] = List match {
+    def unapply(List: List[Byte]): Option[TeamScores] = List match {
       case 0 >>: 2 >>: -1 >>: `ack` >>: version >>: 1 >>: gamemode >>: remain >>: Nil =>
         Option(TeamScores(version, gamemode, remain, Nil))
       case 0 >>: 2 >>: -1 >>: `ack` >>: version >>: 0 >>: gamemode >>: remain >>: scores =>

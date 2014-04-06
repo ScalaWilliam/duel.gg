@@ -19,8 +19,9 @@ trait PingerServiceMixin {
         _._2
       }
     }
-
-  lazy val initialDelay = settings.subscribeToPingDelay
+  import concurrent.duration._
+  lazy val initialDelay = 0.seconds
+//  settings.subscribeToPingDelay
 
   type MinimumRate = Option[FiniteDuration]
   val subscriptions = scala.collection.mutable.Map[(Server, ActorRef), MinimumRate]()
@@ -39,6 +40,7 @@ trait PingerServiceMixin {
 
   def schedule(a: FiniteDuration, b: FiniteDuration, d: Any): Cancellable
 
+  val defaultPingInterval = 30.seconds
 
   /** *
     * Calculate a ping interval for a server. This is pretty much a map.
@@ -55,7 +57,7 @@ trait PingerServiceMixin {
       case rates => Option((for {
         requiredRate <- rates
         duration <- requiredRate
-      } yield duration).reduceLeftOption((x, y) => if (x > y) y else x).getOrElse(settings.defaultPingInterval))
+      } yield duration).reduceLeftOption((x, y) => if (x > y) y else x).getOrElse(defaultPingInterval))
     }
   }
 

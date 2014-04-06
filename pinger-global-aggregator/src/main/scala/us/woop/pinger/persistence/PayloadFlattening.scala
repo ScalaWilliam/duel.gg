@@ -4,12 +4,12 @@ import us.woop.pinger.PingerServiceData.SauerbratenPong
 
 object PayloadFlattening {
 
-  import StatementGeneration.StatementGenerator
+  import CqlInterfacing.AbstractCqlInterface
 
   trait Process[T, V <: Product] {
     def process(input: T): Seq[V]
 
-    def intoPair(pong: SauerbratenPong, input: T)(implicit resolver: StatementGenerator[V]): Seq[(String, List[Any])] = {
+    def intoPair(pong: SauerbratenPong, input: T)(implicit resolver: AbstractCqlInterface[V]): Seq[(String, List[Any])] = {
       val insertQuery = resolver.makeInsertQuery
       for {
         item <- process(input)
