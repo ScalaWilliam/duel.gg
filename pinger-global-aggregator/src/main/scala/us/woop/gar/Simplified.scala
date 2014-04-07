@@ -1,22 +1,22 @@
 package us.woop.gar
 
 import akka.actor._
-import us.woop.pinger.client.{SauerbratenProtocol, PingerClient}
+import us.woop.pinger.client.{SauerbratenProtocol, PingPongProcessor}
 import akka.actor.ActorDSL._
-import us.woop.pinger.client.PingerClient._
+import us.woop.pinger.client.PingPongProcessor._
 import us.woop.pinger.PingerServiceData.Server
 import scala.concurrent.duration.FiniteDuration
-import us.woop.pinger.client.PingerClient.Ping
-import us.woop.pinger.client.PingerClient.ParsedMessage
-import us.woop.pinger.client.PingerClient.Ready
+import us.woop.pinger.client.PingPongProcessor.Ping
+import us.woop.pinger.client.PingPongProcessor.ParsedMessage
+import us.woop.pinger.client.PingPongProcessor.Ready
 import us.woop.pinger.persistence.StatementGeneratorImplicits.ResolveServerInfoReply
 import us.woop.pinger.SauerbratenServerData.Conversions.ConvertedServerInfoReply
 import akka.event.LoggingReceive
-import us.woop.pinger.client.PingerClient.Ping
-import us.woop.pinger.client.PingerClient.BadHash
-import us.woop.pinger.client.PingerClient.ParsedMessage
-import us.woop.pinger.client.PingerClient.CannotParse
-import us.woop.pinger.client.PingerClient.Ready
+import us.woop.pinger.client.PingPongProcessor.Ping
+import us.woop.pinger.client.PingPongProcessor.BadHash
+import us.woop.pinger.client.PingPongProcessor.ParsedMessage
+import us.woop.pinger.client.PingPongProcessor.CannotParse
+import us.woop.pinger.client.PingPongProcessor.Ready
 import us.woop.pinger.{MasterserverClientActor, PingerServiceData, SauerbratenServerData}
 import java.io.{File, ByteArrayOutputStream, ObjectOutputStream, StringWriter}
 import us.woop.pinger.MasterserverClientActor.{ServerAdded, MasterServers, RefreshServerList}
@@ -110,7 +110,7 @@ val targetServer = Server("188.226.169.46", PingerServiceData.defaultSauerbraten
 
     case class Poll(rate: Pollrate)
 
-    val pinger = context.actorOf(Props[FullPingerClient])
+    val pinger = context.actorOf(Props[FullPingPongProcessor])
 
     val servers = collection.mutable.HashMap[Server, ServerDesc]()
 
@@ -159,6 +159,7 @@ val targetServer = Server("188.226.169.46", PingerServiceData.defaultSauerbraten
       }
 
         become {
+
           case 'PreventSpam =>
             val now = System.currentTimeMillis()
             for {
@@ -190,7 +191,7 @@ val targetServer = Server("188.226.169.46", PingerServiceData.defaultSauerbraten
             desc.badHashes = desc.badHashes + 1
             desc.respondedLast = System.currentTimeMillis()
 
-          case CannotParse(ActiveServer(server, desc), _) =>
+          case CannotParse(ActiveServer(server, desc), _, _) =>
             desc.badHashes = desc.cannotParse + 1
             desc.respondedLast = System.currentTimeMillis()
 

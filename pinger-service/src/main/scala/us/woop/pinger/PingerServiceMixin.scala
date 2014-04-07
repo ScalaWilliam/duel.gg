@@ -3,7 +3,7 @@ package us.woop.pinger
 import us.woop.pinger.PingerServiceData.Server
 import akka.actor.{ActorLogging, Cancellable, ActorRef}
 import scala.concurrent.duration.FiniteDuration
-import us.woop.pinger.client.PingerClient.Ping
+import us.woop.pinger.client.PingPongProcessor.Ping
 
 trait PingerServiceMixin {
   this: ActorLogging =>

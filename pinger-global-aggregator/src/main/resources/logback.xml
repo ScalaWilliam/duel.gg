@@ -7,22 +7,24 @@
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
-    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>testFile.log</file>
+    <appender name="DEBUGLOG" class="ch.qos.logback.core.FileAppender">
+        <file>debug.log</file>
         <append>true</append>
         <!-- encoders are assigned the type
              ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
         <encoder>
-            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS}  %-4relative [%thread] %-5level %logger{70} - %msg%n</pattern>
         </encoder>
     </appender>
 
     <logger name="us.woop.pinger.client" level="info">
         <appender-ref ref="STDOUT"/>
-        <appender-ref ref="FILE"/>
+        <appender-ref ref="DEBUGLOG"/>
     </logger>
+
     <root level="debug">
         <appender-ref ref="STDOUT" />
-        <appender-ref ref="FILE"/>
+        <appender-ref ref="DEBUGLOG"/>
     </root>
+
 </configuration>

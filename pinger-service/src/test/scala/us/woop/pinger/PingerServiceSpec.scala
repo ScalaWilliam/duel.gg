@@ -3,16 +3,16 @@ package us.woop.pinger
 import org.scalatest.{WordSpecLike, Matchers, WordSpec}
 import akka.actor._
 import akka.testkit.TestKitBase
-import us.woop.pinger.client.PingerClient._
+import us.woop.pinger.client.PingPongProcessor._
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 import java.net.InetSocketAddress
 import us.woop.pinger.PingerServiceData._
 import com.typesafe.config.ConfigFactory
-import us.woop.pinger.client.PingerClient.Ping
+import us.woop.pinger.client.PingPongProcessor.Ping
 import us.woop.pinger.PingerServiceData.Unsubscribe
 import us.woop.pinger.PingerServiceData.SauerbratenPong
-import us.woop.pinger.client.PingerClient.Ready
+import us.woop.pinger.client.PingPongProcessor.Ready
 
 @RunWith(classOf[JUnitRunner])
 class PingerServiceSpec extends {

@@ -3,9 +3,9 @@ package us.woop.pinger
 import akka.actor._
 
 import scala.concurrent.duration._
-import us.woop.pinger.client.PingerClient.{FullPingerClient, Ready, Ping}
+import us.woop.pinger.client.PingPongProcessor.{FullPingPongProcessor, Ready, Ping}
 import akka.event.LoggingReceive
-import us.woop.pinger.client.PingerClient
+import us.woop.pinger.client.PingPongProcessor
 
 class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor with ActorLogging with Stash with PingerServiceMixin {
 
@@ -18,7 +18,7 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
   def this(injectedPingerClient: ActorRef) = this(Option(injectedPingerClient))
 
   val pingerClient = injectPingerClient.getOrElse {
-    context.actorOf(Props(classOf[FullPingerClient], self), name = "pingerClient")
+    context.actorOf(Props(classOf[FullPingPongProcessor], self), name = "pingerClient")
   }
 
   import context.dispatcher
@@ -78,7 +78,7 @@ class PingerService(injectPingerClient: Option[ActorRef] = None) extends Actor w
       log.debug("{} requested to revoke firehose access")
       firehose -= sender()
 
-    case message@PingerClient.ParsedMessage((ip: String, port: Int), bytes, payload: Any) if sender() == pingerClient =>
+    case message@PingPongProcessor.ParsedMessage((ip: String, port: Int), bytes, payload: Any) if sender() == pingerClient =>
       val server = Server(ip, port)
       val message = SauerbratenPong(
         unixTime = System.currentTimeMillis() / 1000L,
