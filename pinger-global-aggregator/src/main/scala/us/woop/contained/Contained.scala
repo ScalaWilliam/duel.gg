@@ -91,7 +91,9 @@ object Contained extends App {
         firehose remove actor
 
       case m: ParsedMessage =>
+        levelDbPersister ! m
         for { receiver <- firehose } receiver ! m
+
 
     }
   })
