@@ -155,7 +155,7 @@ class ServerPinger(val params: ServerPingerParams) extends Act with ActorLogging
                 }
               }
 
-              val metrics = List (
+              val metrics = 'Metered -> List(
                 'hostPair -> hostPair,
                 'players -> players,
                 'period -> dt,

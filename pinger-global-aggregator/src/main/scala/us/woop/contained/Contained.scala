@@ -26,6 +26,13 @@ object Contained extends App {
 
   val as = ActorSystem("Derpen")
 
+  val metrics = actor(as, "metrics")(new Act with ActorLogging {
+    become {
+      case ('Metered, data) =>
+        log.debug("{} sent metric data: {}", sender(), data)
+    }
+  })
+
   val master = actor(as, "actorPlugger")(new Act {
 
     val masterserverClient = actor(context, "masterserverClient")(new MasterserverClientActor)
