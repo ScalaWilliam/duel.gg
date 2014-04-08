@@ -3,7 +3,7 @@ import com.datastax.driver.core.{BoundStatement, Metadata, SocketOptions, Cluste
 import java.net.{InetSocketAddress, InetAddress}
 import java.util.UUID
 import scala.util.Try
-import us.woop.pinger.client.SauerbratenProtocol
+import us.woop.pinger.client.SauerbratenFormat
 
 object GlobalAggregatorRunner extends App {
 

@@ -13,14 +13,14 @@ import us.woop.pinger.SauerbratenServerData.PlayerCns
 import us.woop.pinger.SauerbratenServerData.ServerInfoReply
 import us.woop.pinger.SauerbratenServerData.PlayerExtInfo
 import us.woop.pinger.SauerbratenServerData.HopmodUptime
-import us.woop.pinger.client.SauerbratenProtocol
+import us.woop.pinger.client.SauerbratenFormat
 
 @RunWith(classOf[JUnitRunner])
 class MappingParsingTest extends WordSpecLike with Matchers with Inspectors {
 
   def parseAs(expected: Any) = new Matcher[ByteString] {
     override def apply(left: ByteString): MatchResult = {
-      val output = Try(SauerbratenProtocol.matchers apply left.toList)
+      val output = Try(SauerbratenFormat.matchers apply left)
       MatchResult(
         output.isSuccess && output.get == expected,
         s"""Failed to transform data into $expected - $output""",

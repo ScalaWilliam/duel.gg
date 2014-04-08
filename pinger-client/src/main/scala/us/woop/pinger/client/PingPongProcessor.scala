@@ -1,208 +1,82 @@
 package us.woop.pinger.client
 
-import akka.actor.{ActorLogging, Actor, ActorRef}
+import akka.actor.{ActorLogging, ActorRef}
 import akka.io
 import akka.io.Udp
 import akka.util.ByteString
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import java.security.MessageDigest
-import scala.util.control.NonFatal
 import scala.util.Random
-import us.woop.pinger.client.PingPongProcessor.OutboundMessages
+import us.woop.pinger.client.data.PingPongProcessor
+import PingPongProcessor.OutboundMessages
 import concurrent.duration._
+import akka.actor.ActorDSL._
+import us.woop.pinger.PingerServiceData
 
-/** 01/02/14 */
 
-object PingPongProcessor {
 
-  type InetPair = (String, Int)
+class PingPongProcessor extends Act with ActorLogging {
 
-  case class BadHash(host: InetPair, message: Udp.Received)
-
-  case class CannotParse(host: InetPair, message: Udp.Received, e: Throwable) extends RuntimeException(s"Cannot parse message from $host due to $e", e)
-
-  case class ParsedMessage(host: InetPair, recombined: List[Byte], message: Any)
-
-  case class Ping(host: InetPair)
-
-  case class Ready(on: InetSocketAddress)
-
-  case object AreYouReady
-
-  def createhasher = new {
-    val random = new Random
-    val hasher = MessageDigest.getInstance("SHA")
-
-    def makeHash(address: PingPongProcessor.InetPair): List[Byte] = {
-      val inputBytes = s"${random.nextString(6)}$address".toCharArray.map(_.toByte)
-      val hashedBytes = hasher.digest(inputBytes)
-      val postfix = hashedBytes.toList.take(10)
-      postfix
-    }
-  }
-
-  trait OutboundMessages {
-    protected val messages = collection.mutable.Set[List[Byte]]()
-    protected def add(list: List[Int]) = messages.add(list.map(_.toByte))
-    lazy val outboundMessages = messages
-  }
-
-  trait AllOutboundMessages extends OutboundMessages with AskForServerInfo with AskForServerUptime with AskForPlayerStats with AskForTeamStats
-
-  trait AskForServerInfo {
-    this: OutboundMessages =>
-      add(List(1,1,1))
-  }
-  trait AskForServerUptime extends OutboundMessages {
-    this: OutboundMessages =>
-      add(List(0, 0, -1))
-  }
-  trait AskForPlayerStats extends OutboundMessages {
-    this: OutboundMessages =>
-      add(List(0, 1, -1))
-  }
-  trait AskForTeamStats extends OutboundMessages {
-    this: OutboundMessages =>
-      add(List(0, 2, -1))
-  }
-  class FullPingPongProcessor(val l: Option[ActorRef] = None) extends PingPongProcessor(l) with AllOutboundMessages {
-    def this() = this(None)
-    def this(ref: ActorRef) = this(Option(ref))
-  }
-
-  trait PingerConversions {
-    this: PingPongProcessor =>
-      override def autoConversions = true
-  }
-
-}
-
-/**
- *
- * Outputs the following messages:
- * — Ready
- * — BadHash
- * — CannotParse
- * — ParsedMessage
- *    -- Uptime
- *    -- PlayerCns
- *    -- PlayerExtInfo
- *    -- OlderClient
- *    -- HopmodUptime
- *    -- ConvertedHopmodUptime
- *    -- ServerInfoReply
- *    -- ConvertedServerInfoReply
- *    -- TeamScores
- *    -- ConvertedTeamScore
- *    -- ThomasExt
- *    -- ConvertedThomasExt
- */
-
-abstract class PingPongProcessor(val listenerRequested: Option[ActorRef] = None) extends Actor with ActorLogging with OutboundMessages {
-
-  def autoConversions = false
-
-  def this() = this(None)
-
-  def this(ref: ActorRef) = this(Option(ref))
-
-  var listener: ActorRef = _
-
-  override def preStart() {
-    super.preStart()
-    listener = listenerRequested.getOrElse{context.parent}
+  whenStarting {
     import context.system
     io.IO(Udp) ! Udp.Bind(self, new InetSocketAddress("0.0.0.0", 0))
   }
 
+  val outboundMessages = for { message <- OutboundMessages.all } yield ByteString(message.map{_.toByte}.toArray)
+  
   import PingPongProcessor._
 
-  def receive = {
+  become {
     case Udp.Bound(boundTo) =>
       log.debug("Pinger client bound to socket {}", boundTo)
       val socket = sender()
-      listener ! Ready(boundTo)
-      context.become(ready(socket, boundTo))
-    case AreYouReady =>
-      self forward AreYouReady
+      context.parent ! Ready(boundTo)
+      become(ready(socket, boundTo))
   }
 
   // Hashes: must ensure that we don't get spoofed data coming in.
   // Also will make sure that we don't receive data out-of-sequence or very very late.
-  var hashes = scala.collection.mutable.HashMap[InetPair, List[Byte]]()
+  var hashes = scala.collection.mutable.HashMap[Server, ByteString]()
 
   // We will convert between InetSocketAddress and (String, Int)
   // This will make pattern matching simpler when interacting with remote actors
   // I have no idea if InetSocketAddress can be passed around nicely between different JVMs.
   // I suspect not.
-  val inet2pair = scala.collection.mutable.HashMap[InetSocketAddress, InetPair]()
-  val pair2inet = scala.collection.mutable.HashMap[InetPair, InetSocketAddress]()
+  val inet2server = scala.collection.mutable.HashMap[InetSocketAddress, Server]()
+  val server2inet = scala.collection.mutable.HashMap[Server, InetSocketAddress]()
   val hasher = createhasher
-
-  val targets = scala.collection.mutable.HashSet[InetPair]()
 
   def ready(send: ActorRef, boundTo: InetSocketAddress): Receive = {
 
-    case AreYouReady =>
-      sender ! Ready(boundTo)
-
-    case Ping(who @ (host:String, port: Int)) =>
-      val inetAddress = pair2inet.getOrElseUpdate(who, new InetSocketAddress(host, port + 1))
-      inet2pair.getOrElseUpdate(inetAddress, who)
-      targets += who
-      log.debug("Received ping request for server {}", who)
-      val hash = hasher.makeHash(who)
-      hashes += who -> hash
+    case Ping(server @ Server(IP(ip), port)) =>
+      val inetAddress = server2inet.getOrElseUpdate(server, new InetSocketAddress(ip, port + 1))
+      inet2server.getOrElseUpdate(inetAddress, server)
+      val hash = hasher.makeHash(server)
+      hashes += server -> hash
       for {
         (message, idx) <- outboundMessages.zipWithIndex
-        hashedMessage = message ::: hash
-        hashedArray = hashedMessage.toArray
-        byteString = ByteString(hashedArray)
+        byteString = message ++ hash
       } {
-        log.debug("Sending to {} ({}) data {}", who, inetAddress, byteString)
         import context.dispatcher
         context.system.scheduler.scheduleOnce((idx * 5).millis, send, Udp.Send(byteString, inetAddress))
       }
 
-    case receivedMessage @ Udp.Received(receivedBytes, fromWho) if (receivedBytes.length > 13) && (inet2pair contains fromWho) =>
-      val hostPair = inet2pair(fromWho)
+    case receivedMessage @ Udp.Received(receivedBytes, fromWho) if (receivedBytes.length > 13) && (inet2server contains fromWho) =>
+      val hostPair = inet2server(fromWho)
       val expectedHash = hashes(hostPair)
-
-      val head = receivedBytes.take(3).toList
-      val theirHash = receivedBytes.drop(3).take(10).toList
-      val message = receivedBytes.drop(3).drop(10).toList
-      val recombined = head ::: message
-
+      val (head, tail) = receivedBytes.splitAt(3)
+      val (theirHash, message) = tail.splitAt(10)
+      val recombined = head ++ message
       theirHash match {
         case `expectedHash` =>
-          val fn: PartialFunction[List[Byte], Any] = SauerbratenProtocol.matchers
-          try {
-            import Extractor.extract
-            val items = extract apply recombined
-            for { item <- items } {
-              val parsedMessage = ParsedMessage(hostPair, recombined, item)
-              listener ! parsedMessage
-            }
-          } catch {
-            case NonFatal(e) =>
-              throw new CannotParse(hostPair, receivedMessage, e)
-              log.error(e,
-                "Caught exception when parsing message from server {}. Detail: {}", hostPair,
-                Map('head -> head, 'messageToParse -> recombined, 'goodHash -> expectedHash, 'originalMessage -> receivedBytes)
-              )
-          }
-
+          context.parent ! ReceivedMessage(hostPair, System.currentTimeMillis, recombined)
         case wrongHash =>
-          listener ! BadHash(hostPair, receivedMessage)
-          log.warning(
-            "Received wrong hash from server {}. Detail: {}", hostPair,
-            Map('head -> head, 'expectedHash -> expectedHash, 'wrongHash -> wrongHash,'messageToParse -> recombined,  'originalMessage -> receivedBytes)
-          )
-
+          context.parent ! BadHash(hostPair, System.currentTimeMillis, receivedBytes, expectedHash, wrongHash)
       }
 
     case Udp.Received(otherBytes, fromWho) =>
       log.warning("Message from UDP host {} does not match an acceptable format: {}", fromWho, otherBytes)
+
   }
 
 }

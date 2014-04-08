@@ -1,10 +1,11 @@
 package us.woop.pinger.client
 
-import SauerbratenProtocol._
+import SauerbratenFormat._
+import akka.util.ByteString
 
 object Extractor {
 
-  def extract: PartialFunction[List[_], Seq[Any]] = {
+  def extract: PartialFunction[ByteString, Seq[Any]] = {
 
     import FlatteningImplicits._
 

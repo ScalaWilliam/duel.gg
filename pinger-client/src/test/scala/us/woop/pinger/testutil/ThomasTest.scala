@@ -1,11 +1,11 @@
 package us.woop.pinger.testutil
 
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-import us.woop.pinger.client.SauerbratenProtocol
+import us.woop.pinger.client.SauerbratenFormat
 
 /** 01/02/14 */
 class ThomasTest extends WordSpecLike with Matchers with BeforeAndAfterAll {
-  import SauerbratenProtocol._
+  import SauerbratenFormat._
   val thomasNoHeaderInput = List(-3, 1, 0, -128, -104, 8, -128, -68, 2, 0, 2, 3, -3, 1, 0, -128, 108, 7, -128, 44, 1, 1, 3, 2, -3, 1, 0, -128, -24, 3, 100, 0, 1, 0, 66, 79, 83, 83, 0, 101, 118, 105, 108, 0, 0, 0, 2, 1, 10, 1, 0, 4, 0, 0, 84, 119, -13).map(_.toByte)
   //println(GetThomasExt.unapply(input))
   val thomasHeaderInput = List(0, 1, -1, -1, 105, 0, -3, 1, 0, 0, 0, 0, 0, 0, -3, 1, 0, -128, -124, 28, -128, 8, 7, 2, 4, 4, 101, 118, 105, 108, 0, 18, 2, 22, 0, 24, 1, 0, 4, 0, 0, 5, -110, 84).map(_.toByte)

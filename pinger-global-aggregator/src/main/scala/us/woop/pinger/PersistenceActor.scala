@@ -5,10 +5,10 @@ import com.datastax.driver.core.{Cluster, Session, PreparedStatement}
 import us.woop.pinger.PingerServiceData.SauerbratenPong
 import scala.util.control.NonFatal
 import akka.actor.ActorLogging
-import us.woop.pinger.client.PingPongProcessor.BadHash
-import us.woop.pinger.WoopMonitoring.MonitorMessage
+import us.woop.pinger.client.data.PingPongProcessor
+import PingPongProcessor.BadHash
 
-class PersistenceActor extends Act with ActorLogging with WoopMonitoring {
+class PersistenceActor extends Act with ActorLogging {
 
   import us.woop.pinger.persistence.TableCreation.addCreationToSession
   import us.woop.pinger.persistence.InputProcessor.inputProcessor
@@ -35,8 +35,6 @@ class PersistenceActor extends Act with ActorLogging with WoopMonitoring {
 
   become {
     case FlushMetrics =>
-      sendMetrics('TypeCounts, inserts.groupBy{_._2}.mapValues{_.size}.toMap)
-      sendMetrics('ServerCounts, inserts.groupBy{_._1}.mapValues{_.size}.toMap)
       inserts.clear()
 
     case message: SauerbratenPong if inputProcessor.isDefinedAt(message) =>

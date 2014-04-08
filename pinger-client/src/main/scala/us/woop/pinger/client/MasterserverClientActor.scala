@@ -1,9 +1,11 @@
-package us.woop.pinger
+package us.woop.pinger.client
+
 import akka.actor.ActorDSL._
-import MasterserverClientActor._
 import akka.pattern._
 import akka.actor.ActorLogging
 import akka.event.LoggingReceive
+import us.woop.pinger.MasterserverClient
+import us.woop.pinger.client.data.MasterserverClientActor
 
 /** Sends:
   * Servers
@@ -12,6 +14,7 @@ import akka.event.LoggingReceive
   */
 class MasterserverClientActor extends Act with ActorLogging  {
 
+  import MasterserverClientActor._
   var previousServers = Set[(String, Int)]()
   import scala.concurrent.ExecutionContext.Implicits.global
   become(LoggingReceive{
@@ -39,14 +42,3 @@ class MasterserverClientActor extends Act with ActorLogging  {
   
 }
 
-object MasterserverClientActor {
-
-  case object RefreshServerList
-
-  case class MasterServers(servers: Set[(String, Int)])
-
-  case class ServerGone(server: (String, Int))
-
-  case class ServerAdded(server: (String, Int))
-
-}

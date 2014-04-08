@@ -3,7 +3,7 @@ package us.woop.pinger.testutil
 
 import akka.util.ByteString
 import us.woop.pinger.SauerbratenServerData._
-import us.woop.pinger.client.SauerbratenProtocol
+import us.woop.pinger.client.SauerbratenFormat
 
 /** 01/02/14 */
 object Mappings {
