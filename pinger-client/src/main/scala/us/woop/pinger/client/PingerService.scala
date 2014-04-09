@@ -40,7 +40,7 @@ akka {
     // Monitors/Unmonitors and sends everything that's received
     val pingerClient = actor(context, name = "pingerClient")(new GlobalPingerClient)
 
-    // Sends everything that's parsed!
+    // Sends everything that's parsed
     val parsedProcessor = actor(context, name = "parsedProcessor")(new ParsedProcessor)
 
     // Selectively sends everything that's parsed

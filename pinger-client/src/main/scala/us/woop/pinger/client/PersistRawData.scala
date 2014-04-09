@@ -18,10 +18,11 @@ import org.iq80.leveldb
 class PersistRawData(target: File) extends Act with ActorLogging {
 
   var db: DB = _
-  var seq: Int = _
+  var lastTime: Long = _
+  def now = System.currentTimeMillis
 
   whenStarting {
-    seq = 0
+    lastTime = now
     try {
       val options = {
         val options = new Options()
@@ -29,7 +30,6 @@ class PersistRawData(target: File) extends Act with ActorLogging {
       }
       log.info("Opening database {}", target)
       db = factory.open(target, options)
-      db.resumeCompactions()
     } catch {
       case NonFatal(e) =>
         throw new DatabaseUseException(e)
@@ -46,12 +46,13 @@ class PersistRawData(target: File) extends Act with ActorLogging {
   val wo = new leveldb.WriteOptions { sync(true) }
 
   def persist(msg: PingPongProcessor.ReceivedBytes) {
-    seq = if ( seq == Integer.MAX_VALUE ) 0 else seq + 1
+    val currentTime = now
+    lastTime = if ( lastTime < currentTime ) currentTime else lastTime + 1
     try {
       val key = {
         val ipBytes = msg.server.ip.ip.split("\\.").map{_.toInt.toByte}
-        implicit val byteOrdering = ByteOrder.LITTLE_ENDIAN
-        new ByteStringBuilder().putLong(msg.time).putInt(seq).putBytes(ipBytes).putInt(msg.server.port).result().toArray
+        implicit val byteOrdering = ByteOrder.BIG_ENDIAN
+        new ByteStringBuilder().putLong(lastTime).putBytes(ipBytes).putInt(msg.server.port).result().toArray
       }
       db.put(key, msg.message.toArray, wo)
     } catch {
