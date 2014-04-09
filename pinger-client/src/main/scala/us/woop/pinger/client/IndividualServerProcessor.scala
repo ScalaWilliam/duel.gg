@@ -2,14 +2,11 @@ package us.woop.pinger.client
 
 import akka.actor.ActorLogging
 import akka.actor.ActorDSL._
-import us.woop.pinger.client.data.{PingPongProcessor, IndividualServerProcessor}
-import PingPongProcessor.{ReceivedMessage, BadHash, Server}
+import us.woop.pinger.data.PingPongProcessor
+import PingPongProcessor.{ReceivedBytes, BadHash, Server}
 import us.woop.pinger.client.SauerbratenFormat.GetServerInfoReply
-
-
-
+import us.woop.pinger.data.IndividualServerProcessor
 import scala.concurrent.duration._
-import us.woop.pinger.client.data.IndividualServerProcessor
 
 class IndividualServerProcessor(server: Server) extends Act with ActorLogging {
 
@@ -45,13 +42,13 @@ class IndividualServerProcessor(server: Server) extends Act with ActorLogging {
       totalMessages = totalMessages + 1
       lastReceived = received
 
-    case ReceivedMessage(`server`, received, GetServerInfoReply(serverinforeply)) =>
+    case ReceivedBytes(`server`, received, GetServerInfoReply(serverinforeply)) =>
       val olderState = currentState
       currentState = if (serverinforeply.clients == 0) Online(Empty) else Online(Active)
       if ( currentState != olderState ) context.parent ! currentState
       lastReceived = received
 
-    case ReceivedMessage(`server`, received, _) =>
+    case ReceivedBytes(`server`, received, _) =>
       totalMessages = totalMessages + 1
       lastReceived = received
 
@@ -81,6 +78,9 @@ class IndividualServerProcessor(server: Server) extends Act with ActorLogging {
         'totalMessages -> totalMessages,
         'lastReceived -> lastReceived
       )
+
+      badHashes = 0
+      totalMessages = 0
 
       log.info("Monitoring status: {}", msg)
 

@@ -1,10 +1,9 @@
 package us.woop.pinger.client
 import akka.actor.ActorDSL._
-import us.woop.pinger.client.data.{PingPongProcessor, ParsedProcessor}
-import PingPongProcessor.{ReceivedMessage, Server}
+import us.woop.pinger.data.PingPongProcessor
+import PingPongProcessor.ReceivedBytes
 import akka.actor.{Terminated, ActorRef}
-import us.woop.pinger.client.data.ParsedProcessor
-
+import us.woop.pinger.data.ParsedProcessor
 
 class ParsedProcessor extends Act {
   import ParsedProcessor._
@@ -18,7 +17,7 @@ class ParsedProcessor extends Act {
       firehose += sender()
     case Unsubscribe =>
       firehose -= sender()
-    case ReceivedMessage(server, time, message) if firehose.nonEmpty =>
+    case ReceivedBytes(server, time, message) if firehose.nonEmpty =>
       for {
         results <- extractor apply message
         result <- results

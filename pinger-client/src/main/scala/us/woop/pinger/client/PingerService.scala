@@ -2,8 +2,8 @@ package us.woop.pinger.client
 
 import akka.actor.ActorSystem
 import akka.actor.ActorDSL._
-import us.woop.pinger.client.data.{PingPongProcessor, ParsedProcessor, MasterserverClientActor, GlobalPingerClient}
-import GlobalPingerClient.{Listen, Monitor}
+import us.woop.pinger.data.{PingPongProcessor, ParsedProcessor, MasterserverClientActor, GlobalPingerClient}
+import GlobalPingerClient.Monitor
 import PingPongProcessor.Server
 import java.io.File
 import com.typesafe.config.ConfigFactory

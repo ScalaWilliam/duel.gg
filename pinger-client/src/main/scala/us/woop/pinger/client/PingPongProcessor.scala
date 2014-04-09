@@ -4,15 +4,11 @@ import akka.actor.{ActorLogging, ActorRef}
 import akka.io
 import akka.io.Udp
 import akka.util.ByteString
-import java.net.{InetAddress, InetSocketAddress}
-import java.security.MessageDigest
-import scala.util.Random
-import us.woop.pinger.client.data.PingPongProcessor
+import java.net.InetSocketAddress
+import us.woop.pinger.data.PingPongProcessor
 import PingPongProcessor.OutboundMessages
 import concurrent.duration._
 import akka.actor.ActorDSL._
-import us.woop.pinger.PingerServiceData
-
 
 
 class PingPongProcessor extends Act with ActorLogging {
@@ -69,7 +65,7 @@ class PingPongProcessor extends Act with ActorLogging {
       val recombined = head ++ message
       theirHash match {
         case `expectedHash` =>
-          context.parent ! ReceivedMessage(hostPair, System.currentTimeMillis, recombined)
+          context.parent ! ReceivedBytes(hostPair, System.currentTimeMillis, recombined)
         case wrongHash =>
           context.parent ! BadHash(hostPair, System.currentTimeMillis, receivedBytes, expectedHash, wrongHash)
       }

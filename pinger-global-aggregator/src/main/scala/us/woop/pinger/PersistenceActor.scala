@@ -5,7 +5,7 @@ import com.datastax.driver.core.{Cluster, Session, PreparedStatement}
 import us.woop.pinger.PingerServiceData.SauerbratenPong
 import scala.util.control.NonFatal
 import akka.actor.ActorLogging
-import us.woop.pinger.client.data.PingPongProcessor
+import us.woop.pinger.data.PingPongProcessor
 import PingPongProcessor.BadHash
 
 class PersistenceActor extends Act with ActorLogging {

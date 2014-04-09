@@ -4,10 +4,10 @@ import java.io.File
 import akka.actor.ActorDSL._
 import akka.actor.ActorLogging
 import scala.util.control.NonFatal
-import us.woop.pinger.client.data.{PingPongProcessor, PersistRawData}
+import us.woop.pinger.data.{PingPongProcessor, PersistRawData}
 import PersistRawData.DatabaseUseException
 import akka.util.ByteStringBuilder
-import PingPongProcessor.ReceivedMessage
+import PingPongProcessor.ReceivedBytes
 import org.iq80.leveldb._
 import org.fusesource.leveldbjni.JniDBFactory._
 import java.nio.ByteOrder
@@ -41,7 +41,7 @@ class PersistRawData(target: File) extends Act with ActorLogging {
 
   val wo = new leveldb.WriteOptions { sync(true) }
 
-  def persist(msg: PingPongProcessor.ReceivedMessage) {
+  def persist(msg: PingPongProcessor.ReceivedBytes) {
     try {
       val key = {
         val ipBytes = msg.server.ip.ip.split("\\.").map{_.toInt.toByte}
@@ -55,7 +55,7 @@ class PersistRawData(target: File) extends Act with ActorLogging {
   }
 
   become {
-    case msg: ReceivedMessage =>
+    case msg: ReceivedBytes =>
       persist(msg)
   }
 }

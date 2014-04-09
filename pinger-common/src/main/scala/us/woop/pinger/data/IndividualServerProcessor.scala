@@ -1,4 +1,4 @@
-package us.woop.pinger.client.data
+package us.woop.pinger.data
 
 object IndividualServerProcessor {
   sealed trait ServerState

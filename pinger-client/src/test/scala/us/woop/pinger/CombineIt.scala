@@ -2,12 +2,12 @@ package us.woop.pinger
 
 import akka.actor.ActorDSL._
 import akka.actor.ActorSystem
-import us.woop.pinger.client.data.{PingPongProcessor, PersistRawData, MasterserverClientActor, GlobalPingerClient}
+import us.woop.pinger.data.{PingPongProcessor, PersistRawData, MasterserverClientActor, GlobalPingerClient}
 import us.woop.pinger.client.{MasterserverClientActor, GlobalPingerClient, PersistRawData}
 import GlobalPingerClient.{Monitor, Listen}
 import PingPongProcessor.Server
 import java.io.File
-import us.woop.pinger.client.data.MasterserverClientActor
+import us.woop.pinger.data.MasterserverClientActor
 
 
 object CombineIt extends App {

@@ -1,13 +1,13 @@
 package us.woop.pinger.client
 import akka.actor.ActorDSL._
 import akka.actor.{ActorRef, ActorLogging}
-import us.woop.pinger.client.data.{PingPongProcessor, IndividualServerProcessor, GlobalPingerClient}
+import us.woop.pinger.data.PingPongProcessor
 import PingPongProcessor._
-import us.woop.pinger.client.data.{IndividualServerProcessor, GlobalPingerClient}
+import us.woop.pinger.data.{IndividualServerProcessor, GlobalPingerClient}
 import GlobalPingerClient._
 import IndividualServerProcessor.ServerState
 import PingPongProcessor.Ping
-import PingPongProcessor.ReceivedMessage
+import PingPongProcessor.ReceivedBytes
 import PingPongProcessor.BadHash
 import GlobalPingerClient.Monitor
 import GlobalPingerClient.Unmonitor
@@ -31,7 +31,7 @@ class GlobalPingerClient extends Act with ActorLogging with ActWithStash {
       unstashAll()
       become {
 
-        case m@ReceivedMessage(server, _, _) if servers contains server =>
+        case m@ReceivedBytes(server, _, _) if servers contains server =>
           for {listener <- listeners} listener ! m
           for {child <- servers get server} child ! m
 

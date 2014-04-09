@@ -5,7 +5,7 @@ import akka.pattern._
 import akka.actor.ActorLogging
 import akka.event.LoggingReceive
 import us.woop.pinger.MasterserverClient
-import us.woop.pinger.client.data.MasterserverClientActor
+import us.woop.pinger.data.MasterserverClientActor
 
 /** Sends:
   * Servers

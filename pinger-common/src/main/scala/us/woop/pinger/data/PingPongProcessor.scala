@@ -1,4 +1,4 @@
-package us.woop.pinger.client.data
+package us.woop.pinger.data
 
 import java.net.{InetSocketAddress, InetAddress}
 import us.woop.pinger.PingerServiceData
@@ -7,7 +7,6 @@ import scala.util.Random
 import java.security.MessageDigest
 
 object PingPongProcessor {
-
   case class IP(ip: String)
   case class Server(ip: IP, port: Int)
   object Server {
@@ -19,7 +18,7 @@ object PingPongProcessor {
       Server(ip, PingerServiceData.defaultSauerbratenPort)
   }
   case class BadHash(server: Server, time: Long, fullMessage: ByteString, expectedHash: ByteString, haveHash: ByteString)
-  case class ReceivedMessage(server: Server, time: Long, message: ByteString)
+  case class ReceivedBytes(server: Server, time: Long, message: ByteString)
   case class Ping(server: Server)
   case class Ready(on: InetSocketAddress)
 
