@@ -8,8 +8,9 @@ import PingPongProcessor.Server
 import java.io.File
 import com.typesafe.config.ConfigFactory
 import MasterserverClientActor.RefreshServerList
+import com.typesafe.scalalogging.slf4j.Logging
 
-object PingerService extends App {
+object PingerService extends App with Logging {
   val configStr =
     """
 akka {
@@ -28,7 +29,11 @@ akka {
 }
 """
 
-  val system = ActorSystem("PingerService", ConfigFactory.parseString(configStr).withFallback(ConfigFactory.load()))
+  val system = ActorSystem("PingerService", ConfigFactory.systemProperties().withFallback(ConfigFactory.parseString(configStr).withFallback(ConfigFactory.load())))
+
+  system.registerOnTermination {
+    logger.info("We have shut down gracefully")
+  }
 
   val pingerService = actor(system, name = "pingerService")(new Act {
 

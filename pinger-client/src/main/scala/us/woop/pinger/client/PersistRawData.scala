@@ -25,6 +25,7 @@ class PersistRawData(target: File) extends Act with ActorLogging {
         val options = new Options()
         options.createIfMissing(true)
       }
+      log.info("Opening database {}", target)
       db = factory.open(target, options)
       db.resumeCompactions()
     } catch {
@@ -36,6 +37,7 @@ class PersistRawData(target: File) extends Act with ActorLogging {
   whenStopping {
     if ( db != null ) {
       db.close()
+      log.info("Database {} closed", target)
     }
   }
 
