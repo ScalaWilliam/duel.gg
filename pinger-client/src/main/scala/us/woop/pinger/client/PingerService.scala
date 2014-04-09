@@ -21,7 +21,7 @@ akka {
     enabled-transports = ["akka.remote.netty.tcp"]
     netty.tcp {
       hostname = "127.0.0.1"
-      port = 2552
+      port = 52552
     }
     secure-cookie = "C802510E1ECC5A7C18AC4DFE489CEAB231D97AAF"
     require-cookie = on
