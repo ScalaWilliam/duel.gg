@@ -5,15 +5,18 @@ import akka.io
 import akka.io.Udp
 import akka.util.ByteString
 import java.net.InetSocketAddress
-import us.woop.pinger.data.PingPongProcessor
-import PingPongProcessor.OutboundMessages
 import concurrent.duration._
 import akka.actor.ActorDSL._
 
 
 class PingPongProcessor extends Act with ActorLogging {
 
+  import us.woop.pinger.data.PingPongProcessor
+  import PingPongProcessor.OutboundMessages
+  var lastTime: Long = _
+  def now = System.nanoTime()
   whenStarting {
+    lastTime = now
     import context.system
     io.IO(Udp) ! Udp.Bind(self, new InetSocketAddress("0.0.0.0", 0))
   }
@@ -58,6 +61,8 @@ class PingPongProcessor extends Act with ActorLogging {
       }
 
     case receivedMessage @ Udp.Received(receivedBytes, fromWho) if (receivedBytes.length > 13) && (inet2server contains fromWho) =>
+      val currentTime = now
+      lastTime = if ( lastTime > currentTime ) lastTime + 1 else currentTime
       val hostPair = inet2server(fromWho)
       val expectedHash = hashes(hostPair)
       val (head, tail) = receivedBytes.splitAt(3)
@@ -65,9 +70,9 @@ class PingPongProcessor extends Act with ActorLogging {
       val recombined = head ++ message
       theirHash match {
         case `expectedHash` =>
-          context.parent ! ReceivedBytes(hostPair, System.currentTimeMillis, recombined)
+          context.parent ! ReceivedBytes(hostPair, lastTime, recombined)
         case wrongHash =>
-          context.parent ! BadHash(hostPair, System.currentTimeMillis, receivedBytes, expectedHash, wrongHash)
+          context.parent ! BadHash(hostPair, lastTime, receivedBytes, expectedHash, wrongHash)
       }
 
     case Udp.Received(otherBytes, fromWho) =>

@@ -47,7 +47,7 @@ akka {
     val parsedSubscriber = actor(context, name = "parsedSubscrber")(new ParsedSubscriber)
 
     // Dumps raw data into a database
-    val persistence = actor(context, name = "persister")(new PersistRawData(new File("./sample-data")))
+    val persistence = actor(context, name = "persister")(new PersistRawData(new File("./indexed-data")))
 
     // Masterserver client
     val masterserver = actor(context, name = "masterserverClient")(new MasterserverClientActor)
