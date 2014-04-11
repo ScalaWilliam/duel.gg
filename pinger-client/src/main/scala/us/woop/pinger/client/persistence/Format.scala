@@ -11,10 +11,10 @@ object Format {
       val ipBytes = server.ip.split("\\.").map {
         _.toInt.toByte
       }
-      new ByteStringBuilder().putBytes("msg".getBytes).putBytes(ipBytes).putInt(server.port).putLong(index).result().toArray
+      assert(ipBytes.size == 4, "ipBytes must be of size 4")
+      new ByteStringBuilder().putByte(2).putBytes(ipBytes).putInt(server.port).putLong(index).result().toArray
     }
   }
-
 
   object DecodeServerDataKey {
 
@@ -24,14 +24,9 @@ object Format {
     def decodeKey(key: Array[Byte]): Option[ServerDataKey] = {
       for {
         bytes <- Option(key)
-        if key.length == 16 + 3
+        if key.length == 17
         bb = ByteBuffer.wrap(key).order(ByteOrder.BIG_ENDIAN)
-        start = {
-          val dst = ByteBuffer.allocate(3)
-          bb.get(dst.array(), 0, 3)
-          new String(dst.array())
-        }
-        if start == "msg"
+        if bb.get == 2
         ip = {
           val ipB = ByteBuffer.allocate(4)
           bb.get(ipB.array(), 0, 4)
@@ -45,7 +40,6 @@ object Format {
         ServerDataKey(idx, Server(ip, port))
       }
     }
-
   }
 
   case class Server(ip: String, port: Int) {
@@ -53,8 +47,9 @@ object Format {
       val ipBytes = ip.split("\\.").map {
         _.toInt.toByte
       }
+      assert(ipBytes.size == 4, "ipBytes must be of size 4")
       implicit val byteOrdering = ByteOrder.BIG_ENDIAN
-      new ByteStringBuilder().putBytes("server.index".getBytes).putBytes(ipBytes).putInt(port).result().toArray
+      new ByteStringBuilder().putByte(1).putByte(1).putBytes(ipBytes).putInt(port).result().toArray
     }
   }
 
@@ -62,19 +57,13 @@ object Format {
     def unapply(key: Array[Byte]): Option[Server] =
       decodeIndexingKey(key)
 
-
     def decodeIndexingKey(key: Array[Byte]): Option[Server] = {
-      val expectedFirst = "server.index"
       for {
         data <- Option(key)
-        if key.length == expectedFirst.length + 4 + 4
+        if key.length == 10
         bb = ByteBuffer.wrap(key).order(ByteOrder.BIG_ENDIAN)
-        haveFirst = {
-          val dst = ByteBuffer.allocate(expectedFirst.length)
-          bb.get(dst.array(), 0, expectedFirst.length)
-          new String(dst.array())
-        }
-        if expectedFirst == haveFirst
+        if bb.get == 1
+        if bb.get == 1
         ip = {
           val ipDst = ByteBuffer.allocate(4)
           bb.get(ipDst.array(), 0, 4)
@@ -92,7 +81,7 @@ object Format {
   case class ServerIndexKey() {
     def toBytes: Array[Byte] = {
       implicit val byteOrdering = ByteOrder.BIG_ENDIAN
-      new ByteStringBuilder().putBytes("server.index".getBytes).putLong(0L).result().toArray
+      new ByteStringBuilder().putByte(1).putByte(0).result().toArray
     }
   }
 
@@ -102,19 +91,12 @@ object Format {
       decodeMainIndexKey(data)
 
     def decodeMainIndexKey(key: Array[Byte]): Option[ServerIndexKey] = {
-      val expected = "server.index"
       for {
         data <- Option(key)
-        if key.length == expected.length + 8
+        if data.length == 2
         bb = ByteBuffer.wrap(key).order(ByteOrder.BIG_ENDIAN)
-        haveFirst = {
-          val dst = ByteBuffer.allocate(expected.length)
-          bb.get(dst.array(), 0, expected.length)
-          new String(dst.array())
-        }
-        if haveFirst == expected
-        nextNum = bb.getLong
-        if nextNum == 0
+        if bb.get == 1
+        if bb.get == 0
       } yield ServerIndexKey()
     }
   }

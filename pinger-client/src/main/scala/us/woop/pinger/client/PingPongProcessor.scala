@@ -14,7 +14,7 @@ class PingPongProcessor extends Act with ActorLogging {
   import us.woop.pinger.data.PingPongProcessor
   import PingPongProcessor.OutboundMessages
   var lastTime: Long = _
-  def now = System.nanoTime()
+  def now = System.currentTimeMillis()
   whenStarting {
     lastTime = now
     import context.system
