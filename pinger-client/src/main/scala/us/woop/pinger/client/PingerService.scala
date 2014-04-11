@@ -9,6 +9,8 @@ import java.io.File
 import com.typesafe.config.ConfigFactory
 import MasterserverClientActor.RefreshServerList
 import com.typesafe.scalalogging.slf4j.Logging
+import java.util.Date
+import java.text.SimpleDateFormat
 
 object PingerService extends App with Logging {
   val configStr =
@@ -29,7 +31,17 @@ akka {
 }
 """
 
-  val system = ActorSystem("PingerService", ConfigFactory.systemProperties().withFallback(ConfigFactory.parseString(configStr).withFallback(ConfigFactory.load())))
+  val configData = ConfigFactory.systemProperties().withFallback(ConfigFactory.parseString(configStr).withFallback(ConfigFactory.load()))
+
+  val system = ActorSystem("PingerService", configData)
+
+
+  val dataName = {
+    val df = new SimpleDateFormat("dd-HH")
+    df.format(new Date())
+  }
+
+  val target = new File(new File("indexed-data"), dataName)
 
   system.registerOnTermination {
     logger.info("We have shut down gracefully")
@@ -47,7 +59,7 @@ akka {
     val parsedSubscriber = actor(context, name = "parsedSubscrber")(new ParsedSubscriber)
 
     // Dumps raw data into a database
-    val persistence = actor(context, name = "persister")(new PersistRawData(new File("./indexed-data")))
+    val persistence = actor(context, name = "persister")(new PersistRawData(target))
 
     // Masterserver client
     val masterserver = actor(context, name = "masterserverClient")(new MasterserverClientActor)

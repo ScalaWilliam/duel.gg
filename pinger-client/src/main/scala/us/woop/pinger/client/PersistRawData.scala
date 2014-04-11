@@ -9,6 +9,9 @@ import org.fusesource.leveldbjni.JniDBFactory._
 import java.nio.ByteOrder
 import org.iq80.leveldb
 import us.woop.pinger.data.PingPongProcessor.Server
+import us.woop.pinger.client.persistence.Format.{ServerDataKey, ServerIndexKey}
+import sun.text.resources.FormatData_sk
+import us.woop.pinger.client.persistence.Format
 
 
 class PersistRawData(target: File) extends Act with ActorLogging {
@@ -25,10 +28,10 @@ class PersistRawData(target: File) extends Act with ActorLogging {
         val options = new Options()
         options.createIfMissing(true)
       }
-      log.info("Opening database {}", target)
+      target.mkdirs()
+      log.info("Opening database {}", target.getAbsoluteFile.getCanonicalPath)
       db = factory.open(target, options)
-      implicit val byteOrdering = ByteOrder.BIG_ENDIAN
-      val indexIndexKey = new ByteStringBuilder().putBytes("server.index".getBytes).putLong(0L).result().toArray
+      val indexIndexKey = ServerIndexKey().toBytes
       if ( db.get(indexIndexKey) == null ) {
         db.put(indexIndexKey, Array[Byte]())
       }
@@ -47,11 +50,9 @@ class PersistRawData(target: File) extends Act with ActorLogging {
 
   val wo = new leveldb.WriteOptions { sync(true) }
 
-  def ensureFirstIndex(server: Server, key: Array[Byte]) {
-    val ipBytes = server.ip.ip.split("\\.").map{_.toInt.toByte}
-    implicit val byteOrdering = ByteOrder.BIG_ENDIAN
-    val indexKey = new ByteStringBuilder().putBytes("server.index".getBytes).putBytes(ipBytes).putInt(server.port).result().toArray
-    // TODO make LevelDB into a scala mutable Map!!! :-)
+  // TODO make LevelDB into a scala mutable Map!!! :-)
+  def ensureFirstIndex(server: Format.Server, key: Array[Byte]) {
+    val indexKey = server.toBytes
     if (db.get(indexKey) == null) {
       db.put(indexKey, key)
     }
@@ -59,12 +60,9 @@ class PersistRawData(target: File) extends Act with ActorLogging {
 
   def persist(msg: PingPongProcessor.ReceivedBytes) {
     try {
-      val key = {
-        val ipBytes = msg.server.ip.ip.split("\\.").map{_.toInt.toByte}
-        implicit val byteOrdering = ByteOrder.BIG_ENDIAN
-        new ByteStringBuilder().putBytes("msg".getBytes).putBytes(ipBytes).putInt(msg.server.port).putLong(msg.time).result().toArray
-      }
-      ensureFirstIndex(msg.server, key)
+      val sserver = Format.Server(msg.server.ip.ip, msg.server.port)
+      val key = ServerDataKey(msg.time, sserver).toBytes
+      ensureFirstIndex(sserver, key)
       db.put(key, msg.message.toArray, wo)
     } catch {
       case NonFatal(e) => throw new DatabaseUseException(e)
