@@ -43,7 +43,7 @@ class PingPongProcessor extends Act with ActorLogging {
   // I suspect not.
   val inet2server = scala.collection.mutable.HashMap[InetSocketAddress, Server]()
   val server2inet = scala.collection.mutable.HashMap[Server, InetSocketAddress]()
-  val hasher = createhasher
+  val hasher = createHasher
 
   def ready(send: ActorRef, boundTo: InetSocketAddress): Receive = {
 

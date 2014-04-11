@@ -22,7 +22,7 @@ object PingPongProcessor {
   case class Ping(server: Server)
   case class Ready(on: InetSocketAddress)
 
-  def createhasher = new {
+  def createHasher = new {
     val random = new Random
     val hasher = MessageDigest.getInstance("SHA")
 

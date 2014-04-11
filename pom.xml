@@ -10,6 +10,7 @@
         <module>pinger-client</module>
         <module>pinger-common</module>
         <module>pinger-global-aggregator</module>
+        <module>pinger-analytics</module>
         <module>admins</module>
     </modules>
     <packaging>pom</packaging>
