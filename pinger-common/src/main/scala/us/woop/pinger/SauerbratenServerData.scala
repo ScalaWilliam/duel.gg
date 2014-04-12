@@ -10,7 +10,7 @@ object SauerbratenServerData {
   case class HopmodUptime(uptime: Uptime, hopmodVersion: Int, hopmodRevision: Int, buildTime: String)
 
   case class PlayerCns(version: Int, cns: List[Int])
-  case class PlayerExtInfo(version: Int, cn: Int, ping: Int, name: String, team: String, frags: Int,
+  case class  PlayerExtInfo(version: Int, cn: Int, ping: Int, name: String, team: String, frags: Int,
                            deaths: Int, teamkills: Int, accuracy: Int, health: Int, armour: Int, gun: Int, privilege: Int, state: Int, ip: String)
 
   case class ThomasExt(ds: List[ThomasD], r: ThomasR)
