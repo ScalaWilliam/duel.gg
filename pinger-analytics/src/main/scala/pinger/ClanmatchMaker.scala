@@ -10,9 +10,12 @@ import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.{Parsed
 
 object ClanmatchMaker {
 
+type PotentialGame = Either[String, Clanmatch]
+  def gameMatching(game: Clanmatch): PotentialGame =
+    if ( game.gameDuration > 280) Right(game) else Left(s"Game only lasted ${game.gameDuration}")
 
 
-    case class Clanmatch(timestamp: String, server: Server, map: String, mode: String, winner: Option[String], gameDuration: Int, teams: Map[String, Team], playing: Boolean, activeAt: List[Int])
+  case class Clanmatch(timestamp: String, server: Server, map: String, mode: String, winner: Option[String], gameDuration: Int, teams: Map[String, Team], playing: Boolean, activeAt: List[Int])
     case class Team(name: String, scoresLog: Map[Int, Int], score: Int, players: Map[String, Player])
     case class Player(name: String, ip: String, weaponsLog: Map[Int, Int], mainWeapon: Int)
     def makeDuel(gameData: GameData) = {
@@ -76,7 +79,7 @@ object ClanmatchMaker {
 
       for {
         cw <- clanwarCalculation.right
-        matching <- if (cw.gameDuration > 280) Right(cw) else Left(s"Game only lasted ${cw.gameDuration}")
+        _ <- gameMatching(cw).right
       } yield
         <duel>
           <server>{cw.server}</server>
