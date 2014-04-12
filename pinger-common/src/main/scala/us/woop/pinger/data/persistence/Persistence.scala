@@ -1,4 +1,4 @@
-package us.woop.pinger.persistence
+package us.woop.pinger.data.persistence
 
 import java.io.File
 import scala.util.control.NonFatal

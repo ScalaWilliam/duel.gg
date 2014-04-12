@@ -7,22 +7,39 @@ import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.{Parsed
 import us.woop.pinger.data.actor.PingPongProcessor.Server
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import org.joda.time.DateTime
+import scala.util.Try
+import pinger.ModesList.Weapon
 
 object DuelMaker {
+
+  def meaningfulDuration(seconds: Int): String = {
+    val minutes = Math.round(seconds.toDouble / 60)
+    s"$minutes minutes"
+  }
 
   case class Duel(timestamp: String, server: Server, map: String, mode: String, winner: Option[String], gameDuration: Int, players: Map[String, Player], playing: Boolean, activeAt: List[Int])
 
   case class Player(name: String, ip: String, fragsLog: Map[Int, Int], weaponsLog: Map[Int, Int], frags: Int, mainWeapon: Int)
 
+  type PotentialGame = Either[String, Duel]
   def makeDuel(gameData: GameData) = {
 
-    val initialDuel = {
-      import gameData.firstTime._
-      import message._
-      Duel(timestamp = ISODateTimeFormat.dateTimeNoMillis().print(DateTime.now), server = server, map = mapname, mode = gamemode.map {
-        _.toString
-      }.getOrElse(""), winner = None, gameDuration = 0, players = Map.empty, playing = true, activeAt = List.empty)
-    }
+    val initialDuel: PotentialGame = for {
+      cw <- Right{
+        import gameData.firstTime._
+        import message._
+        Duel(timestamp = ISODateTimeFormat.dateTimeNoMillis().print(DateTime.now), server = server, map = mapname, mode = gamemode.map {
+          _.id.toString
+        }.getOrElse(""), winner = None, gameDuration = 0, players = Map.empty, playing = true, activeAt = List.empty)
+      }.right
+
+      gameMode <- Try(cw.mode.toInt).map{Right(_)}.getOrElse{Left(s"Unknown mode: ${cw.mode}")}.right
+      modeDetail <- (ModesList.modes.get(gameMode) match {
+        case Some(mode) => Right(mode)
+        case None => Left(s"Mode $gameMode not found")
+      }).right
+      allowedMode <- (if (!modeDetail.keys.contains(ModesList.ModeParams.M_TEAM)) Right(true) else Left(s"Mode not a teammode")).right
+    } yield cw.copy(mode = modeDetail.name)
 
     object PlayerInfoUpdate {
       def unapply(msg: ParsedMessage) = for {
@@ -35,8 +52,8 @@ object DuelMaker {
       } yield serverInfo
     }
 
-    type PotentialGame = Either[String, Duel]
-    val duelCalculation = gameData.data.foldLeft[PotentialGame](Right(initialDuel)){
+    val duelModes = List(1,4,6)
+    val duelCalculation = gameData.data.foldLeft[PotentialGame](initialDuel){
 
       case (fault @ Left(_), _) => fault
 
@@ -73,6 +90,7 @@ object DuelMaker {
             Right(duel.copy(players = newPlayers))
           }
         }
+      case (Right(duel), _ ) => Right(duel)
     }
 
     def gameMatching(game: Duel): PotentialGame =
@@ -81,19 +99,19 @@ object DuelMaker {
     for {
       duel <- duelCalculation.right
       _ <- gameMatching(duel).right
+      _ <- (if (duel.players.size < 2) Left(s"Not enough players") else Right(duel)).right
     } yield
     <duel>
-      <server>{duel.server}</server>
+      <server>{duel.server.ip.ip}:{duel.server.port}</server>
       <map>{duel.map}</map>
       <timestamp>{duel.timestamp}</timestamp>
-      <mode>{duel.mode}</mode>{
-      <duration>{duel.gameDuration}</duration>
+      <mode>{duel.mode}</mode>
+      <duration>{meaningfulDuration(duel.gameDuration)}</duration>
+      {
       val sortedByScore = duel.players.mapValues{_.frags}.toList.sortBy{_._2}
       if ( sortedByScore.map{_._2}.toSet.size > 1 ) {
         val (name, winner) = sortedByScore.last
-        <winner>
-          {name}
-        </winner>
+        <winner>{name}</winner>
       }
       }
       {
@@ -101,9 +119,12 @@ object DuelMaker {
           (name, player) <- duel.players
         } yield <player>
         <name>{name}</name>
-          <weapon>{player.mainWeapon}</weapon>
+          {Weapon(player.mainWeapon).xml}
           <frags>{player.frags}</frags>
           <ip>{player.ip}</ip>
+          <log>
+            { for { (time, score) <- player.fragsLog.toList } yield <frags time="{time}">{score}</frags> }
+          </log>
         </player>
       }
     </duel>

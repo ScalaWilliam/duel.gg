@@ -8,7 +8,7 @@ import org.iq80.leveldb._
 import org.fusesource.leveldbjni.JniDBFactory._
 import org.iq80.leveldb
 import us.woop.pinger.data.actor.{PersistRawData, PingPongProcessor}
-import us.woop.pinger.persistence.{Persistence, Format}
+import us.woop.pinger.data.persistence.{Persistence, Format}
 import Format.{ServerDataKey, ServerIndexKey}
 
 

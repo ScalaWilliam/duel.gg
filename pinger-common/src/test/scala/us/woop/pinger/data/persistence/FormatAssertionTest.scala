@@ -1,4 +1,4 @@
-package us.woop.pinger.persistence
+package us.woop.pinger.data.persistence
 
 import org.scalatest.{FlatSpec, Matchers, WordSpec}
 
@@ -22,7 +22,7 @@ class FormatAssertionTest extends FlatSpec with Matchers {
   }
 
   "Server index index" should "marshall and unmarshall correctly" in {
-    val In = ServerIndexKey()
+    val In = ServerIndexIndexKey()
     val binary = In.toBytes
     val ServerIndexIndex(ii) = binary
     ii shouldBe In
