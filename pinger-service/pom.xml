@@ -10,23 +10,24 @@
         <artifactId>root</artifactId>
         <version>1.0</version>
     </parent>
-    <artifactId>pinger-client</artifactId>
+    <artifactId>pinger-service</artifactId>
     <version>1.0</version>
     <properties>
         <jdk.version>1.7.0</jdk.version>
         <jdk.level>1.7</jdk.level>
     </properties>
 
+
     <dependencies>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor_2.10</artifactId>
-            <version>2.3.0</version>
+            <version>2.3.2</version>
         </dependency>
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>2.10.3</version>
+            <version>2.10.4</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -48,12 +49,12 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-contrib_2.10</artifactId>
-            <version>2.3.0</version>
+            <version>2.3.2</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-slf4j_2.10</artifactId>
-            <version>2.3.0</version>
+            <version>2.3.2</version>
         </dependency>
 
 
@@ -66,7 +67,7 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-testkit_2.10</artifactId>
-            <version>2.3.0</version>
+            <version>2.3.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>

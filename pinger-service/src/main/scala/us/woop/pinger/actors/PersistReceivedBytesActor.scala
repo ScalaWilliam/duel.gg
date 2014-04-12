@@ -8,7 +8,7 @@ import org.iq80.leveldb._
 import org.fusesource.leveldbjni.JniDBFactory._
 import org.iq80.leveldb
 import us.woop.pinger.data.actor.{PersistRawData, PingPongProcessor}
-import us.woop.pinger.persistence.Format
+import us.woop.pinger.persistence.{Persistence, Format}
 import Format.{ServerDataKey, ServerIndexKey}
 
 
@@ -20,28 +20,14 @@ class PersistReceivedBytesActor(target: File) extends Act with ActorLogging {
   var db: DB = _
 
   whenStarting {
-    try {
-      val options = {
-        val options = new Options()
-        options.createIfMissing(true)
-      }
-      target.mkdirs()
-      log.info("Opening database {}", target.getAbsoluteFile.getCanonicalPath)
-      db = factory.open(target, options)
-      val indexIndexKey = ServerIndexKey().toBytes
-      if ( db.get(indexIndexKey) == null ) {
-        db.put(indexIndexKey, Array[Byte]())
-      }
-    } catch {
-      case NonFatal(e) =>
-        throw new DatabaseUseException(e)
-    }
+    db = Persistence.database(target)
+    ensureIndexIndex()
   }
 
-  whenStopping {
-    if ( db != null ) {
-      db.close()
-      log.info("Database {} closed", target)
+  def ensureIndexIndex() {
+    val indexIndexKey = ServerIndexKey().toBytes
+    if ( db.get(indexIndexKey) == null ) {
+      db.put(indexIndexKey, Array[Byte]())
     }
   }
 

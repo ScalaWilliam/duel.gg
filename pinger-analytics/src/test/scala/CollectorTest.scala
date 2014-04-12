@@ -3,10 +3,11 @@ import scalaz.stream.Process
 import us.woop.pinger.Collector
 import us.woop.pinger.Collector.GameData
 import us.woop.pinger.data.actor.{ParsedProcessor, PingPongProcessor}
-import ParsedProcessor.{ParsedTypedMessage, ParsedMessage}
 import PingPongProcessor.Server
 import us.woop.pinger.data.ParsedPongs
-import ParsedPongs.Conversions.{Gamemode, ConvertServerInfoReply}
+import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
+import us.woop.pinger.data.ParsedPongs.{Gamemode, ParsedMessage}
+import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
 
 class CollectorTest extends FunSuite with Matchers {
   import Collector.getGame

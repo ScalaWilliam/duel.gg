@@ -91,8 +91,6 @@ akka {
     val persistence = actor(context, name = "persister")(new PersistReceivedBytesActor(target))
 
     whenStarting {
-      import scala.concurrent.ExecutionContext.Implicits.global
-      import concurrent.duration._
       pingerClient.tell(GlobalPingerClient.Listen, parsedProcessor)
       pingerClient.tell(GlobalPingerClient.Listen, persistence)
       parsedProcessor.tell(ParsedProcessor.Subscribe, parsedSubscriber)
@@ -104,7 +102,6 @@ akka {
     become {
       case s: ServerState => println(s"Server ")
       case any => println(s"--> $any")
-      case _ =>
     }
 
   })

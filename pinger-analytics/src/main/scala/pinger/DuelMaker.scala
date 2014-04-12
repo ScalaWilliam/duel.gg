@@ -1,98 +1,110 @@
 package pinger
 
-import us.woop.pinger.data.actor.ParsedProcessor
-import ParsedProcessor.{ParsedTypedMessageConversion, ParsedTypedMessage}
 import us.woop.pinger.Collector.GameData
-import scalaz.stream._
-import scalaz.stream.Process._
-import ParsedProcessor.ParsedTypedMessages.{ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessagePlayerExtInfo}
-import scala.annotation.tailrec
 import org.joda.time.format.ISODateTimeFormat
+import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
+import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.{ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessagePlayerExtInfo}
+import us.woop.pinger.data.actor.PingPongProcessor.Server
+import us.woop.pinger.data.ParsedPongs.ParsedMessage
+import org.joda.time.DateTime
 
 object DuelMaker {
 
-  sealed trait GameActiveStatus { def from: Int; def to: Int }
-  case class GameRunning(from: Int, to: Int) extends GameActiveStatus
-  case class GamePaused(from: Int, to: Int) extends GameActiveStatus
-  case class Player(name: String, ip: String)
-  case class PlayState(time: Int, gun: Int, frags: Int)
+  case class Duel(timestamp: String, server: Server, map: String, mode: String, winner: Option[String], gameDuration: Int, players: Map[String, Player], playing: Boolean, activeAt: List[Int])
+
+  case class Player(name: String, ip: String, fragsLog: Map[Int, Int], weaponsLog: Map[Int, Int], frags: Int, mainWeapon: Int)
 
   def makeDuel(gameData: GameData) = {
 
-    val startTime = gameData.firstTime.time
+    val initialDuel = {
+      import gameData.firstTime._
+      import message._
+      Duel(timestamp = ISODateTimeFormat.dateTimeNoMillis().print(DateTime.now), server = server, map = mapname, mode = gamemode.map {
+        _.toString
+      }.getOrElse(""), winner = None, gameDuration = 0, players = Map.empty, playing = true, activeAt = List.empty)
+    }
 
-    val finishTime = gameData.data.reverse.collectFirst {
-      case ParsedTypedMessageConvertedServerInfoReply(ParsedTypedMessage(server, mtime, info)) =>
-        mtime
-    }.getOrElse(startTime)
+    object PlayerInfoUpdate {
+      def unapply(msg: ParsedMessage) = for {
+        ParsedTypedMessagePlayerExtInfo(ParsedTypedMessage(_, _, playerExtInfo)) <- Option(msg)
+      } yield playerExtInfo
+    }
+    object ServerInfoUpdate {
+      def unapply(msg: ParsedMessage) = for {
+        ParsedTypedMessageConvertedServerInfoReply(ParsedTypedMessage(_, _, serverInfo)) <- Option(msg)
+      } yield serverInfo
+    }
 
-    assert(finishTime - startTime > 299000, s"Game must be a full game")
+    type PotentialGame = Either[String, Duel]
+    val duelCalculation = gameData.data.foldLeft[PotentialGame](Right(initialDuel)){
 
-    val playerStates = gameData.data.collect {
-      case ParsedTypedMessagePlayerExtInfo(ParsedTypedMessage(server, mtime, playerExtInfo))
-      if (0 to 4) contains playerExtInfo.state =>
-        Player(playerExtInfo.name,playerExtInfo.ip) -> PlayState(((mtime - startTime) / 1000).toInt, playerExtInfo.gun, playerExtInfo.frags)
-    }.groupBy{_._1}.mapValues{_.map{_._2}}
+      case (fault @ Left(_), _) => fault
 
-    assert(playerStates.size == 2, s"Player states size = ${playerStates.size}")
+      case (Right(duel), ServerInfoUpdate(serverUpdate)) if duel.playing && serverUpdate.gamepaused =>
+        Right(duel.copy(playing = !duel.playing, gameDuration = duel.gameDuration + 3))
 
-    val calculatedPauses = {
-      val activeStates = gameData.data.collect {
-        case ParsedTypedMessageConvertedServerInfoReply(ParsedTypedMessage(server, mtime, info)) =>
-          val time = ((mtime - startTime) / 1000).toInt
-          if (info.gamepaused) GamePaused(time, time) else GameRunning(time, time)
-      }
-      @tailrec
-      def calculatePausesActivities(left: List[GameActiveStatus]): List[GameActiveStatus] = {
-        val reduced = left.sliding(2).flatMap {
-          case GamePaused(a, b) :: GamePaused(c, d) :: Nil => GamePaused(a, b) :: Nil
-          case GameRunning(a, b) :: GameRunning(c, d) :: Nil => GameRunning(a, d) :: Nil
-          case other => other
-        }.toList
-        reduced.length match {
-          case x if x == left.length => reduced
-          case other => calculatePausesActivities(reduced)
+      case (Right(duel), ServerInfoUpdate(serverUpdate)) if !duel.playing && !serverUpdate.gamepaused =>
+        Right(duel.copy(playing = !duel.playing, gameDuration = duel.gameDuration + 3, activeAt = duel.activeAt :+ duel.gameDuration))
+
+      case (Right(duel), ServerInfoUpdate(serverUpdate)) if duel.playing =>
+        Right(duel.copy(activeAt = duel.activeAt :+ duel.gameDuration, gameDuration = duel.gameDuration + 3))
+
+      case (Right(duel), PlayerInfoUpdate(info)) if info.state < 5 =>
+        val player = duel.players.getOrElse(info.name, Player(info.name, info.ip, Map.empty, Map.empty, frags = 0, mainWeapon = 0))
+        if (player.ip != info.ip) {
+          Left(s"IP for '${info.name}' has changed from '${player.ip}' to '${info.ip}. Discarding duel")
+        } else {
+          val newFragsLog = player.fragsLog.updated(duel.gameDuration, info.frags)
+          val newWeaponsLog = player.weaponsLog.updated(duel.gameDuration, info.gun)
+          val mainWeapon = newWeaponsLog.toList.map{_.swap}.groupBy{_._1}.mapValues{_.size}.toList.sorted.reverse.head._1
+          val newPlayers =
+            duel.players.updated(
+              player.name,
+              player.copy(
+                fragsLog = newFragsLog,
+                weaponsLog = newWeaponsLog,
+                frags = info.frags,
+                mainWeapon = mainWeapon
+              )
+            )
+          if ( newPlayers.size > 2 ) {
+            Left(s"More than 2 players in-game (${info.name} joined)")
+          } else {
+            Right(duel.copy(players = newPlayers))
+          }
         }
-      }
-      calculatePausesActivities(activeStates)
     }
 
-    val he = playerStates.mapValues{x => x.map{_.gun}.filterNot{_==6}.groupBy{identity}.mapValues{_.length}.toList.sortBy{_._2}.reverse.map{_._1}.head}
-
-    val finalResult = playerStates.mapValues{_.last.frags}
-
-    val timeline = playerStates.mapValues{ items =>
-      for {
-        minute <- 1 to (gameData.firstTime.message.remain / 60)
-        value = items.collectFirst{case x if x.time > minute * 60 => x.frags}
-      } yield value
-    }
-
-    val winner = finalResult.maxBy{_._2}._1
-      <duel>
-        <server>{gameData.firstTime.server.ip}:{gameData.firstTime.server.port}</server>
-        <map>{gameData.firstTime.message.mapname}</map>
-        <datetime>{ISODateTimeFormat.dateTimeNoMillis().print(startTime)}</datetime>
-        <mode>{gameData.firstTime.message.gamemode.getOrElse("")}</mode>
+    for {
+      duel <- duelCalculation.right
+      matching <- if (duel.gameDuration > 280) Right(duel) else Left(s"Game only lasted ${duel.gameDuration}")
+    } yield 
+    <duel>
+      <server>{duel.server}</server>
+      <map>{duel.map}</map>
+      <timestamp>{duel.timestamp}</timestamp>
+      <mode>{duel.mode}</mode>{
+      <duration>{cw.gameDuration}</duration>
+      val sortedByScore = duel.players.mapValues{_.frags}.toList.sortBy{_._2}
+      if ( sortedByScore.map{_._2}.toSet.size > 1 ) {
+        val (name, winner) = sortedByScore.last
         <winner>
-          <ip>{winner.ip}</ip>
-          <name>{winner.name}</name>
+          {name}
         </winner>
-        {
+      }
+      }
+      {
         for {
-          (id, result) <- finalResult
-          weapon <- he get id
-          times <- timeline get id
-        }
-        yield <player>
-          <ip>{id.ip}</ip>
-          <name>{id.name}</name>
-          <frags>{result}</frags>
-          <weapon>{weapon}</weapon>
-          <timeline>{times map {_.getOrElse("")} mkString ","}</timeline>
+          (name, player) <- duel.players
+        } yield <player>
+        <name>{name}</name>
+          <weapon>{player.mainWeapon}</weapon>
+          <frags>{player.frags}</frags>
+          <ip>{player.ip}</ip>
         </player>
-        }
-      </duel>
+      }
+    </duel>
   }
+
 
 }
