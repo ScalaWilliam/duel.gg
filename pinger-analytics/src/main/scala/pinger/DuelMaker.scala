@@ -75,16 +75,19 @@ object DuelMaker {
         }
     }
 
+    def gameMatching(game: Duel): PotentialGame =
+      if ( game.gameDuration > 280) Right(game) else Left(s"Game only lasted ${game.gameDuration}")
+
     for {
       duel <- duelCalculation.right
-      matching <- if (duel.gameDuration > 280) Right(duel) else Left(s"Game only lasted ${duel.gameDuration}")
-    } yield 
+      _ <- gameMatching(duel).right
+    } yield
     <duel>
       <server>{duel.server}</server>
       <map>{duel.map}</map>
       <timestamp>{duel.timestamp}</timestamp>
       <mode>{duel.mode}</mode>{
-      <duration>{cw.gameDuration}</duration>
+      <duration>{duel.gameDuration}</duration>
       val sortedByScore = duel.players.mapValues{_.frags}.toList.sortBy{_._2}
       if ( sortedByScore.map{_._2}.toSet.size > 1 ) {
         val (name, winner) = sortedByScore.last
