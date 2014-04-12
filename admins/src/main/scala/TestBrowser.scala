@@ -3,10 +3,12 @@ import java.io.File
 import java.nio.{ByteOrder, Bits, ByteBuffer}
 import java.util.Comparator
 import org.iq80.leveldb.{DBComparator, Options}
-import us.woop.pinger.client.Extractor
-import us.woop.pinger.client.SauerbratenFormat.GetServerInfoReply
-import us.woop.pinger.SauerbratenServerData.Conversions.ConvertedServerInfoReply
-import us.woop.pinger.SauerbratenServerData.ServerInfoReply
+import us.woop.pinger.data.ParsedPongs
+import us.woop.pinger.{Extractor, PongParser}
+import PongParser.GetServerInfoReply
+import us.woop.pinger.data.ParsedPongs
+import ParsedPongs.Conversions.ConvertServerInfoReply
+import ParsedPongs.ServerInfoReply
 import vaadin.scala.UI
 import vaadin.scala._
 import vaadin.scala.server.ScaladinRequest

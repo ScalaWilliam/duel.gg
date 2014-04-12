@@ -1,10 +1,11 @@
 import org.scalatest.{Matchers, FlatSpec}
 import pinger.GameMaker
 import us.woop.pinger.Collector.GameData
-import us.woop.pinger.data.ParsedProcessor.{ParsedMessage, ParsedTypedMessage}
-import us.woop.pinger.data.PingPongProcessor
-import us.woop.pinger.SauerbratenServerData.Conversions.{Gamemode, ConvertedServerInfoReply}
-import us.woop.pinger.SauerbratenServerData.PlayerExtInfo
+import us.woop.pinger.data.actor.{ParsedProcessor, PingPongProcessor}
+import ParsedProcessor.{ParsedMessage, ParsedTypedMessage}
+import us.woop.pinger.data.ParsedPongs
+import ParsedPongs.Conversions.{Gamemode, ConvertServerInfoReply}
+import ParsedPongs.PlayerExtInfo
 
 class GameMakerTest extends FlatSpec with Matchers {
 

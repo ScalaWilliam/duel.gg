@@ -1,9 +1,10 @@
 import akka.util.ByteString
 import java.nio.{ByteOrder, ByteBuffer}
 import scala.annotation.tailrec
-import us.woop.pinger.client.Extractor
-import us.woop.pinger.SauerbratenServerData.Conversions.ConvertedServerInfoReply
-import us.woop.pinger.SauerbratenServerData.PlayerExtInfo
+import us.woop.pinger.data.ParsedPongs
+import ParsedPongs.Conversions.ConvertServerInfoReply
+import ParsedPongs.PlayerExtInfo
+import us.woop.pinger.Extractor
 
 object Aggregator {
 

@@ -1,10 +1,11 @@
 package pinger
 
-import us.woop.pinger.data.ParsedProcessor.{ParsedTypedMessageConversion, ParsedTypedMessage}
+import us.woop.pinger.data.actor.ParsedProcessor
+import ParsedProcessor.{ParsedTypedMessageConversion, ParsedTypedMessage}
 import us.woop.pinger.Collector.GameData
 import scalaz.stream._
 import scalaz.stream.Process._
-import us.woop.pinger.data.ParsedProcessor.ParsedTypedMessages.{ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessagePlayerExtInfo}
+import ParsedProcessor.ParsedTypedMessages.{ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessagePlayerExtInfo}
 import scala.annotation.tailrec
 import org.joda.time.format.ISODateTimeFormat
 
