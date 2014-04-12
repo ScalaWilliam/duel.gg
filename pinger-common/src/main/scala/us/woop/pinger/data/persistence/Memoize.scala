@@ -1,4 +1,4 @@
-package us.woop.pinger.persistence
+package us.woop.pinger.data.persistence
 
 import java.util.concurrent.CountDownLatch
 import scala.annotation.tailrec

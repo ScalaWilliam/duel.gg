@@ -1,4 +1,4 @@
-package us.woop.pinger.persistence
+package us.woop.pinger.data.persistence
 
 import java.nio.{ByteBuffer, ByteOrder}
 import akka.util.ByteStringBuilder
@@ -77,7 +77,7 @@ object Format {
 
   }
 
-  case class ServerIndexKey() {
+  case class ServerIndexIndexKey() {
     def toBytes: Array[Byte] = {
       implicit val byteOrdering = ByteOrder.BIG_ENDIAN
       new ByteStringBuilder().putByte(1).putByte(0).result().toArray
@@ -86,17 +86,17 @@ object Format {
 
   object ServerIndexIndex {
 
-    def unapply(data: Array[Byte]): Option[ServerIndexKey] =
+    def unapply(data: Array[Byte]): Option[ServerIndexIndexKey] =
       decodeMainIndexKey(data)
 
-    def decodeMainIndexKey(key: Array[Byte]): Option[ServerIndexKey] = {
+    def decodeMainIndexKey(key: Array[Byte]): Option[ServerIndexIndexKey] = {
       for {
         data <- Option(key)
         if data.length == 2
         bb = ByteBuffer.wrap(key).order(ByteOrder.BIG_ENDIAN)
         if bb.get == 1
         if bb.get == 0
-      } yield ServerIndexKey()
+      } yield ServerIndexIndexKey()
     }
   }
 
