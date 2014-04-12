@@ -3,10 +3,11 @@ package us.woop.pinger
 import scalaz.stream._
 import scalaz.stream.Process._
 import us.woop.pinger.data.actor.ParsedProcessor
-import ParsedProcessor.{ParsedTypedMessage, ParsedMessage}
 import us.woop.pinger.data.ParsedPongs
-import ParsedPongs.Conversions.ConvertServerInfoReply
-import ParsedProcessor.ParsedTypedMessages.ParsedTypedMessageConvertedServerInfoReply
+import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
+import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
+import us.woop.pinger.data.ParsedPongs.ParsedMessage
+import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.ParsedTypedMessageConvertedServerInfoReply
 
 object Collector {
 
