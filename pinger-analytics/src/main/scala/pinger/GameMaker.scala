@@ -1,9 +1,11 @@
 package pinger
 
-import us.woop.pinger.data.ParsedProcessor.ParsedTypedMessage
+import us.woop.pinger.data.actor.ParsedProcessor
+import ParsedProcessor.ParsedTypedMessage
 import us.woop.pinger.Collector.GameData
-import us.woop.pinger.data.ParsedProcessor.ParsedTypedMessages.{ParsedTypedMessageConvertedTeamScore, ParsedTypedMessagePlayerExtInfo}
-import us.woop.pinger.SauerbratenServerData.PlayerExtInfo
+import ParsedProcessor.ParsedTypedMessages.{ParsedTypedMessageConvertedTeamScore, ParsedTypedMessagePlayerExtInfo}
+import us.woop.pinger.data.ParsedPongs
+import ParsedPongs.PlayerExtInfo
 
 object GameMaker {
   import concurrent.duration._

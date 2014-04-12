@@ -2,9 +2,11 @@ import org.scalatest.{FunSuite, Matchers}
 import scalaz.stream.Process
 import us.woop.pinger.Collector
 import us.woop.pinger.Collector.GameData
-import us.woop.pinger.data.ParsedProcessor.{ParsedTypedMessage, ParsedMessage}
-import us.woop.pinger.data.PingPongProcessor.Server
-import us.woop.pinger.SauerbratenServerData.Conversions.{Gamemode, ConvertedServerInfoReply}
+import us.woop.pinger.data.actor.{ParsedProcessor, PingPongProcessor}
+import ParsedProcessor.{ParsedTypedMessage, ParsedMessage}
+import PingPongProcessor.Server
+import us.woop.pinger.data.ParsedPongs
+import ParsedPongs.Conversions.{Gamemode, ConvertServerInfoReply}
 
 class CollectorTest extends FunSuite with Matchers {
   import Collector.getGame

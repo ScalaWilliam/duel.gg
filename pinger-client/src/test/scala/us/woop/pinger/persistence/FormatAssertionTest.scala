@@ -4,7 +4,7 @@ import org.scalatest.{FlatSpec, Matchers, WordSpec}
 
 class FormatAssertionTest extends FlatSpec with Matchers {
 
-  import us.woop.pinger.client.persistence.Format._
+  import Format._
 
 
   "Server data key" should "marshall and unmarshall correctly" in {

@@ -3,11 +3,13 @@ import java.io.File
 import java.nio.{ByteOrder, ByteBuffer}
 import org.fusesource.leveldbjni.JniDBFactory._
 import org.iq80.leveldb.{DB, Options}
-import us.woop.pinger.client.Extractor
-import us.woop.pinger.client.persistence.Format.{Server, DecodeServerDataKey, ServerIndexIndex, ServerIndexKey}
-import us.woop.pinger.client.SauerbratenFormat.GetTeamScores
-import us.woop.pinger.SauerbratenServerData.Conversions.{ConvertedTeamScore, ConvertedServerInfoReply}
-import us.woop.pinger.SauerbratenServerData.PlayerExtInfo
+import us.woop.pinger.data.ParsedPongs
+import us.woop.pinger.persistence.Format
+import Format.{Server, DecodeServerDataKey, ServerIndexIndex, ServerIndexKey}
+import us.woop.pinger.{Extractor, PongParser}
+import PongParser.GetTeamScores
+import ParsedPongs.Conversions.{ConvertTeamScore, ConvertServerInfoReply}
+import ParsedPongs.PlayerExtInfo
 
 
 object DatabaseBrowser extends App {

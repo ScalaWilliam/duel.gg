@@ -12,7 +12,7 @@
         <appender-ref ref="STDOUT" />
     </root>
 
-    <logger name="us.woop.pinger.client.PingPongProcessor$FullPingPongProcessor" level="info">
+    <logger name="us.woop.pinger.client.PingToRawMessagesActor$FullPingPongProcessor" level="info">
         <appender-ref ref="STDOUT" />
     </logger>
 </configuration>
