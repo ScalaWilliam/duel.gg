@@ -21,8 +21,13 @@
         <appender-ref ref="DEBUGLOG"/>
     </logger>
 
-    <root level="info">
+    <logger name="us.woop" level="debug">
+        <appender-ref ref="DEBUGLOG"/>
+    </logger>
+
+    <root level="debug">
         <appender-ref ref="STDOUT" />
     </root>
+
 
 </configuration>

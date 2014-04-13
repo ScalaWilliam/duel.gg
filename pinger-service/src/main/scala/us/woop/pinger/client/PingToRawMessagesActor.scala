@@ -18,6 +18,7 @@ class PingToRawMessagesActor extends Act with ActorLogging {
   var lastTime: Long = _
   def now = System.currentTimeMillis()
   whenStarting {
+    log.info("Starting raw pinger...")
     lastTime = now
     import context.system
     io.IO(Udp) ! Udp.Bind(self, new InetSocketAddress("0.0.0.0", 0))

@@ -18,7 +18,6 @@ import us.woop.pinger.client.PingToRawMessagesActor
 
 class PingPongRouterActor extends Act with ActorLogging with ActWithStash {
 
-  val pinger = actor(context, name = "pinger")(new PingToRawMessagesActor)
 
   val servers = scala.collection.mutable.HashMap[Server, ActorRef]()
 
@@ -27,8 +26,18 @@ class PingPongRouterActor extends Act with ActorLogging with ActWithStash {
   def serverActor(forServer: Server) =
     actor(context, name = s"${forServer.ip.ip}:${forServer.port}")(new IndividualServerRateControlActor(forServer))
 
+  whenStarting {
+    log.info("Starting ping pong router...")
+  }
+
+  val pinger = actor(context, name = "pinger")(new PingToRawMessagesActor)
+  context watch pinger
+
   become {
+    case Terminated(from) if from == pinger =>
+      log.error("Pinger has terminated")
     case Ready(_) =>
+      log.info("Ping pong router is ready. Moving in.")
       unstashAll()
       become {
 
@@ -59,6 +68,9 @@ class PingPongRouterActor extends Act with ActorLogging with ActWithStash {
         case Unmonitor(server) if servers contains server =>
           for {actor <- servers remove server}
             context stop actor
+
+        case Terminated(from) if from == pinger =>
+          log.error("Pinger has terminated")
 
         case Terminated(child) if listeners contains child =>
           listeners remove child

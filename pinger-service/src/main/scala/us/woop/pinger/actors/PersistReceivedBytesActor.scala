@@ -22,6 +22,7 @@ class PersistReceivedBytesActor(target: File) extends Act with ActorLogging {
   whenStarting {
     db = Persistence.database(target)
     ensureIndexIndex()
+    log.info("Starting LevelDB persister at {}", target)
   }
 
   def ensureIndexIndex() {
