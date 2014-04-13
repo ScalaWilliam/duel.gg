@@ -1,40 +1,39 @@
-package pinger
+package us.woop.pinger.analytics.processing
 
 import us.woop.pinger.data.actor.PingPongProcessor.Server
-import us.woop.pinger.Collector.GameData
 import org.joda.time.format.ISODateTimeFormat
-import org.joda.time.DateTime
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
-import us.woop.pinger.data.ParsedPongs.TypedMessages.{ParsedTypedMessage, ParsedTypedMessageConversion}
+import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.{ParsedTypedMessageConvertedTeamScore, ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessagePlayerExtInfo}
 import scala.util.Try
-import pinger.ModesList.Weapon
+import us.woop.pinger.analytics.data.ModesList
+import ModesList.Weapon
+import us.woop.pinger.analytics.data.GameData
 
 object ClanmatchMaker {
 
-type PotentialGame = Either[String, Clanmatch]
-  def gameMatching(game: Clanmatch): PotentialGame =
-    if ( game.gameDuration > 280) Right(game) else Left(s"Game only lasted ${game.gameDuration}")
+  private type PotentialGame = Either[String, Clanmatch]
+  private def gameMatching(game: Clanmatch): PotentialGame =
+    if ( game.gameDuration > 560) Right(game) else Left(s"Game only lasted ~ ${game.gameDuration} seconds")
 
-  def meaningfulDuration(seconds: Int): String = {
+  private def meaningfulDuration(seconds: Int): String = {
     val minutes = meaningfulMinutes(seconds)
     s"$minutes minutes"
   }
-  def meaningfulMinutes(seconds: Int): Int = {
+  private def meaningfulMinutes(seconds: Int): Int = {
     Math.round(seconds.toDouble / 60).toInt
   }
 
-
-  case class Clanmatch(timestamp: String, server: Server, map: String, mode: String, winner: Option[String], gameDuration: Int, teams: Map[String, Team], playing: Boolean, activeAt: List[Int])
-    case class Team(name: String, scoresLog: Map[Int, Int], score: Int, players: Map[String, Player])
-    case class Player(name: String, ip: String, weaponsLog: Map[Int, Int], mainWeapon: Int)
+  private case class Clanmatch(timestamp: String, server: Server, map: String, mode: String, winner: Option[String], gameDuration: Int, teams: Map[String, Team], playing: Boolean, activeAt: List[Int])
+  private case class Team(name: String, scoresLog: Map[Int, Int], score: Int, players: Map[String, Player])
+  private case class Player(name: String, ip: String, weaponsLog: Map[Int, Int], mainWeapon: Int)
     def makeMatch(gameData: GameData) = {
 
       val initialCwR = {
         import gameData.firstTime._
         import message._
-        Clanmatch(timestamp = ISODateTimeFormat.dateTimeNoMillis().print(DateTime.now), server = server, map = mapname, mode = gamemode.map {
-          _.id.toString
+        Clanmatch(timestamp = ISODateTimeFormat.dateTimeNoMillis().print(gameData.firstTime.time), server = server, map = mapname, mode = gamemode.map {
+          _.toString
         }.getOrElse(""), winner = None, gameDuration = 0, teams = Map.empty, playing = true, activeAt = List.empty)
       }
       val initialCw: PotentialGame = for {
@@ -132,12 +131,10 @@ type PotentialGame = Either[String, Clanmatch]
                 {Weapon(player.mainWeapon).xml}
               </player>}{
             List(team.scoresLog).filter{_.nonEmpty}.map{sl =>
-            <log>
-              {val gameMinutes = meaningfulMinutes(cw.gameDuration)
+            <log>{val gameMinutes = meaningfulMinutes(cw.gameDuration)
               (1 to gameMinutes).flatMap{ min => sl.get(min).toList.map{min -> _}}.map {
                 case (y, x) => s"""$y:$x"""
-              }.mkString(",")}
-            </log>}}
+              }.mkString(",")}</log>}}
           </team>
           }
         </teamgame>

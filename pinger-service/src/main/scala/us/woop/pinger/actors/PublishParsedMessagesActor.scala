@@ -8,7 +8,9 @@ import us.woop.pinger.data.ParsedPongs.ParsedMessage
 
 
 class PublishParsedMessagesActor extends Act {
+
   val subscriptions = collection.mutable.Set[(Server, ActorRef)]()
+
   import ParsedSubscriber._
 
   become {

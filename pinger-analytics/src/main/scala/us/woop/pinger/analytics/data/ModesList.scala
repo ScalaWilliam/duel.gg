@@ -1,6 +1,6 @@
-package pinger
+package us.woop.pinger.analytics.data
 
-import scala.xml.{NodeSeq, Null, Node}
+import scala.xml.NodeSeq
 
 object ModesList {
 

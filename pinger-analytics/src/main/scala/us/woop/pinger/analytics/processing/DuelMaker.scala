@@ -1,35 +1,38 @@
-package pinger
+package us.woop.pinger.analytics.processing
 
-import us.woop.pinger.Collector.GameData
 import org.joda.time.format.ISODateTimeFormat
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.{ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessagePlayerExtInfo}
 import us.woop.pinger.data.actor.PingPongProcessor.Server
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
-import org.joda.time.DateTime
 import scala.util.Try
-import pinger.ModesList.Weapon
+import us.woop.pinger.analytics.data.ModesList
+import ModesList.Weapon
+import us.woop.pinger.analytics.data.GameData
 
 object DuelMaker {
 
-  def meaningfulDuration(seconds: Int): String = {
-    val minutes = Math.round(seconds.toDouble / 60)
+  private def meaningfulDuration(seconds: Int): String = {
+    val minutes = meaningfulMinutes(seconds)
     s"$minutes minutes"
   }
+  private def meaningfulMinutes(seconds: Int): Int = {
+    Math.round(seconds.toDouble / 60).toInt
+  }
 
-  case class Duel(timestamp: String, server: Server, map: String, mode: String, winner: Option[String], gameDuration: Int, players: Map[String, Player], playing: Boolean, activeAt: List[Int])
+  private case class Duel(timestamp: String, server: Server, map: String, mode: String, winner: Option[String], gameDuration: Int, players: Map[String, Player], playing: Boolean, activeAt: List[Int])
 
-  case class Player(name: String, ip: String, fragsLog: Map[Int, Int], weaponsLog: Map[Int, Int], frags: Int, mainWeapon: Int)
+  private case class Player(name: String, ip: String, fragsLog: Map[Int, Int], weaponsLog: Map[Int, Int], frags: Int, mainWeapon: Int)
 
-  type PotentialGame = Either[String, Duel]
+  private type PotentialGame = Either[String, Duel]
   def makeDuel(gameData: GameData) = {
 
     val initialDuel: PotentialGame = for {
       cw <- Right{
         import gameData.firstTime._
         import message._
-        Duel(timestamp = ISODateTimeFormat.dateTimeNoMillis().print(DateTime.now), server = server, map = mapname, mode = gamemode.map {
-          _.id.toString
+        Duel(timestamp = ISODateTimeFormat.dateTimeNoMillis().print(gameData.firstTime.time), server = server, map = mapname, mode = gamemode.map {
+          _.toString
         }.getOrElse(""), winner = None, gameDuration = 0, players = Map.empty, playing = true, activeAt = List.empty)
       }.right
 
@@ -71,7 +74,7 @@ object DuelMaker {
         if (player.ip != info.ip) {
           Left(s"IP for '${info.name}' has changed from '${player.ip}' to '${info.ip}. Discarding duel")
         } else {
-          val newFragsLog = player.fragsLog.updated(duel.gameDuration, info.frags)
+          val newFragsLog = player.fragsLog.updated(meaningfulMinutes(duel.gameDuration), info.frags)
           val newWeaponsLog = player.weaponsLog.updated(duel.gameDuration, info.gun)
           val mainWeapon = newWeaponsLog.toList.map{_.swap}.groupBy{_._1}.mapValues{_.size}.toList.sorted.reverse.head._1
           val newPlayers =
@@ -94,7 +97,7 @@ object DuelMaker {
     }
 
     def gameMatching(game: Duel): PotentialGame =
-      if ( game.gameDuration > 280) Right(game) else Left(s"Game only lasted ${game.gameDuration}")
+      if ( game.gameDuration > 280) Right(game) else Left(s"Game only lasted ~${game.gameDuration} seconds")
 
     for {
       duel <- duelCalculation.right
@@ -122,9 +125,13 @@ object DuelMaker {
           {Weapon(player.mainWeapon).xml}
           <frags>{player.frags}</frags>
           <ip>{player.ip}</ip>
-          <log>
-            { for { (time, score) <- player.fragsLog.toList } yield <frags time="{time}">{score}</frags> }
-          </log>
+          {
+          List(player.fragsLog).filter{_.nonEmpty}.map{sl =>
+            <log>{
+              val gameMinutes = meaningfulMinutes(duel.gameDuration)
+            (1 to gameMinutes).flatMap{ min => sl.get(min).toList.map{min -> _}}.map {
+              case (y, x) => s"""$y:$x"""
+            }.mkString(",")}</log>}}
         </player>
       }
     </duel>

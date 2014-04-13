@@ -9,7 +9,7 @@ import org.fusesource.leveldbjni.JniDBFactory._
 import org.iq80.leveldb
 import us.woop.pinger.data.actor.{PersistRawData, PingPongProcessor}
 import us.woop.pinger.data.persistence.{Persistence, Format}
-import Format.{ServerDataKey, ServerIndexKey}
+import us.woop.pinger.data.persistence.Format.{ServerIndexIndexKey, ServerDataKey, ServerIndexKey}
 
 
 class PersistReceivedBytesActor(target: File) extends Act with ActorLogging {
@@ -25,7 +25,7 @@ class PersistReceivedBytesActor(target: File) extends Act with ActorLogging {
   }
 
   def ensureIndexIndex() {
-    val indexIndexKey = ServerIndexKey().toBytes
+    val indexIndexKey = ServerIndexIndexKey().toBytes
     if ( db.get(indexIndexKey) == null ) {
       db.put(indexIndexKey, Array[Byte]())
     }

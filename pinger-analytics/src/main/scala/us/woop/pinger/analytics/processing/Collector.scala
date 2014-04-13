@@ -1,20 +1,21 @@
-package us.woop.pinger
+package us.woop.pinger.analytics.processing
 
 import scalaz.stream._
 import scalaz.stream.Process._
-import us.woop.pinger.data.actor.ParsedProcessor
-import us.woop.pinger.data.ParsedPongs
-import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
-import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
-import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.ParsedTypedMessageConvertedServerInfoReply
+import us.woop.pinger.data.ParsedPongs.ParsedMessage
+import scalaz.stream.Process.Emit
+import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
+import scala.Some
+import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
+import org.joda.time.format.ISODateTimeFormat
+import scala.xml.Elem
+import us.woop.pinger.analytics.data.{GameData, ModesList}
 
 object Collector {
 
   def isSwitch(from: ConvertedServerInfoReply, to: ConvertedServerInfoReply) =
     from.remain < to.remain || from.mapname != to.mapname || from.gamemode != to.gamemode
-
-  case class GameData(firstTime: ParsedTypedMessage[ConvertedServerInfoReply], nextGame: Option[ParsedTypedMessage[ConvertedServerInfoReply]], data: List[ParsedMessage])
 
   /*** From a sequence of ParsedMessage extract individual games into self contained units .!. ***/
   def getGame[F]: scalaz.stream.Process.Process1[ParsedMessage, GameData] = {
@@ -37,4 +38,28 @@ object Collector {
     }
     go(None, None, List.empty)
   }
+
+  import scalaz.stream.Process.Process1
+  def processGame: Process1[GameData, Elem] = scalaz.stream.process1.lift {
+    x =>
+      val duel = DuelMaker.makeDuel(x)
+      val cm = ClanmatchMaker.makeMatch(x)
+
+      val xmlResult = List(duel, cm).collectFirst{
+        case Right(goodGame) => goodGame
+      }.getOrElse {
+        <othergame>
+          <server>{x.firstTime.server.ip.ip}:{x.firstTime.server.port}</server>
+          <map>{x.firstTime.message.mapname}</map>
+          <timestamp>{ISODateTimeFormat.dateTimeNoMillis().print(x.firstTime.time)}</timestamp>
+          {x.firstTime.message.gamemode.flatMap(ModesList.modes.get).toSeq.map{mode => <mode>{mode.name}</mode>}}
+          <failures>
+            <duel>{duel.left.get}</duel>
+            <clanmatch>{cm.left.get}</clanmatch>
+          </failures>
+        </othergame>
+      }
+      xmlResult
+  }
+
 }

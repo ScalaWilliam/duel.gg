@@ -17,7 +17,7 @@
         </encoder>
     </appender>
 
-    <logger name="us.woop.pinger.client" level="debug">
+    <logger name="us.woop.us.woop.pinger.analytics.client" level="debug">
         <appender-ref ref="DEBUGLOG"/>
     </logger>
 
