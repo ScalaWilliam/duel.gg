@@ -1,8 +1,9 @@
 package us.woop.pinger
 
-import akka.actor.ActorSystem
+import _root_.net.xqj.basex.BaseXXQDataSource
+import akka.actor._
 import akka.actor.ActorDSL._
-import us.woop.pinger.data.actor.{ParsedProcessor, PingPongProcessor, GlobalPingerClient}
+import us.woop.pinger.data.actor.{ParsedSubscriber, ParsedProcessor, PingPongProcessor, GlobalPingerClient}
 import GlobalPingerClient.Monitor
 import PingPongProcessor.Server
 import java.io.File
@@ -12,6 +13,17 @@ import java.util.Date
 import java.text.SimpleDateFormat
 import us.woop.pinger.actors.{PublishParsedMessagesActor, PingPongRouterActor, PersistReceivedBytesActor, ParseRawMessagesActor}
 import us.woop.pinger.data.actor.IndividualServerProcessor.ServerState
+import us.woop.pinger.analytics.actor._
+import com.xqj2.XQConnection2
+import us.woop.pinger.analytics.actor.data.GameCollectorPublisher
+import us.woop.pinger.data
+import us.woop.pinger.data.actor.GlobalPingerClient.Monitor
+import akka.actor.Terminated
+import scala.util.control.NonFatal
+import us.woop.pinger.analytics.actor.data.IndividualGameCollectorActor.HaveGame
+import us.woop.pinger.data.actor.GlobalPingerClient.Monitor
+import us.woop.pinger.analytics.actor.data.GameCollectorPublisher
+import us.woop.pinger.analytics.actor.GameCollectorPublisher
 
 object PingerService extends App with Logging {
   val configStr =
@@ -70,13 +82,32 @@ akka {
     df.format(new Date())
   }
 
-  val target = new File(new File("indexed-data"), dataName)
+  val levelDbTarget = new File(new File("indexed-data"), dataName)
+
+  def basexConnection = {
+    val xqs = new BaseXXQDataSource() {
+      setProperty("serverName", "localhost")
+      setProperty("port", "1984")
+      setProperty("databaseName", "matches")
+    }
+    xqs.getConnection("pingerpersist", "awesome").asInstanceOf[XQConnection2]
+  }
+
+
+  case class SubscriptionLink(subscriber: ActorRef, provider: ActorRef, subscribeMessage: Any)
+
+  implicit class subscribeMe(actor: ActorRef) {
+    def subscribesTo(who: ActorRef) = new {
+      def via(message: Any) = SubscriptionLink(actor, who, message)
+    }
+  }
 
   system.registerOnTermination {
     logger.info("We have shut down gracefully")
   }
 
   val pingerService = actor(system, name = "pingerService")(new Act {
+
 
     // Monitors/Unmonitors and sends everything that's received
     val pingerClient = actor(context, name = "pingerClient")(new PingPongRouterActor)
@@ -85,22 +116,48 @@ akka {
     val parsedProcessor = actor(context, name = "parsedProcessor")(new ParseRawMessagesActor)
 
     // Selectively sends everything that's parsed
-    val parsedSubscriber = actor(context, name = "parsedSubscrber")(new PublishParsedMessagesActor)
+    val parsedSubscriber = actor(context, name = "parsedSubscriber")(new PublishParsedMessagesActor)
 
     // Dumps raw data into a database
-    val persistence = actor(context, name = "persister")(new PersistReceivedBytesActor(target))
+    val persistence = actor(context, name = "rawPersister")(new PersistReceivedBytesActor(levelDbTarget))
+
+    val gameCollectorPublisher = actor(context, name = "gameCollectorPublisher")(new GameCollectorPublisher)
+
+    val gameCollectorPersister = actor(context, name = "gameCollectorPersister")(new BaseXPersisterGuardianActor(basexConnection))
+
+    def requiredLinks = Set(
+      parsedProcessor subscribesTo pingerClient via GlobalPingerClient.Listen,
+      parsedSubscriber subscribesTo parsedProcessor via ParsedSubscriber.Subscribe,
+      persistence subscribesTo pingerClient via GlobalPingerClient.Listen,
+      gameCollectorPublisher subscribesTo parsedProcessor via ParsedSubscriber.Subscribe,
+      gameCollectorPersister subscribesTo gameCollectorPublisher via GameCollectorPublisher.Listen
+    )
+
+    {
+      import concurrent.duration._
+      import scala.concurrent.ExecutionContext.Implicits.global
+      context.system.scheduler.schedule(5.seconds, 5.seconds)(enforceSubscriptions())
+    }
+
+
+    def enforceSubscriptions() {
+      for {
+        SubscriptionLink(client, server, hello) <- requiredLinks
+      } {
+        server.tell(hello, sender = client)
+        context watch server
+        context watch client
+      }
+    }
 
     whenStarting {
-      pingerClient.tell(GlobalPingerClient.Listen, parsedProcessor)
-      pingerClient.tell(GlobalPingerClient.Listen, persistence)
-      parsedProcessor.tell(ParsedProcessor.Subscribe, parsedSubscriber)
+      enforceSubscriptions()
       for { server <- serversParsed }
         pingerClient ! Monitor(server)
     }
 
-
     become {
-      case s: ServerState => println(s"Server ")
+      case s: ServerState => println(s"Server $s")
       case any => println(s"--> $any")
     }
 

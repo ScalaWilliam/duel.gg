@@ -1,16 +1,15 @@
 import akka.util.ByteString
 import java.io.File
 import org.fusesource.leveldbjni.JniDBFactory._
-import org.iq80.leveldb.{DB, Options}
-import pinger.{ClanmatchMaker, DuelMaker}
+import org.iq80.leveldb.Options
 import scalaz.stream.Process
+import us.woop.pinger.analytics.processing.Collector
 import us.woop.pinger.data.actor.PingPongProcessor
-import us.woop.pinger.data.actor.PingPongProcessor.IP
-import us.woop.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
+import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.persistence.Format._
 import us.woop.pinger.data.persistence.Format.Server
 import us.woop.pinger.data.persistence.Format.ServerIndexIndexKey
-import us.woop.pinger.{Collector, Extractor}
+import us.woop.pinger.Extractor
 
 object ReadCollections extends App {
   val target = new File("***REMOVED***/Projects/14/ladder.sauer/indexed-data/12-11")
@@ -57,14 +56,15 @@ object ReadCollections extends App {
         for { v <- exxa apply data } yield ParsedMessage(PingPongProcessor.Server(server.ip, server.port), index, v)
     }.flatten
 
-    val woot = (Process(gameData.toSeq :_*) |> Collector.getGame).flush
+    val woot = (Process(gameData.toSeq :_*) |> Collector.getGame |> Collector.processGame).flush
 
-//    val cws = woot.par.map{DuelMaker.makeDuel}.flatMap{_.right.toSeq}.toList
-
-    val cws = woot.par.map{ClanmatchMaker.makeMatch}.toList
-      .flatMap{_.right.toSeq}.toList
+//    val cws = woot.par.flatMap{i => Seq(DuelMaker.makeDuel(i), ClanmatchMaker.makeMatch(i))}.toList
+//.flatMap{_.right.toSeq}.toList
+//
+//    val cwss = cws ::: woot.par.map{ClanmatchMaker.makeMatch}.toList
+//      .flatMap{_.right.toSeq}.toList
     iter.close()
-    cws
+    woot
   }
 
 //  val allS = listServers().toList
@@ -72,7 +72,7 @@ object ReadCollections extends App {
 
   println(allS)
 
-  allS.par.map{listServerData}.toIterator foreach println
+  allS.par.flatMap{listServerData}.toIterator foreach println
 
   db.close()
 }

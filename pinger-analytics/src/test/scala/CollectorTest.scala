@@ -1,25 +1,23 @@
 import org.scalatest.{FunSuite, Matchers}
 import scalaz.stream.Process
-import us.woop.pinger.Collector
-import us.woop.pinger.Collector.GameData
-import us.woop.pinger.data.actor.{ParsedProcessor, PingPongProcessor}
+import us.woop.pinger.analytics.data.GameData
+import us.woop.pinger.analytics.processing.Collector
+import us.woop.pinger.data.actor.PingPongProcessor
 import PingPongProcessor.Server
-import us.woop.pinger.data.ParsedPongs
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
-import us.woop.pinger.data.ParsedPongs.{Gamemode, ParsedMessage}
+import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
 
 class CollectorTest extends FunSuite with Matchers {
   import Collector.getGame
-  import Collector.GameData
   implicit class whenTran(x: Stream[ParsedMessage]) {
     def afterProcessing: Seq[GameData] = {
       (Process(x:_*) |> getGame).flush
     }
   }
-  val payloadA = ConvertedServerInfoReply(1,2,Option(Gamemode(3)),remain=4,5,gamepaused = true,1,"hey","ded")
-  val payloadB = ConvertedServerInfoReply(1,2,Option(Gamemode(3)),remain=5,5,gamepaused = true,1,"hey","ded")
-  val payloadC = ConvertedServerInfoReply(1,2,Option(Gamemode(3)),remain=6,5,gamepaused = true,1,"hey","ded")
+  val payloadA = ConvertedServerInfoReply(1,2,Option(3),remain=4,5,gamepaused = true,1,"hey","ded")
+  val payloadB = ConvertedServerInfoReply(1,2,Option(3),remain=5,5,gamepaused = true,1,"hey","ded")
+  val payloadC = ConvertedServerInfoReply(1,2,Option(3),remain=6,5,gamepaused = true,1,"hey","ded")
   val infoA = ParsedMessage(Server("123",123),2,payloadA)
   val infoB = ParsedMessage(Server("123",123),2,payloadB)
   val infoC = ParsedMessage(Server("123",123),2,payloadC)
