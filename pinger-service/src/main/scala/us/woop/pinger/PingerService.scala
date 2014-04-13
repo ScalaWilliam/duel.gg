@@ -90,7 +90,8 @@ akka {
       setProperty("port", "1984")
       setProperty("databaseName", "matches")
     }
-    xqs.getConnection("pingerpersist", "awesome").asInstanceOf[XQConnection2]
+//    xqs.getConnection("pingerpersist", "awesome").asInstanceOf[XQConnection2]
+    xqs.getConnection("admin", "admin").asInstanceOf[XQConnection2]
   }
 
 
@@ -116,7 +117,7 @@ akka {
     val parsedProcessor = actor(context, name = "parsedProcessor")(new ParseRawMessagesActor)
 
     // Selectively sends everything that's parsed
-    val parsedSubscriber = actor(context, name = "parsedSubscriber")(new PublishParsedMessagesActor)
+    val parsedPublisher = actor(context, name = "parsedPublisher")(new PublishParsedMessagesActor)
 
     // Dumps raw data into a database
     val persistence = actor(context, name = "rawPersister")(new PersistReceivedBytesActor(levelDbTarget))
@@ -126,10 +127,10 @@ akka {
     val gameCollectorPersister = actor(context, name = "gameCollectorPersister")(new BaseXPersisterGuardianActor(basexConnection))
 
     def requiredLinks = Set(
-      parsedProcessor subscribesTo pingerClient via GlobalPingerClient.Listen,
-      parsedSubscriber subscribesTo parsedProcessor via ParsedSubscriber.Subscribe,
-      persistence subscribesTo pingerClient via GlobalPingerClient.Listen,
-      gameCollectorPublisher subscribesTo parsedProcessor via ParsedSubscriber.Subscribe,
+      parsedProcessor        subscribesTo pingerClient via GlobalPingerClient.Listen,
+      persistence            subscribesTo pingerClient via GlobalPingerClient.Listen,
+      parsedPublisher        subscribesTo parsedProcessor via ParsedProcessor.Subscribe,
+      gameCollectorPublisher subscribesTo parsedProcessor via ParsedProcessor.Subscribe,
       gameCollectorPersister subscribesTo gameCollectorPublisher via GameCollectorPublisher.Listen
     )
 

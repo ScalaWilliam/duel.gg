@@ -11,6 +11,9 @@ class GlobalGameCollectorActor extends Act with ActorLogging {
 
   val serverProcessors = collection.mutable.HashMap[Server, ActorRef]()
 
+  whenStarting {
+    log.info("Global game collector started")
+  }
   def makeServerActor(forServer: Server) =
     actor(context, name = s"${forServer.ip.ip}:${forServer.port}")(new IndividualGameCollectorActor(forServer))
 
@@ -18,6 +21,7 @@ class GlobalGameCollectorActor extends Act with ActorLogging {
     case parsedMessage@ParsedMessage(server, time, message) =>
       serverProcessors.getOrElseUpdate(server, makeServerActor(server)) ! parsedMessage
     case game: HaveGame =>
+      log.info("Global game collector received a new game for {}", game.server)
       context.parent ! game
   }
 
