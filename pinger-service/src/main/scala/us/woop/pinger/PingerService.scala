@@ -90,8 +90,8 @@ akka {
       setProperty("port", "1984")
       setProperty("databaseName", "matches")
     }
-//    xqs.getConnection("pingerpersist", "awesome").asInstanceOf[XQConnection2]
-    xqs.getConnection("admin", "admin").asInstanceOf[XQConnection2]
+    xqs.getConnection("pingerpersist", "awesome").asInstanceOf[XQConnection2]
+//    xqs.getConnection("admin", "admin").asInstanceOf[XQConnection2]
   }
 
 
