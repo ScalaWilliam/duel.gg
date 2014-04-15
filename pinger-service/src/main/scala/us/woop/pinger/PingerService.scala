@@ -129,9 +129,9 @@ akka {
     def requiredLinks = Set(
       parsedProcessor        subscribesTo pingerClient via GlobalPingerClient.Listen,
       persistence            subscribesTo pingerClient via GlobalPingerClient.Listen,
-      parsedPublisher        subscribesTo parsedProcessor via ParsedProcessor.Subscribe,
-      gameCollectorPublisher subscribesTo parsedProcessor via ParsedProcessor.Subscribe,
-      gameCollectorPersister subscribesTo gameCollectorPublisher via GameCollectorPublisher.Listen
+      parsedPublisher        subscribesTo parsedProcessor via ParsedProcessor.Subscribe
+//      gameCollectorPublisher subscribesTo parsedProcessor via ParsedProcessor.Subscribe,
+//      gameCollectorPersister subscribesTo gameCollectorPublisher via GameCollectorPublisher.Listen
     )
 
     {
