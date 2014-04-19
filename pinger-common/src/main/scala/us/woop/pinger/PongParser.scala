@@ -192,8 +192,9 @@ object PongParser extends Logging {
         val gd = getDs(stuff)
         val allDs = gd.map(_._1)
         val leftOver = gd.last._2
-        val (thomasR, lefties) = GetR.unapply(leftOver).get
-        Option(ThomasExt(allDs, thomasR))
+        for {
+          (thomasR, lefties) <- GetR.unapply(leftOver)
+        } yield ThomasExt(allDs, thomasR)
     }
   }
   object GetD {
@@ -209,12 +210,12 @@ object PongParser extends Logging {
 
   object GetR {
     def unapply(list: ByteString): Option[(ThomasR, ByteString)] = list match {
-      case s1 >>##:: s2 >>##:: rest =>
+      case s1 >>##:: s2 >>##:: rest if rest.size > 12 =>
         val ints = GetInts.ints(rest).take(13)
         val listOfInts = ints.map(_._1)
         val leftOver = ints.last._2
         Option(ThomasR(Option(s1), s2, listOfInts), leftOver)
-      case s >>##:: rest =>
+      case s >>##:: rest if rest.size > 12 =>
         val ints = GetInts.ints(rest).take(13)
         val listOfInts = ints.map(_._1)
         val leftOver = ints.last._2
@@ -254,8 +255,13 @@ object PongParser extends Logging {
         cn >>: ping >>: name >>##:: team >>##:: frags >>: flags >>: deaths >>:
         teamkills >>: accuracy >>: health >>: armour >>: gun >>: privilege >>: state
         >>: ip >~: _ =>
-        Option(PlayerExtInfo(version, cn, ping, name, team, frags, deaths, teamkills, accuracy, health, armour,
-          gun, privilege, state, ip))
+        val vinfo = PlayerExtInfo(version, cn, ping, name, team, frags, deaths, teamkills, accuracy, health, armour,
+          gun, privilege, state, ip)
+        Option(vinfo)
+      case 0 >>: 1 >>: -1 >>: `ack` >>: 105 >>: 0 >>: -10 >>: _ =>
+        None
+      case 0 >>: 1 >>: -1 >>: `ack` >>: other =>
+        None
       case _ => None
     }
   }

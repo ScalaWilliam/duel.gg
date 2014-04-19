@@ -18,16 +18,16 @@ class IndividualGameCollectorActor(server: Server) extends Act with Actor with A
   import scalaz.stream._
   val (queue, source) = scalaz.stream.async.queue[ParsedMessage]()
     val sink: Sink[Task, Elem] = Process.constant(a => Task.delay { self ! HaveGame(server, s"$a") })
-    val woot = source pipe Collector.getGame pipe Collector.processGame to sink
-    log.info("Initialising game processor for {}", server)
+//    val woot = source pipe Collector.getGame pipe Collector.processGame to sink
+//    log.info("Initialising game processor for {}", server)
     case class FailDue(to: Throwable)
-    woot.run.runAsync{ r =>
-      log.info("Process for {} terminated because {}", server, r)
-      r match {
-        case -\/(a) => self ! FailDue(a)
-        case \/-(b) =>
-      }
-    }
+//    woot.run.runAsync{ r =>
+//      log.info("Process for {} terminated because {}", server, r)
+//      r match {
+//        case -\/(a) => self ! FailDue(a)
+//        case \/-(b) =>
+//      }
+//    }
     become {
       case m: ParsedMessage =>
         queue.enqueue(m)

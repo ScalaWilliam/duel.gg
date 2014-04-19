@@ -41,7 +41,8 @@ object PingPongProcessor {
     val askForServerUptime = List(0, 0, -1)
     val askForPlayerStats = List(0, 1, -1)
     val askForTeamStats = List(0, 2, -1)
-    val all = List(askForServerInfo, askForPlayerStats, askForTeamStats, askForServerUptime)
+//    val all = List(askForServerInfo, askForPlayerStats, askForTeamStats, askForServerUptime)
+    val all = List(askForPlayerStats, askForTeamStats, askForServerInfo)
   }
 
 }

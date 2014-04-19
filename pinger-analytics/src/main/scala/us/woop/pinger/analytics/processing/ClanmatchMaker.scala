@@ -62,7 +62,7 @@ object ClanmatchMaker {
         } yield teamScore
       }
 
-      val clanwarCalculation = gameData.data.foldLeft[Either[String, Clanmatch]](initialCw){
+      val clanwarCalculation = gameData.gameMessages.foldLeft[Either[String, Clanmatch]](initialCw){
 
         case (fault @ Left(_), _) => fault
 

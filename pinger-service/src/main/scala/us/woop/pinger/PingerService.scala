@@ -44,7 +44,7 @@ akka {
 }
 """
 
-  val servers =
+  val serverss =
     """
       |vaq-clan.de
       |effic.me 10000
@@ -64,6 +64,8 @@ akka {
       |noviteam.de
       |darkkeepers.dk 28786
     """.stripMargin
+
+  val servers = "effic.me 20000".stripMargin
 
   val noPort = """^([^ ]+)$""".r
   val withPort = """^([^ ]+) ([0-9]+)$""".r
@@ -122,9 +124,9 @@ akka {
     // Dumps raw data into a database
     val persistence = actor(context, name = "rawPersister")(new PersistReceivedBytesActor(levelDbTarget))
 
-    val gameCollectorPublisher = actor(context, name = "gameCollectorPublisher")(new GameCollectorPublisher)
-
-    val gameCollectorPersister = actor(context, name = "gameCollectorPersister")(new BaseXPersisterGuardianActor(basexConnection))
+//    val gameCollectorPublisher = actor(context, name = "gameCollectorPublisher")(new GameCollectorPublisher)
+//
+//    val gameCollectorPersister = actor(context, name = "gameCollectorPersister")(new BaseXPersisterGuardianActor(basexConnection))
 
     def requiredLinks = Set(
       parsedProcessor        subscribesTo pingerClient via GlobalPingerClient.Listen,
