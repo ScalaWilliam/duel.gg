@@ -44,7 +44,7 @@ akka {
 }
 """
 
-  val serverss =
+  val servers =
     """
       |vaq-clan.de
       |effic.me 10000
@@ -65,7 +65,7 @@ akka {
       |darkkeepers.dk 28786
     """.stripMargin
 
-  val servers = "effic.me 20000".stripMargin
+//  val servers = "effic.me 20000".stripMargin
 
   val noPort = """^([^ ]+)$""".r
   val withPort = """^([^ ]+) ([0-9]+)$""".r
