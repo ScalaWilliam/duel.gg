@@ -56,7 +56,7 @@ object DuelMaker {
     }
 
     val duelModes = List(1,4,6)
-    val duelCalculation = gameData.data.foldLeft[PotentialGame](initialDuel){
+    val duelCalculation = gameData.gameMessages.foldLeft[PotentialGame](initialDuel){
 
       case (fault @ Left(_), _) => fault
 
@@ -75,6 +75,9 @@ object DuelMaker {
           Left(s"IP for '${info.name}' has changed from '${player.ip}' to '${info.ip}. Discarding duel")
         } else {
           val newFragsLog = player.fragsLog.updated(meaningfulMinutes(duel.gameDuration), info.frags)
+          if ( info.teamkills > 0  ) {
+            println("OK")
+          }
           val newWeaponsLog = player.weaponsLog.updated(duel.gameDuration, info.gun)
           val mainWeapon = newWeaponsLog.toList.map{_.swap}.groupBy{_._1}.mapValues{_.size}.toList.sorted.reverse.head._1
           val newPlayers =

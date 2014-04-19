@@ -60,7 +60,7 @@ class PingToRawMessagesActor extends Act with ActorLogging {
         byteString = message ++ hash
       } {
         import context.dispatcher
-        context.system.scheduler.scheduleOnce((idx * 5).millis, send, Udp.Send(byteString, inetAddress))
+        context.system.scheduler.scheduleOnce((idx * 15).millis, send, Udp.Send(byteString, inetAddress))
       }
 
     case receivedMessage @ Udp.Received(receivedBytes, fromWho) if (receivedBytes.length > 13) && (inet2server contains fromWho) =>

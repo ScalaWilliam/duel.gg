@@ -2,6 +2,7 @@ import org.scalatest.{FunSuite, Matchers}
 import scalaz.stream.Process
 import us.woop.pinger.analytics.data.GameData
 import us.woop.pinger.analytics.processing.Collector
+import us.woop.pinger.analytics.processing.Collector.GetGameImperative
 import us.woop.pinger.data.actor.PingPongProcessor
 import PingPongProcessor.Server
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
@@ -9,10 +10,17 @@ import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
 
 class CollectorTest extends FunSuite with Matchers {
-  import Collector.getGame
   implicit class whenTran(x: Stream[ParsedMessage]) {
     def afterProcessing: Seq[GameData] = {
-      (Process(x:_*) |> getGame).flush
+      val currentGames = collection.mutable.ArrayBuffer.empty[GameData]
+      val gameProcessor = new GetGameImperative {
+        def emit(data: GameData) {
+          currentGames += data
+        }
+      }
+      x foreach gameProcessor.input
+      gameProcessor.complete()
+      currentGames.toList.toSeq
     }
   }
   val payloadA = ConvertedServerInfoReply(1,2,Option(3),remain=4,5,gamepaused = true,1,"hey","ded")
