@@ -50,7 +50,7 @@ akka {
       |rb1.butchers.su
       |rb1.butchers.su 20000
       |rb2.butchers.su
-      |rb4.butchers.su
+      |rb3.butchers.su
       |vaq-clan.de
       |effic.me 10000
       |effic.me 20000
