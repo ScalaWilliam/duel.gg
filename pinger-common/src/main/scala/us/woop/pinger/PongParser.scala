@@ -1,7 +1,7 @@
 package us.woop.pinger
 
-import com.typesafe.scalalogging.slf4j.Logging
 import akka.util.ByteString
+import com.typesafe.scalalogging.slf4j.StrictLogging
 import us.woop.pinger.data.ParsedPongs.ThomasD
 import us.woop.pinger.data.ParsedPongs.ServerInfoReply
 import us.woop.pinger.data.ParsedPongs.ThomasExt
@@ -15,7 +15,7 @@ import us.woop.pinger.data.ParsedPongs.PlayerExtInfo
 import us.woop.pinger.data.ParsedPongs.HopmodUptime
 
 /** 01/02/14 */
-object PongParser extends Logging {
+object PongParser extends StrictLogging {
 
   val matchers: PartialFunction[ByteString, Any] = {
     case GetRelaxedPlayerExtInfo(x) => x
