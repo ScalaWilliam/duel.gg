@@ -1,31 +1,22 @@
 package us.woop.pinger
 
-import _root_.net.xqj.basex.BaseXXQDataSource
-import akka.actor._
-import akka.actor.ActorDSL._
-import us.woop.pinger.data.actor.{ParsedSubscriber, ParsedProcessor, PingPongProcessor, GlobalPingerClient}
-import GlobalPingerClient.Monitor
-import PingPongProcessor.Server
 import java.io.File
-import com.typesafe.config.ConfigFactory
-import com.typesafe.scalalogging.slf4j.Logging
-import java.util.Date
 import java.text.SimpleDateFormat
-import us.woop.pinger.actors.{PublishParsedMessagesActor, PingPongRouterActor, PersistReceivedBytesActor, ParseRawMessagesActor}
-import us.woop.pinger.data.actor.IndividualServerProcessor.ServerState
-import us.woop.pinger.analytics.actor._
-import com.xqj2.XQConnection2
-import us.woop.pinger.analytics.actor.data.GameCollectorPublisher
-import us.woop.pinger.data
-import us.woop.pinger.data.actor.GlobalPingerClient.Monitor
-import akka.actor.Terminated
-import scala.util.control.NonFatal
-import us.woop.pinger.analytics.actor.data.IndividualGameCollectorActor.HaveGame
-import us.woop.pinger.data.actor.GlobalPingerClient.Monitor
-import us.woop.pinger.analytics.actor.data.GameCollectorPublisher
-import us.woop.pinger.analytics.actor.GameCollectorPublisher
+import java.util.Date
 
-object PingerService extends App with Logging {
+import _root_.net.xqj.basex.BaseXXQDataSource
+import akka.actor.ActorDSL._
+import akka.actor._
+import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.slf4j.StrictLogging
+import com.xqj2.XQConnection2
+import us.woop.pinger.actors.{ParseRawMessagesActor, PersistReceivedBytesActor, PingPongRouterActor, PublishParsedMessagesActor}
+import us.woop.pinger.data.actor.GlobalPingerClient.Monitor
+import us.woop.pinger.data.actor.IndividualServerProcessor.ServerState
+import us.woop.pinger.data.actor.PingPongProcessor.Server
+import us.woop.pinger.data.actor.{GlobalPingerClient, ParsedProcessor}
+
+object PingerService extends App with StrictLogging {
   val configStr =
     """
 akka {
@@ -142,8 +133,8 @@ akka {
     )
 
     {
-      import concurrent.duration._
       import scala.concurrent.ExecutionContext.Implicits.global
+      import scala.concurrent.duration._
       context.system.scheduler.schedule(5.seconds, 5.seconds)(enforceSubscriptions())
     }
 

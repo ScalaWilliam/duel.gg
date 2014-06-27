@@ -1,21 +1,19 @@
 package us.woop.pinger.analytics.processing
 
-import scalaz.stream._
-import scalaz.stream.Process._
-import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.ParsedTypedMessageConvertedServerInfoReply
-import us.woop.pinger.data.ParsedPongs.ParsedMessage
-import scalaz.stream.Process.Emit
-import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
-import scala.Some
-import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
-import org.joda.time.format.ISODateTimeFormat
-import scala.xml.Elem
-import us.woop.pinger.analytics.data.{GameData, ModesList}
-import org.reactivestreams.api.Producer
+import akka.stream.Transformer
 import akka.stream.scaladsl.Flow
-import scala.collection.immutable
+import org.joda.time.format.ISODateTimeFormat
+import org.reactivestreams.api.Producer
+import us.woop.pinger.analytics.data.{GameData, ModesList}
+import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
+import us.woop.pinger.data.ParsedPongs.ParsedMessage
+import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.ParsedTypedMessageConvertedServerInfoReply
 import us.woop.pinger.data.actor.PingPongProcessor
+
 import scala.annotation.tailrec
+import scala.collection.immutable
+import scala.collection.immutable.Seq
+import scala.xml.Elem
 
 object Collector {
 
@@ -72,15 +70,16 @@ object Collector {
     from.remain < to.remain || from.mapname != to.mapname || from.gamemode != to.gamemode
 
   def multiplexFlows(proc: Producer[ParsedMessage]): Flow[GameData] =
-    Flow(proc).transform[Map[PingPongProcessor.Server, Open], GameData](Map.empty.withDefaultValue(NoGameOpen))(
-      (stateMap, gameData) => {
+    Flow(proc).transform(new Transformer[ParsedMessage, GameData]{
+      var stateMap = Map.empty[PingPongProcessor.Server, Open].withDefaultValue(NoGameOpen)
+      override def onNext(gameData: ParsedMessage): Seq[GameData] = {
         val nextState = stateMap(gameData.server).process.apply(gameData)
-        (stateMap.updated(gameData.server, nextState),
-          immutable.Seq(nextState).collect {
-            case EmmittedOpen(emmittee, _) => emmittee
-          })
+        stateMap = stateMap.updated(gameData.server, nextState)
+        immutable.Seq(nextState).collect {
+          case EmmittedOpen(emmittee, _) => emmittee
+        }
       }
-    )
+    })
 
   // synchronous data extractor, does a similar job to the above
   def extractData(from: Iterator[ParsedMessage]) = {
