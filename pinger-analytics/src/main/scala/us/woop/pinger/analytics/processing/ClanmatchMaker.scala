@@ -1,8 +1,9 @@
 package us.woop.pinger.analytics.processing
 
-import us.woop.pinger.client.PingPongProcessor
+import us.woop.pinger.PingPongProcessor
 import PingPongProcessor.Server
 import org.joda.time.format.ISODateTimeFormat
+import us.woop.pinger.PingPongProcessor
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.{ParsedTypedMessageConvertedTeamScore, ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessagePlayerExtInfo}

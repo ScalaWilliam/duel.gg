@@ -6,7 +6,7 @@ import java.util.Date
 
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import us.woop.pinger.client.PingPongProcessor.Server
+import us.woop.pinger.data.Stuff.Server
 
 object StandardStuff {
   val configStr =

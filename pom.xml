@@ -8,7 +8,7 @@
 
     <modules>
         <module>pinger-service</module>
-        <module>pinger-common</module>
+        <module>pinger-data</module>
         <module>pinger-analytics</module>
         <module>admins</module>
     </modules>
@@ -143,7 +143,7 @@
             </dependency>
             <dependency>
                 <groupId>ladder.sauer</groupId>
-                <artifactId>pinger-common</artifactId>
+                <artifactId>pinger-data</artifactId>
                 <version>1.0</version>
             </dependency>
             <dependency>

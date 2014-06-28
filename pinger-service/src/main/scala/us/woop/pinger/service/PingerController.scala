@@ -1,9 +1,10 @@
 package us.woop.pinger.service
 import akka.actor.ActorDSL._
 import akka.actor.{ActorRef, Kill, Props}
-import us.woop.pinger.client.PingPongProcessor._
-import us.woop.pinger.client.PingPongProcessorActor
-import us.woop.pinger.data.actor.GlobalPingerClient.{Monitor, Unmonitor}
+import us.woop.pinger.data.Stuff.Server
+import us.woop.pinger.service.PingerController.{Unmonitor, Monitor}
+import PingPongProcessor._
+import us.woop.pinger.service.individual.ServerSupervisor
 
 /**
  * This class creates a monitoring ecosystem that will
@@ -16,6 +17,8 @@ import us.woop.pinger.data.actor.GlobalPingerClient.{Monitor, Unmonitor}
  */
 object PingerController {
   case object Ready
+  case class Monitor(server: Server)
+  case class Unmonitor(server: Server)
 }
 class PingerController extends Act with ActWithStash {
   case class Pinger(actorRef: ActorRef)

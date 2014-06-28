@@ -1,9 +1,11 @@
-package us.woop.pinger.service
+package us.woop.pinger.service.individual
+
 import akka.actor.ActorDSL._
 import akka.actor.Cancellable
-import us.woop.pinger.client.PingPongProcessor.{Ping, Server}
-import us.woop.pinger.data.actor.IndividualServerProcessor._
-import us.woop.pinger.service.ServerMonitor.ServerStateChanged
+import us.woop.pinger.data.Stuff.Server
+import us.woop.pinger.service.PingPongProcessor
+import PingPongProcessor.{Ping}
+import us.woop.pinger.service.individual.ServerMonitor._
 
 import scala.concurrent.duration._
 

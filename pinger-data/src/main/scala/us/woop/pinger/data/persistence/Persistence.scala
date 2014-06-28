@@ -2,7 +2,6 @@ package us.woop.pinger.data.persistence
 
 import java.io.File
 import scala.util.control.NonFatal
-import us.woop.pinger.data.actor.PersistRawData.DatabaseUseException
 
 object Persistence {
   import org.iq80.leveldb
@@ -18,7 +17,7 @@ object Persistence {
       factory.open(target, options)
     } catch {
       case NonFatal(e) =>
-        throw new DatabaseUseException(e)
+        throw e
     }
   }
   def database(target: File) =

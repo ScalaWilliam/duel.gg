@@ -51,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>ladder.sauer</groupId>
-            <artifactId>pinger-common</artifactId>
+            <artifactId>pinger-data</artifactId>
         </dependency>
         <dependency>
             <groupId>org.vaadin.addons</groupId>

@@ -1,0 +1,51 @@
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] root
+[INFO] pinger-data
+[INFO] pinger-service
+[INFO] pinger-analytics
+[INFO] admins
+[INFO] 
+[INFO] Using the builder org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder with a thread count of 1
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building root 1.0
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ root ---
+[INFO] 
+[INFO] --- maven-install-plugin:2.4:install (default-install) @ root ---
+[INFO] Installing /home/william/Projects/26/ladder.sauer/pom.xml to /home/william/.m2/repository/us/woop/pinger/root/1.0/root-1.0.pom
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building pinger-data 1.0
+[INFO] ------------------------------------------------------------------------
+[INFO] 
+[INFO] --- maven-clean-plugin:2.5:clean (default-clean) @ pinger-data ---
+[INFO] Deleting /home/william/Projects/26/ladder.sauer/pinger-data/target
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:resources (default-resources) @ pinger-data ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /home/william/Projects/26/ladder.sauer/pinger-data/src/main/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:compile (default-compile) @ pinger-data ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- scala-maven-plugin:3.1.6:compile (default) @ pinger-data ---
+[INFO] /home/william/Projects/26/ladder.sauer/pinger-data/src/main/scala:-1: info: compiling
+[INFO] Compiling 8 source files to /home/william/Projects/26/ladder.sauer/pinger-data/target/classes at 1403979389144
+[INFO] prepare-compile in 0 s
+[INFO] compile in 10 s
+[INFO] 
+[INFO] --- maven-resources-plugin:2.6:testResources (default-testResources) @ pinger-data ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] skip non existing resourceDirectory /home/william/Projects/26/ladder.sauer/pinger-data/src/test/resources
+[INFO] 
+[INFO] --- maven-compiler-plugin:3.1:testCompile (default-testCompile) @ pinger-data ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] --- scala-maven-plugin:3.1.6:testCompile (default) @ pinger-data ---
+[INFO] /home/william/Projects/26/ladder.sauer/pinger-data/src/test/scala:-1: info: compiling
+[INFO] Compiling 2 source files to /home/william/Projects/26/ladder.sauer/pinger-data/target/test-classes at 1403979399565

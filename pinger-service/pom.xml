@@ -25,7 +25,7 @@
         </dependency>
         <dependency>
             <groupId>ladder.sauer</groupId>
-            <artifactId>pinger-common</artifactId>
+            <artifactId>pinger-data</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe.scala-logging</groupId>
@@ -42,10 +42,6 @@
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-slf4j_${scala.version.short}</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ladder.sauer</groupId>
-            <artifactId>pinger-analytics</artifactId>
         </dependency>
         <dependency>
             <groupId>org.basex</groupId>

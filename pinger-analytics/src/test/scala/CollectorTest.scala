@@ -1,5 +1,5 @@
 import org.scalatest.{FunSuite, Matchers}
-import us.woop.pinger.client.PingPongProcessor
+import us.woop.pinger.PingPongProcessor
 import scalaz.stream.Process
 import us.woop.pinger.analytics.data.GameData
 import us.woop.pinger.analytics.processing.Collector

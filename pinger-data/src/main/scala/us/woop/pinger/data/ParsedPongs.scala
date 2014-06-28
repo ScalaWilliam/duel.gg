@@ -1,7 +1,7 @@
 package us.woop.pinger.data
 
-import us.woop.pinger.client.PingPongProcessor.Server
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.{ConvertedHopmodUptime, ConvertedServerInfoReply, ConvertedTeamScore, ConvertedThomasExt}
+import us.woop.pinger.data.Stuff.Server
 
 object ParsedPongs {
 
