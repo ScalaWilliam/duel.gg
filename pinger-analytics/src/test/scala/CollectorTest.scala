@@ -1,9 +1,9 @@
 import org.scalatest.{FunSuite, Matchers}
+import us.woop.pinger.client.PingPongProcessor
 import scalaz.stream.Process
 import us.woop.pinger.analytics.data.GameData
 import us.woop.pinger.analytics.processing.Collector
 import us.woop.pinger.analytics.processing.Collector.GetGameImperative
-import us.woop.pinger.data.actor.PingPongProcessor
 import PingPongProcessor.Server
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import us.woop.pinger.data.ParsedPongs.ParsedMessage

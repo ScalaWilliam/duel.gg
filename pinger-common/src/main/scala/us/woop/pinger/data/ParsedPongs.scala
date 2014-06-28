@@ -1,7 +1,7 @@
 package us.woop.pinger.data
 
-import us.woop.pinger.data.actor.PingPongProcessor.Server
-import us.woop.pinger.data.ParsedPongs.ConvertedMessages.{ConvertedThomasExt, ConvertedTeamScore, ConvertedHopmodUptime, ConvertedServerInfoReply}
+import us.woop.pinger.client.PingPongProcessor.Server
+import us.woop.pinger.data.ParsedPongs.ConvertedMessages.{ConvertedHopmodUptime, ConvertedServerInfoReply, ConvertedTeamScore, ConvertedThomasExt}
 
 object ParsedPongs {
 
@@ -33,8 +33,6 @@ object ParsedPongs {
   object TypedMessages {
 
     case class ParsedTypedMessage[T](server: Server, time: Long, message: T)
-
-    import scala.reflect.runtime.universe._
     trait ParsedTypedMessageConversion[T] {
       def unapply(m: ParsedMessage): Option[ParsedTypedMessage[T]]
     }

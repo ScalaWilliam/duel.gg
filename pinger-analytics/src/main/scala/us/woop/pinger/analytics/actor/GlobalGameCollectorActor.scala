@@ -2,7 +2,8 @@ package us.woop.pinger.analytics.actor
 
 import akka.actor.ActorDSL._
 import akka.actor.{ActorRef, ActorLogging}
-import us.woop.pinger.data.actor.PingPongProcessor.Server
+import us.woop.pinger.client.PingPongProcessor
+import PingPongProcessor.Server
 import us.woop.pinger.analytics.actor.data.IndividualGameCollectorActor
 import IndividualGameCollectorActor.HaveGame
 import us.woop.pinger.data.ParsedPongs.ParsedMessage

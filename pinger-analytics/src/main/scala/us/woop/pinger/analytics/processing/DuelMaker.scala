@@ -1,9 +1,10 @@
 package us.woop.pinger.analytics.processing
 
 import org.joda.time.format.ISODateTimeFormat
+import us.woop.pinger.client.PingPongProcessor
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.{ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessagePlayerExtInfo}
-import us.woop.pinger.data.actor.PingPongProcessor.Server
+import PingPongProcessor.Server
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import scala.util.Try
 import us.woop.pinger.analytics.data.ModesList

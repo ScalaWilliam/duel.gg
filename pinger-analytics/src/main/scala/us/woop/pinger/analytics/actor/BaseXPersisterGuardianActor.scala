@@ -1,10 +1,11 @@
 package us.woop.pinger.analytics.actor
 
 import akka.actor.ActorDSL._
+import us.woop.pinger.client.PingPongProcessor
 import scala.Some
 import scala.util.control.NonFatal
 import us.woop.pinger.analytics.actor.data.IndividualGameCollectorActor.HaveGame
-import us.woop.pinger.data.actor.PingPongProcessor.Server
+import PingPongProcessor.Server
 import akka.actor._
 import com.xqj2.XQConnection2
 import us.woop.pinger.analytics.actor.data.IndividualGameCollectorActor.HaveGame
