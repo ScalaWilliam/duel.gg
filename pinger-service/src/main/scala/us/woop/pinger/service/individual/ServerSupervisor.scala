@@ -1,8 +1,8 @@
-package us.woop.pinger.service
+package us.woop.pinger.service.individual
 
-import akka.actor.Props
 import akka.actor.ActorDSL._
-import us.woop.pinger.client.PingPongProcessor.Server
+import akka.actor.Props
+import us.woop.pinger.data.Stuff.Server
 
 class ServerSupervisor(server: Server) extends Act {
   whenStarting {

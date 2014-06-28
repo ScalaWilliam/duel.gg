@@ -6,17 +6,16 @@ import akka.actor.ActorDSL._
 import akka.actor.ActorLogging
 import org.iq80.leveldb
 import org.iq80.leveldb._
-import us.woop.pinger.client.PingPongProcessor
 import us.woop.pinger.data.persistence.Format.{ServerDataKey, ServerIndexIndexKey}
 import us.woop.pinger.data.persistence.{Format, Persistence}
+import us.woop.pinger.service.PingPongProcessor
 
 import scala.util.control.NonFatal
 
 
 class PersistReceivedBytesActor(target: File) extends Act with ActorLogging {
 
-  import us.woop.pinger.client.PingPongProcessor.ReceivedBytes
-  import us.woop.pinger.data.actor.PersistRawData.DatabaseUseException
+  import PingPongProcessor.ReceivedBytes
 
   var db: DB = _
 
@@ -50,7 +49,7 @@ class PersistReceivedBytesActor(target: File) extends Act with ActorLogging {
       ensureFirstIndex(sserver, key)
       db.put(key, msg.message.toArray, wo)
     } catch {
-      case NonFatal(e) => throw new DatabaseUseException(e)
+      case NonFatal(e) => e
     }
   }
 

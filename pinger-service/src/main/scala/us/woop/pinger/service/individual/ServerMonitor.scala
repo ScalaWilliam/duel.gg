@@ -1,13 +1,23 @@
-package us.woop.pinger.service
+package us.woop.pinger.service.individual
 
 import akka.actor.ActorDSL._
-import us.woop.pinger.service.ServerMonitor.ServerStateChanged
-import concurrent.duration._
 import us.woop.pinger.PongParser.GetServerInfoReply
-import us.woop.pinger.client.PingPongProcessor.{ReceivedBytes, BadHash, Server}
-import us.woop.pinger.data.actor.IndividualServerProcessor._
+import us.woop.pinger.data.Stuff.Server
+import us.woop.pinger.service.PingPongProcessor.{BadHash, ReceivedBytes}
+import us.woop.pinger.service.individual.ServerMonitor._
+
+import scala.concurrent.duration._
 
 object ServerMonitor {
+
+  sealed trait ServerState
+  case class Online(gameStatus: GameStatus) extends ServerState
+  case object Offline extends ServerState
+  case object Initialising extends ServerState
+
+  sealed trait GameStatus
+  case object Empty extends GameStatus
+  case object Active extends GameStatus
   case class ServerStateChanged(server: Server, serverState: ServerState)
 }
 

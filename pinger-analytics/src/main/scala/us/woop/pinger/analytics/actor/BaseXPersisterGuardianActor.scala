@@ -1,7 +1,7 @@
 package us.woop.pinger.analytics.actor
 
 import akka.actor.ActorDSL._
-import us.woop.pinger.client.PingPongProcessor
+import us.woop.pinger.PingPongProcessor
 import scala.Some
 import scala.util.control.NonFatal
 import us.woop.pinger.analytics.actor.data.IndividualGameCollectorActor.HaveGame

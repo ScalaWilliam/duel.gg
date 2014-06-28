@@ -1,20 +1,13 @@
 package us.woop.pinger.analytics
 
 import akka.actor._
-import akka.actor.ActorIdentity
-import akka.actor.Identify
 import com.typesafe.config.ConfigFactory
-import us.woop.pinger.client.PingPongProcessor
-import scala.Some
-import us.woop.pinger.data.actor.ParsedProcessor
-import PingPongProcessor.Server
-import us.woop.pinger.data.ParsedPongs.ParsedMessage
-import us.woop.pinger.analytics.actor.{GameCollectorPublisher, BaseXPersisterActor, GlobalGameCollectorActor}
-import net.xqj.basex.BaseXXQDataSource
 import com.xqj2.XQConnection2
-import us.woop.pinger.analytics.actor.data.IndividualGameCollectorActor.HaveGame
+import net.xqj.basex.BaseXXQDataSource
 import us.woop.pinger.analytics.actor.data.GameCollectorPublisher
-import us.woop.pinger.analytics.actor.GameCollectorPublisher
+import us.woop.pinger.analytics.actor.data.IndividualGameCollectorActor.HaveGame
+import us.woop.pinger.analytics.actor.{BaseXPersisterActor, GameCollectorPublisher, GlobalGameCollectorActor}
+import us.woop.pinger.data.ParsedPongs.ParsedMessage
 
 object CollectGamesRemotelyApp extends App {
   val configStr =

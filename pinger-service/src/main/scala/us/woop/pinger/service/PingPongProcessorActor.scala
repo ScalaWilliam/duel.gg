@@ -1,32 +1,20 @@
-package us.woop.pinger.client
+package us.woop.pinger.service
 
+import java.net.InetSocketAddress
 import java.security.MessageDigest
 
+import akka.actor.ActorDSL._
 import akka.actor.{ActorLogging, ActorRef}
 import akka.io
 import akka.io.Udp
 import akka.util.ByteString
-import java.net.{InetAddress, InetSocketAddress}
-import us.woop.pinger.PingerServiceData
-
-import concurrent.duration._
-import akka.actor.ActorDSL._
+import us.woop.pinger.data.Stuff.{IP, Server}
+import us.woop.pinger.service.PingPongProcessor._
 
 import scala.util.Random
 
 object PingPongProcessor {
 
-  case class IP(ip: String)
-  case class Server(ip: IP, port: Int)
-
-  object Server {
-    def apply(host: String, port: Int): Server =
-      Server(IP(InetAddress.getByName(host).getHostAddress), port)
-    def apply(host: String): Server =
-      apply(host, PingerServiceData.defaultSauerbratenPort)
-    def apply(ip: IP): Server =
-      Server(ip, PingerServiceData.defaultSauerbratenPort)
-  }
 
   case class BadHash(server: Server, time: Long, fullMessage: ByteString, expectedHash: ByteString, haveHash: ByteString)
   case class ReceivedBytes(server: Server, time: Long, message: ByteString)
@@ -37,7 +25,7 @@ object PingPongProcessor {
     val random = new Random
     val hasher = MessageDigest.getInstance("SHA")
 
-    def makeHash(address: PingPongProcessor.Server): ByteString = {
+    def makeHash(address: Server): ByteString = {
       val inputBytes = s"${random.nextString(6)}$address".toCharArray.map(_.toByte)
       val hashedBytes = hasher.digest(inputBytes)
       ByteString(hashedBytes.take(10))
@@ -55,10 +43,9 @@ object PingPongProcessor {
 
 }
 
+import scala.concurrent.duration._
 
 class PingPongProcessorActor extends Act with ActorLogging {
-
-  import PingPongProcessor.OutboundMessages
 
   var lastTime: Long = _
   def now = System.currentTimeMillis()
@@ -70,8 +57,6 @@ class PingPongProcessorActor extends Act with ActorLogging {
   }
 
   val outboundMessages = for { message <- OutboundMessages.all } yield ByteString(message.map{_.toByte}.toArray)
-  
-  import PingPongProcessor._
 
   become {
     case Udp.Bound(boundTo) =>

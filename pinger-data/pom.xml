@@ -13,7 +13,7 @@
     </parent>
     <packaging>jar</packaging>
 
-    <artifactId>pinger-common</artifactId>
+    <artifactId>pinger-data</artifactId>
     <version>1.0</version>
 
     <dependencies>

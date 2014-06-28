@@ -55,7 +55,7 @@
         </dependency>
         <dependency>
             <groupId>ladder.sauer</groupId>
-            <artifactId>pinger-common</artifactId>
+            <artifactId>pinger-data</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe.scala-logging</groupId>

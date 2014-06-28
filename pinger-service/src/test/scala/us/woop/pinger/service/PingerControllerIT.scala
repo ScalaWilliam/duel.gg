@@ -2,21 +2,20 @@ package us.woop.pinger.service
 
 import java.net.InetSocketAddress
 
-import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.testkit.{ImplicitSender, TestKit, TestProbe}
-import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
-import us.woop.pinger.client.PingPongProcessor.{ReceivedBytes, Server}
-import us.woop.pinger.data.actor.GlobalPingerClient.Monitor
-import us.woop.pinger.referencedata.{SimpleUdpServer, StubServer}
 import akka.actor.ActorDSL._
-
-import scala.collection.mutable
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.testkit.{ImplicitSender, TestKit}
+import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
+import us.woop.pinger.data.Stuff.Server
+import us.woop.pinger.referencedata.{SimpleUdpServer, StubServer}
+import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
+import us.woop.pinger.service.PingerController.Monitor
 
 class PingerControllerIT(sys: ActorSystem) extends TestKit(sys) with FunSuiteLike with Matchers with ImplicitSender with BeforeAndAfterAll {
 
   def this() = this(ActorSystem("MySpec"))
 
-  test("Pinger service") {
+  test("Pinger service integrates properly with a monitor message + stub") {
 
     val server = Server("127.0.0.1", 5010)
 
