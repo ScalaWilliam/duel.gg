@@ -5,10 +5,10 @@ import akka.stream.scaladsl.Flow
 import org.joda.time.format.ISODateTimeFormat
 import org.reactivestreams.api.Producer
 import us.woop.pinger.analytics.data.{GameData, ModesList}
+import us.woop.pinger.client.PingPongProcessor
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.ParsedTypedMessageConvertedServerInfoReply
-import us.woop.pinger.data.actor.PingPongProcessor
 
 import scala.annotation.tailrec
 import scala.collection.immutable

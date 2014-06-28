@@ -4,9 +4,10 @@ import akka.actor._
 import akka.actor.ActorIdentity
 import akka.actor.Identify
 import com.typesafe.config.ConfigFactory
+import us.woop.pinger.client.PingPongProcessor
 import scala.Some
 import us.woop.pinger.data.actor.ParsedProcessor
-import us.woop.pinger.data.actor.PingPongProcessor.Server
+import PingPongProcessor.Server
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.analytics.actor.{GameCollectorPublisher, BaseXPersisterActor, GlobalGameCollectorActor}
 import net.xqj.basex.BaseXXQDataSource

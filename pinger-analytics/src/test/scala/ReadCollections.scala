@@ -6,7 +6,7 @@ import java.io.File
 import org.fusesource.leveldbjni.JniDBFactory._
 import org.iq80.leveldb.Options
 import us.woop.pinger.analytics.processing.Collector
-import us.woop.pinger.data.actor.PingPongProcessor
+import us.woop.pinger.client.PingPongProcessor
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.persistence.Format._
 import us.woop.pinger.data.persistence.Format.Server

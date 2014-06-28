@@ -1,6 +1,7 @@
 package us.woop.pinger.analytics.actor
 
-import us.woop.pinger.data.actor.PingPongProcessor.Server
+import us.woop.pinger.client.PingPongProcessor
+import PingPongProcessor.Server
 import akka.actor._
 import akka.actor.ActorDSL._
 import scalaz.concurrent.Task

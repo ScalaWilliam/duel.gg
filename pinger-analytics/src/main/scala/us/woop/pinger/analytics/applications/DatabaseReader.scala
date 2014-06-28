@@ -1,5 +1,6 @@
 package us.woop.pinger.analytics.applications
 
+import us.woop.pinger.client.PingPongProcessor
 import us.woop.pinger.data.persistence.Format._
 
 import collection.JavaConverters._
@@ -7,7 +8,6 @@ import us.woop.pinger.data.persistence.Format.Server
 import us.woop.pinger.data.persistence.Format.ServerIndexIndexKey
 import akka.util.ByteString
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
-import us.woop.pinger.data.actor.PingPongProcessor
 import org.iq80.leveldb.{DBIterator, DB}
 import us.woop.pinger.Extractor
 

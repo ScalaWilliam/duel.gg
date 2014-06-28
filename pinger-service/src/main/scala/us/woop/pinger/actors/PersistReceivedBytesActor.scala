@@ -1,21 +1,22 @@
 package us.woop.pinger.actors
 
 import java.io.File
+
 import akka.actor.ActorDSL._
 import akka.actor.ActorLogging
-import scala.util.control.NonFatal
-import org.iq80.leveldb._
-import org.fusesource.leveldbjni.JniDBFactory._
 import org.iq80.leveldb
-import us.woop.pinger.data.actor.{PersistRawData, PingPongProcessor}
-import us.woop.pinger.data.persistence.{Persistence, Format}
-import us.woop.pinger.data.persistence.Format.{ServerIndexIndexKey, ServerDataKey, ServerIndexKey}
+import org.iq80.leveldb._
+import us.woop.pinger.client.PingPongProcessor
+import us.woop.pinger.data.persistence.Format.{ServerDataKey, ServerIndexIndexKey}
+import us.woop.pinger.data.persistence.{Format, Persistence}
+
+import scala.util.control.NonFatal
 
 
 class PersistReceivedBytesActor(target: File) extends Act with ActorLogging {
 
-  import PersistRawData.DatabaseUseException
-  import PingPongProcessor.ReceivedBytes
+  import us.woop.pinger.client.PingPongProcessor.ReceivedBytes
+  import us.woop.pinger.data.actor.PersistRawData.DatabaseUseException
 
   var db: DB = _
 
