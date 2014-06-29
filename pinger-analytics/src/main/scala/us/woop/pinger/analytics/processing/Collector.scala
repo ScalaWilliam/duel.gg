@@ -4,11 +4,11 @@ import akka.stream.Transformer
 import akka.stream.scaladsl.Flow
 import org.joda.time.format.ISODateTimeFormat
 import org.reactivestreams.api.Producer
-import us.woop.pinger.PingPongProcessor
 import us.woop.pinger.analytics.data.{GameData, ModesList}
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.ParsedTypedMessageConvertedServerInfoReply
+import us.woop.pinger.data.persistence.Format.Server
 
 import scala.annotation.tailrec
 import scala.collection.immutable
@@ -71,7 +71,7 @@ object Collector {
 
   def multiplexFlows(proc: Producer[ParsedMessage]): Flow[GameData] =
     Flow(proc).transform(new Transformer[ParsedMessage, GameData]{
-      var stateMap = Map.empty[PingPongProcessor.Server, Open].withDefaultValue(NoGameOpen)
+      var stateMap = Map.empty[Server, Open].withDefaultValue(NoGameOpen)
       override def onNext(gameData: ParsedMessage): Seq[GameData] = {
         val nextState = stateMap(gameData.server).process.apply(gameData)
         stateMap = stateMap.updated(gameData.server, nextState)
@@ -112,7 +112,7 @@ object Collector {
     }.getOrElse {
       Left(
       <othergame>
-        <server>{x.firstTime.server.ip.ip}:{x.firstTime.server.port}</server>
+        <server>{x.firstTime.server.ip}:{x.firstTime.server.port}</server>
         <map>{x.firstTime.message.mapname}</map>
         <timestamp>{ISODateTimeFormat.dateTimeNoMillis().print(x.firstTime.time)}</timestamp>
         {x.firstTime.message.gamemode.flatMap(ModesList.modes.get).toSeq.map{mode => <mode>{mode.name}</mode>}}

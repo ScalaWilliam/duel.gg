@@ -1,5 +1,6 @@
 package us.woop.pinger.analytics.applications
 
+import us.woop.pinger.Extractor
 import us.woop.pinger.data.persistence.Format._
 
 import collection.JavaConverters._
@@ -8,7 +9,6 @@ import us.woop.pinger.data.persistence.Format.ServerIndexIndexKey
 import akka.util.ByteString
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import org.iq80.leveldb.{DBIterator, DB}
-import us.woop.pinger.{PingPongProcessor, Extractor}
 
 object DatabaseReader {
   
@@ -39,8 +39,8 @@ object DatabaseReader {
         None
     }.takeWhile(_.isDefined).flatMap{_.toIterator}.flatMap{
       case ((index,server), data) =>
-        val one = for { v <- exxa apply data } yield ParsedMessage(PingPongProcessor.Server(server.ip, server.port), index, v)
-        List(ParsedMessage(PingPongProcessor.Server(server.ip, server.port), index, data -> one))
+        val one = for { v <- exxa apply data } yield ParsedMessage(Server(server.ip, server.port), index, v)
+        List(ParsedMessage(Server(server.ip, server.port), index, data -> one))
     }
   }
   def getParsedMessages(iterator: DBIterator): Iterator[ParsedMessage] = {
@@ -50,7 +50,7 @@ object DatabaseReader {
       case _ => None
     }.takeWhile(_.isDefined).flatMap{_.toIterator}.flatMap{
       case ((index,server), data) =>
-        for { v <- exxa apply data } yield ParsedMessage(PingPongProcessor.Server(server.ip, server.port), index, v)
+        for { v <- exxa apply data } yield ParsedMessage(Server(server.ip, server.port), index, v)
     }
   }
 

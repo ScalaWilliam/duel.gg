@@ -10,7 +10,7 @@ import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.persistence.Format._
 import us.woop.pinger.data.persistence.Format.Server
 import us.woop.pinger.data.persistence.Format.ServerIndexIndexKey
-import us.woop.pinger.{PingPongProcessor, Extractor}
+import us.woop.pinger.{Extractor}
 
 object ReadCollections extends App {
 
@@ -50,7 +50,7 @@ object ReadCollections extends App {
       case _ => None
     }.takeWhile{_.isDefined}.flatMap{_.toIterable}.collect {
       case ((index, server), data) =>
-        for { v <- exxa apply data } yield ParsedMessage(PingPongProcessor.Server(server.ip, server.port), index, v)
+        for { v <- exxa apply data } yield ParsedMessage(Server(server.ip, server.port), index, v)
     }.flatten
   }
 
@@ -70,7 +70,7 @@ object ReadCollections extends App {
       case _ => None
     }.takeWhile(_.isDefined).flatMap{_.toIterator}.flatMap{
       case ((index,server), data) =>
-      for { v <- exxa apply data} yield ParsedMessage(PingPongProcessor.Server(server.ip, server.port), index, v)
+      for { v <- exxa apply data} yield ParsedMessage(Server(server.ip, server.port), index, v)
     }
   }
   Collector.multiplexFlows(Flow(listEverythingPossible).toProducer(materializer)).map(Collector.processGameData).filter{_.isRight}.map{_.right.get}.take(50).foreach{
