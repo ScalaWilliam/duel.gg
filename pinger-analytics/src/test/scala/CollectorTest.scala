@@ -1,13 +1,10 @@
 import org.scalatest.{FunSuite, Matchers}
-import us.woop.pinger.PingPongProcessor
-import scalaz.stream.Process
 import us.woop.pinger.analytics.data.GameData
-import us.woop.pinger.analytics.processing.Collector
 import us.woop.pinger.analytics.processing.Collector.GetGameImperative
-import PingPongProcessor.Server
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
+import us.woop.pinger.data.persistence.Format.Server
 
 class CollectorTest extends FunSuite with Matchers {
   implicit class whenTran(x: Stream[ParsedMessage]) {

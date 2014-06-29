@@ -1,16 +1,14 @@
 package us.woop.pinger.analytics.processing
 
-import us.woop.pinger.PingPongProcessor
-import PingPongProcessor.Server
 import org.joda.time.format.ISODateTimeFormat
-import us.woop.pinger.PingPongProcessor
+import us.woop.pinger.analytics.data.ModesList.Weapon
+import us.woop.pinger.analytics.data.{GameData, ModesList}
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
-import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.{ParsedTypedMessageConvertedTeamScore, ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessagePlayerExtInfo}
+import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.{ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessageConvertedTeamScore, ParsedTypedMessagePlayerExtInfo}
+import us.woop.pinger.data.persistence.Format.Server
+
 import scala.util.Try
-import us.woop.pinger.analytics.data.ModesList
-import ModesList.Weapon
-import us.woop.pinger.analytics.data.GameData
 
 object ClanmatchMaker {
 
@@ -108,7 +106,7 @@ object ClanmatchMaker {
         _ <- gameMatching(cw).right
       } yield
         <teamgame>
-          <server>{cw.server.ip.ip}:{cw.server.port}</server>
+          <server>{cw.server.ip}:{cw.server.port}</server>
           <map>{cw.map}</map>
           <timestamp>{cw.timestamp}</timestamp>
           <duration>{meaningfulDuration(cw.gameDuration)}</duration>

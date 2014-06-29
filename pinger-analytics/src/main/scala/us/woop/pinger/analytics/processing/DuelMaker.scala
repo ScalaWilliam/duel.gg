@@ -1,15 +1,14 @@
 package us.woop.pinger.analytics.processing
 
 import org.joda.time.format.ISODateTimeFormat
-import us.woop.pinger.PingPongProcessor
+import us.woop.pinger.analytics.data.ModesList.Weapon
+import us.woop.pinger.analytics.data.{GameData, ModesList}
+import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
 import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.{ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessagePlayerExtInfo}
-import PingPongProcessor.Server
-import us.woop.pinger.data.ParsedPongs.ParsedMessage
+import us.woop.pinger.data.persistence.Format.Server
+
 import scala.util.Try
-import us.woop.pinger.analytics.data.ModesList
-import ModesList.Weapon
-import us.woop.pinger.analytics.data.GameData
 
 object DuelMaker {
 
@@ -109,7 +108,7 @@ object DuelMaker {
       _ <- (if (duel.players.size < 2) Left(s"Not enough players") else Right(duel)).right
     } yield
     <duel>
-      <server>{duel.server.ip.ip}:{duel.server.port}</server>
+      <server>{duel.server.ip}:{duel.server.port}</server>
       <map>{duel.map}</map>
       <timestamp>{duel.timestamp}</timestamp>
       <mode>{duel.mode}</mode>
