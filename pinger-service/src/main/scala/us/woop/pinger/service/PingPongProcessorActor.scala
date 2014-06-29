@@ -15,7 +15,6 @@ import scala.util.Random
 
 object PingPongProcessor {
 
-
   case class BadHash(server: Server, time: Long, fullMessage: ByteString, expectedHash: ByteString, haveHash: ByteString)
   case class ReceivedBytes(server: Server, time: Long, message: ByteString)
   case class Ping(server: Server)
