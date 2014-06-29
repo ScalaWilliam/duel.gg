@@ -30,9 +30,9 @@ class PingerControllerIT(sys: ActorSystem) extends TestKit(sys) with FlatSpecLik
     val pingerService = parentedProbe(Props(classOf[PingerController]))
     expectMsg(PingerController.Ready)
     pingerService ! Monitor(server)
-    forExactly(1, results) { _ shouldBe a [ServerStateChanged] }
     // expect a state change
     val results = receiveN(17, 2.seconds)
+    forExactly(1, results) { _ shouldBe a [ServerStateChanged] }
     forExactly(8, results) { _ shouldBe a [ReceivedBytes] }
     forExactly(8, results) { _ shouldBe a [ExtractedMessage[_]] }
     val probe = TestProbe()
