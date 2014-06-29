@@ -4,8 +4,6 @@ import org.scalatest.{Inspectors, WordSpecLike, Matchers}
 import org.scalatest.matchers.{Matcher, MatchResult}
 import akka.util.ByteString
 import scala.util.Try
-import org.scalatest.junit.JUnitRunner
-import org.junit.runner.RunWith
 import ParsedPongs._
 import ParsedPongs.Uptime
 import ParsedPongs.PlayerCns
@@ -14,7 +12,6 @@ import ParsedPongs.PlayerExtInfo
 import ParsedPongs.HopmodUptime
 import us.woop.pinger.PongParser
 
-@RunWith(classOf[JUnitRunner])
 class MappingParsingTest extends WordSpecLike with Matchers with Inspectors {
 
   def parseAs(expected: Any) = new Matcher[ByteString] {
