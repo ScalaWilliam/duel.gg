@@ -1,9 +1,11 @@
 package us.woop.pinger.service
 import akka.actor.ActorDSL._
-import akka.actor.{ActorRef, Kill, Props}
+import akka.actor.{ActorRef, PoisonPill, Props}
 import us.woop.pinger.data.Stuff.Server
-import us.woop.pinger.service.PingerController.{Unmonitor, Monitor}
-import PingPongProcessor._
+import us.woop.pinger.service.PingPongProcessor._
+import us.woop.pinger.service.PingerController.{Monitor, Unmonitor}
+import us.woop.pinger.service.RawToExtracted.ExtractedMessage
+import us.woop.pinger.service.individual.ServerMonitor.ServerStateChanged
 import us.woop.pinger.service.individual.ServerSupervisor
 
 /**
@@ -21,46 +23,56 @@ object PingerController {
   case class Unmonitor(server: Server)
 }
 class PingerController extends Act with ActWithStash {
-  case class Pinger(actorRef: ActorRef)
+
+  case class Dependencies(pinger: ActorRef, parser: ActorRef)
 
   val servers = scala.collection.mutable.Map[Server, ActorRef]()
 
   whenStarting {
-    self ! Pinger(context.actorOf(Props[PingPongProcessorActor], "pinger"))
-    context.system.eventStream.subscribe(self, classOf[Ping])
+    self ! Dependencies(
+      pinger = context.actorOf(Props[PingPongProcessorActor], "pinger"),
+      parser = context.actorOf(Props[RawToExtracted], "parser")
+    )
   }
 
-  become {
-    case _: Monitor => stash()
-    case _: Unmonitor => stash()
-    case _: Ready => stash()
-    case Pinger(pinger) =>
-      become {
-        case m: Monitor => stash()
-        case m: Unmonitor => stash()
+  def ready(pinger: ActorRef, parser: ActorRef): Receive = {
+    case badHash: BadHash if servers contains badHash.server =>
+      servers(badHash.server) ! badHash
+      context.parent ! badHash
+    case receivedBytes: ReceivedBytes if servers contains receivedBytes.server =>
+      parser ! receivedBytes
+      context.parent ! receivedBytes
+    case serverStateChange: ServerStateChanged =>
+      context.parent ! serverStateChange
+    case e: ExtractedMessage[_] if servers contains e.server =>
+      servers(e.server) ! e
+      context.parent ! e
+    case Monitor(server) =>
+      val actorName = s"${server.ip.ip}:${server.port}"
+      servers.getOrElseUpdate(
+        key = server,
+        op = context.actorOf(
+          name = actorName,
+          props = Props(classOf[ServerSupervisor], server)
+        )
+      )
+    case Unmonitor(server) =>
+      servers.remove(server).foreach(_ ! PoisonPill)
+    case p: Ping =>
+      pinger ! p
+  }
 
+
+  become {
+    case Dependencies(pinger, parser) =>
+      become {
         case Ready(addr) =>
           unstashAll()
           context.parent ! PingerController.Ready
-          become {
-            case badHash: BadHash =>
-              context.system.eventStream.publish(badHash)
-            case receivedBytes: ReceivedBytes =>
-              context.system.eventStream.publish(receivedBytes)
-            case Monitor(server) =>
-              val actorName = s"${server.ip.ip}:${server.port}"
-              servers.getOrElseUpdate(
-                key = server,
-                op = context.actorOf(
-                  name = actorName,
-                  props = Props(classOf[ServerSupervisor], server)
-                )
-              )
-            case Unmonitor(server) =>
-              servers.remove(server).foreach(_ ! Kill)
-            case p: Ping =>
-              pinger ! p
-          }
+          become(ready(pinger, parser))
+        case _ => stash()
       }
+    case _ => stash()
   }
+
 }

@@ -1,52 +1,76 @@
 package us.woop.pinger.referencedata
 
-import akka.actor.Actor._
-import akka.actor.ActorDSL._
-import akka.actor.{ActorLogging, ActorSystem, ActorRef}
-import akka.event.LoggingReceive
-import akka.io.{Udp, IO}
-import akka.util.ByteString
 import java.net.InetSocketAddress
+
+import akka.actor.ActorDSL._
+import akka.actor.{ActorLogging, ActorRef}
+import akka.event.LoggingReceive
+import akka.io.{IO, Udp}
+import akka.util.ByteString
 
 /** 01/02/14 */
 object SimpleUdpServer {
 
-  type Respond2 = PartialFunction[(List[Int] => Unit, List[Int]), Unit]
+  case class Ready(address: InetSocketAddress)
 
-  case class Ready(to: InetSocketAddress)
+  class SauerbratenPongServer(address: InetSocketAddress) extends Act with ActorLogging {
 
-  def udpServer2(local: InetSocketAddress, status: ActorRef)(respond: Respond2)(orMore: Receive = emptyBehavior)(implicit actorSystem: ActorSystem) =
-    actor(actorSystem, s"""server:${local.toString.replaceAllLiterally("/", "")}""")(new Act with ActorLogging {
-      IO(Udp) ! Udp.Bind(self, local)
+    whenStarting {
+      import context.system
+      IO(Udp) ! Udp.Bind(self, address)
+    }
 
-      def responding(socket: ActorRef): Receive = LoggingReceive {
-        case a@Udp.Received(data, from) =>
+    type MapsBytes = PartialFunction[Vector[Int], Vector[Vector[Int]]]
 
-          val respondFunction = (bytes: List[Int]) => {
-            socket ! Udp.Send(ByteString(bytes.map(_.toByte): _*), from)
-          }
-          val process: Respond2 = respond orElse {
-            case a@(aa, b) =>
-              println(s"Not matched: $a")
-              log.info(s"Ignored client request from '$from' with data '$data'")
-          }
+    val recombine = (_: Vector[Int]) ++ (_: Vector[Int]) ++ (_: Vector[Int])
 
-          process((respondFunction, data.map(_.toInt).toList))
+    def mapped(socket: ActorRef, mappings: MapsBytes) = LoggingReceive {
+      case message @ Udp.Received(data, clientAddress) if mappings.isDefinedAt(data.map(_.toInt).toVector) =>
+        log.debug("Server at {} received input: {}", address, message)
+        val dataBytes = data.map(_.toInt).toVector
+        val head = dataBytes.take(3)
+        val hash = dataBytes.drop(3)
+        val recombiner = recombine.curried(head)(hash)
+        mappings.apply(dataBytes).map(recombiner).map{
+          x =>
+            ByteString(x.map(_.toByte) :_*)
+        }.map(Udp.Send(_, clientAddress)).foreach{ response =>
+          log.debug("Server at {} responded with: {}", address, response)
+          socket ! response
+        }
+    }
 
-        case Udp.Unbind =>
-          socket ! Udp.Unbind
-        case Udp.Unbound =>
-          context.stop(self)
-      }
+    def restOfUdp(socket: ActorRef) = LoggingReceive {
+      case Udp.Unbind =>
+        socket ! Udp.Unbind
+      case Udp.Unbound =>
+        context.stop(self)
+    }
 
+    becomeStart(restOfUdp)
+
+    def becomeStart(fn: ActorRef => Receive) {
       become {
-
         case Udp.Bound(boundToAddress) =>
-          val socket = sender()
-          log.info(s"Server successfully bound to $boundToAddress")
-          become(responding(socket) orElse orMore)
-          status ! Ready(boundToAddress)
+          context.parent ! Ready(boundToAddress)
+          become(fn(sender()))
       }
-    })
+    }
+
+  }
+
+  class GoodHashSauerbratenPongServer(address: InetSocketAddress) extends SauerbratenPongServer(address) {
+    becomeStart { sender =>
+      mapped(sender, StubServer.mappings) orElse restOfUdp(sender)
+    }
+  }
+  class BadHashSauerbratenPongServer(address: InetSocketAddress) extends SauerbratenPongServer(address) {
+
+    override val recombine = (_: Vector[Int]) ++ Vector(1) ++ (_: Vector[Int]) ++ (_: Vector[Int])
+
+    becomeStart { sender =>
+      mapped(sender, StubServer.mappings) orElse restOfUdp(sender)
+    }
+  }
 
 }

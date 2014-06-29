@@ -13,7 +13,6 @@ import scala.concurrent.duration._
  * Send pings out at intervals dependent on the current server state.
  * Either: 3 seconds (Online-Active/Initialising), or 30 seconds (Offline/Online-Empty)
  * We don't want to get too much crappy data coming in.
- * @param server
  */
 class ServerRateController(server: Server) extends Act {
 
@@ -24,7 +23,6 @@ class ServerRateController(server: Server) extends Act {
   case object Refresh
   
   whenStarting {
-    context.system.eventStream.subscribe(self, classOf[ServerStateChanged])
     self ! Start
   }
 
@@ -43,7 +41,7 @@ class ServerRateController(server: Server) extends Act {
     {
 
       case Refresh =>
-        context.system.eventStream.publish(Ping(server))
+        context.parent ! Ping(server)
 
       case ServerStateChanged(`server`, Online(Active)) =>
         changeRate(3.seconds)

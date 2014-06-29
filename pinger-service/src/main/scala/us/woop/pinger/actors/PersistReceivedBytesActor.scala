@@ -49,7 +49,7 @@ class PersistReceivedBytesActor(target: File) extends Act with ActorLogging {
       ensureFirstIndex(sserver, key)
       db.put(key, msg.message.toArray, wo)
     } catch {
-      case NonFatal(e) => e
+      case NonFatal(e) => throw e
     }
   }
 

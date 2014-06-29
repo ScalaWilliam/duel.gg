@@ -2,43 +2,68 @@ package us.woop.pinger.service
 
 import java.net.InetSocketAddress
 
-import akka.actor.ActorDSL._
-import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.testkit.{ImplicitSender, TestKit}
-import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
+import akka.actor.{ActorSystem, PoisonPill, Props}
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import org.scalatest.{Inspectors, BeforeAndAfterAll, FlatSpecLike, Matchers}
+import us.woop.pinger.Thing
 import us.woop.pinger.data.Stuff.Server
-import us.woop.pinger.referencedata.{SimpleUdpServer, StubServer}
+import us.woop.pinger.referencedata.SimpleUdpServer
+import us.woop.pinger.referencedata.SimpleUdpServer.GoodHashSauerbratenPongServer
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 import us.woop.pinger.service.PingerController.Monitor
+import us.woop.pinger.service.RawToExtracted.ExtractedMessage
+import us.woop.pinger.service.individual.ServerMonitor.ServerStateChanged
+class PingerControllerIT(sys: ActorSystem) extends TestKit(sys) with FlatSpecLike with Matchers with ImplicitSender with BeforeAndAfterAll with Thing with Inspectors {
 
-class PingerControllerIT(sys: ActorSystem) extends TestKit(sys) with FunSuiteLike with Matchers with ImplicitSender with BeforeAndAfterAll {
+  def this() = this(ActorSystem())
 
-  def this() = this(ActorSystem("MySpec"))
+  val server = Server("127.0.0.1", 5010)
 
-  test("Pinger service integrates properly with a monitor message + stub") {
-
-    val server = Server("127.0.0.1", 5010)
-
-    StubServer.makeStub(new InetSocketAddress(server.ip.ip, server.port + 1), testActor)
-
+  override def beforeAll() {
+    parentedProbe(Props(classOf[GoodHashSauerbratenPongServer], new InetSocketAddress(server.ip.ip, server.port + 1)))
     expectMsgClass(classOf[SimpleUdpServer.Ready])
+  }
 
-    // create a layer for forwarding messages back
-    actor(new Act {
-      testActor ! context.actorOf(Props(classOf[PingerController]))
-      become { case any => testActor forward any }
-    })
+  "Pinger service" should "integrate properly with a monitor message + stub" in {
+    import concurrent.duration._
 
-    val pinger = expectMsgClass(classOf[ActorRef])
-
+    val pingerService = parentedProbe(Props(classOf[PingerController]))
     expectMsg(PingerController.Ready)
+    pingerService ! Monitor(server)
+    forExactly(1, results) { _ shouldBe a [ServerStateChanged] }
+    // expect a state change
+    val results = receiveN(17, 2.seconds)
+    forExactly(8, results) { _ shouldBe a [ReceivedBytes] }
+    forExactly(8, results) { _ shouldBe a [ExtractedMessage[_]] }
+    val probe = TestProbe()
+    probe watch pingerService
+    pingerService ! PoisonPill
+    probe.expectTerminated(pingerService)
+    expectNoMsg()
+  }
 
-    pinger ! Monitor(server)
+  "Pinger service" should "send a message for an active server every three seconds" in {
 
-    system.eventStream.subscribe(testActor, classOf[ReceivedBytes])
+    val pingerService = parentedProbe(Props(classOf[PingerController]))
+    expectMsg(PingerController.Ready)
+    pingerService ! Monitor(server)
+    import concurrent.duration._
+    val stuffs = receiveWhile(max = 2.seconds){ case x => x }
+    stuffs should have size 17
+    expectNoMsg(1.second)
+    receiveN(16, 2.seconds)
 
-    // expect a successful response. Yay!
-    expectMsgClass(classOf[ReceivedBytes])
+    val probe = TestProbe()
+    probe watch pingerService
+    pingerService ! PoisonPill
+    probe.expectTerminated(pingerService)
+
+    expectNoMsg()
 
   }
+
+  override def afterAll() {
+    TestKit.shutdownActorSystem(system)
+  }
+
 }
