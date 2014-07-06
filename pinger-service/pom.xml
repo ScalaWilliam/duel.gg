@@ -13,8 +13,23 @@
     <artifactId>pinger-service</artifactId>
     <version>1.0</version>
 
-
     <dependencies>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jcraft</groupId>
+            <artifactId>jsch</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor_${scala.version.short}</artifactId>
@@ -26,6 +41,14 @@
         <dependency>
             <groupId>ladder.sauer</groupId>
             <artifactId>pinger-data</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ladder.sauer</groupId>
+            <artifactId>pinger-analytics</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe.scala-logging</groupId>
@@ -91,12 +114,10 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.7</version>
                 <configuration>
                     <skipTests>true</skipTests>
                 </configuration>
@@ -104,11 +125,14 @@
             <plugin>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
-                <version>1.0</version>
                 <configuration>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>Results.txt</filereports>
+                    <systemProperties>
+                        <aws.accessKeyId>${us.woop.pinger.writer.aws.accessKeyId}</aws.accessKeyId>
+                        <aws.secretKey>${us.woop.pinger.writer.aws.secretKey}</aws.secretKey>
+                    </systemProperties>
                 </configuration>
                 <executions>
                     <execution>
@@ -122,7 +146,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.2</version>
                 <executions>
                     <execution>
                         <phase>package</phase>

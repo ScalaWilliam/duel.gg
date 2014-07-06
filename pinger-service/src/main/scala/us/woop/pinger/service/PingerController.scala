@@ -35,6 +35,19 @@ class PingerController extends Act with ActWithStash {
     )
   }
 
+
+  become {
+    case Dependencies(pinger, parser) =>
+      become {
+        case Ready(addr) =>
+          unstashAll()
+          context.parent ! PingerController.Ready
+          become(ready(pinger, parser))
+        case _ => stash()
+      }
+    case _ => stash()
+  }
+
   def ready(pinger: ActorRef, parser: ActorRef): Receive = {
     case badHash: BadHash if servers contains badHash.server =>
       servers(badHash.server) ! badHash
@@ -62,17 +75,5 @@ class PingerController extends Act with ActWithStash {
       pinger ! p
   }
 
-
-  become {
-    case Dependencies(pinger, parser) =>
-      become {
-        case Ready(addr) =>
-          unstashAll()
-          context.parent ! PingerController.Ready
-          become(ready(pinger, parser))
-        case _ => stash()
-      }
-    case _ => stash()
-  }
 
 }

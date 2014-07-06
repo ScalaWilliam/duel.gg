@@ -3,7 +3,7 @@ package us.woop.pinger.service
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
-import us.woop.pinger.Thing
+import us.woop.pinger.ParentedProbe
 import us.woop.pinger.data.ParsedPongs.ServerInfoReply
 import us.woop.pinger.data.Stuff.Server
 import us.woop.pinger.service.PingPongProcessor.Ping
@@ -11,7 +11,7 @@ import us.woop.pinger.service.RawToExtracted.ExtractedMessage
 import us.woop.pinger.service.individual.ServerMonitor.{Active, Online, ServerStateChanged}
 import us.woop.pinger.service.individual.ServerSupervisor
 
-class ServerSupervisorSpec(sys: ActorSystem) extends TestKit(sys) with FunSuiteLike with Matchers with ImplicitSender with BeforeAndAfterAll with Thing {
+class ServerSupervisorSpec(sys: ActorSystem) extends TestKit(sys) with FunSuiteLike with Matchers with ImplicitSender with BeforeAndAfterAll with ParentedProbe {
 
   def this() = this(ActorSystem())
 

@@ -13,7 +13,9 @@ object ParsedPongs {
   case class HopmodUptime(uptime: Uptime, hopmodVersion: Int, hopmodRevision: Int, buildTime: String)
   case class PlayerCns(version: Int, cns: List[Int])
   case class PlayerExtInfo(version: Int, cn: Int, ping: Int, name: String, team: String, frags: Int,
-                           deaths: Int, teamkills: Int, accuracy: Int, health: Int, armour: Int, gun: Int, privilege: Int, state: Int, ip: String)
+                           deaths: Int, teamkills: Int, accuracy: Int, health: Int, armour: Int, gun: Int, privilege: Int, state: Int, ip: String) {
+    override def toString = s"[$ip] $name: $frags - ${super.toString}"
+  }
   case class ThomasExt(ds: List[ThomasD], r: ThomasR)
   case class ThomasD(data: List[Int])
   case class ThomasR(s1: Option[String], s2: String, data: List[Int])
@@ -24,7 +26,7 @@ object ParsedPongs {
 
     case class ConvertedThomasExt(i: Int, dataA: List[Int], dataB: List[Int], s1: String, s2: String)
     case class ConvertedHopmodUptime(version: Int, totalsecs: Int, hopmodVersion: Int, hopmodRevision: Int, buildTime: String)
-    case class ConvertedServerInfoReply(clients: Int, protocol: Int, gamemode: Option[Int], remain: Int, maxclients: Int,
+    case class ConvertedServerInfoReply(clients: Int, protocol: Int, gamemode: Int, remain: Int, maxclients: Int,
                                         gamepaused: Boolean, gamespeed: Int, mapname: String, description: String)
 
     case class ConvertedTeamScore(scoreNum: Int, version: Int, gamemode: Int, remain: Int, name: String, score: Int, baseMap: Boolean, baseScores: List[Int])
@@ -128,13 +130,11 @@ object ParsedPongs {
       }
     }
 
-    val validGamemodeIs = (0 to 22).toList
-
     object ConvertServerInfoReply {
       def convert (obj: ServerInfoReply): ConvertedServerInfoReply = {
         import obj._
         ConvertedServerInfoReply(
-          clients = clients, protocol = protocol, gamemode = validGamemodeIs.lift.apply(gamemode),
+          clients = clients, protocol = protocol, gamemode = gamemode,
           remain = remain, maxclients = maxclients, gamepaused = gamepaused.getOrElse(0) != 0,
           gamespeed = gamespeed.getOrElse(100), mapname = mapname, description = description
         )

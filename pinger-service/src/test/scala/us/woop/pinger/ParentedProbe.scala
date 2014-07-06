@@ -4,7 +4,7 @@ import akka.actor.ActorDSL._
 import akka.actor.{ActorRef, Props}
 import akka.testkit.TestKit
 
-trait Thing {
+trait ParentedProbe {
   this: TestKit =>
 
   def parentedProbe(props: Props): ActorRef = {

@@ -40,7 +40,23 @@ object DatabaseReader {
     }.takeWhile(_.isDefined).flatMap{_.toIterator}.flatMap{
       case ((index,server), data) =>
         val one = for { v <- exxa apply data } yield ParsedMessage(Server(server.ip, server.port), index, v)
-        List(ParsedMessage(Server(server.ip, server.port), index, data -> one))
+        one
+//        List(ParsedMessage(Server(server.ip, server.port), index, data -> one))
+//        List(ParsedMessage(Server(server.ip, server.port), index, data -> one))
+    }
+  }
+  def getMapParsedMessages(iterator: DBIterator, onlyServer: Server)  = {
+    iterator.asScala.map{ i => i.getKey -> i.getValue }.collect{
+      case (DecodeServerDataKey(ServerDataKey(index, `onlyServer`)), data) =>
+        Option((index -> onlyServer) -> ByteString(data))
+      case _ =>
+        None
+    }.takeWhile(_.isDefined).flatMap{_.toIterator}.map{
+      case ((index,server), data) =>
+        val one = for { v <- exxa apply data } yield ParsedMessage(Server(server.ip, server.port), index, v)
+        (index, data, one.toVector)
+//        List(ParsedMessage(Server(server.ip, server.port), index, data -> one))
+//        List(ParsedMessage(Server(server.ip, server.port), index, data -> one))
     }
   }
   def getParsedMessages(iterator: DBIterator): Iterator[ParsedMessage] = {
@@ -68,6 +84,14 @@ object DatabaseReader {
     val startAt = iter.next().getValue
     iter.seek(startAt)
     getParsedMessages(iter, serverDataStart)
+  }
+
+  def listMappedServerData(db: DB, serverDataStart: Server) = {
+    val iter = db.iterator()
+    iter.seek(serverDataStart.toBytes)
+    val startAt = iter.next().getValue
+    iter.seek(startAt)
+    getMapParsedMessages(iter, serverDataStart)
   }
 
 }
