@@ -5,13 +5,13 @@ import java.net.InetSocketAddress
 import akka.actor.{PoisonPill, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
-import us.woop.pinger.Thing
+import us.woop.pinger.ParentedProbe
 import us.woop.pinger.data.Stuff.Server
 import us.woop.pinger.referencedata.SimpleUdpServer
 import us.woop.pinger.referencedata.SimpleUdpServer.{BadHashSauerbratenPongServer, GoodHashSauerbratenPongServer}
 import us.woop.pinger.service.PingPongProcessor.{BadHash, Ping, ReceivedBytes}
 
-class PingPongProcessorActorSpec(sys: ActorSystem) extends TestKit(sys) with FunSuiteLike with Matchers with ImplicitSender with BeforeAndAfterAll with Thing {
+class PingPongProcessorActorSpec(sys: ActorSystem) extends TestKit(sys) with FunSuiteLike with Matchers with ImplicitSender with BeforeAndAfterAll with ParentedProbe {
 
   def this() = this(ActorSystem())
 

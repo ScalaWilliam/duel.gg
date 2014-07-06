@@ -1,144 +1,168 @@
 package us.woop.pinger.analytics.processing
 
 import org.joda.time.format.ISODateTimeFormat
-import us.woop.pinger.analytics.data.ModesList.Weapon
-import us.woop.pinger.analytics.data.{GameData, ModesList}
-import us.woop.pinger.data.ParsedPongs.ParsedMessage
-import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessage
-import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.{ParsedTypedMessageConvertedServerInfoReply, ParsedTypedMessagePlayerExtInfo}
+import org.scalactic.Accumulation._
+import org.scalactic._
+import us.woop.pinger.analytics.data.ModesList
+import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
+import us.woop.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
 import us.woop.pinger.data.persistence.Format.Server
 
-import scala.util.Try
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 object DuelMaker {
 
-  private def meaningfulDuration(seconds: Int): String = {
-    val minutes = meaningfulMinutes(seconds)
-    s"$minutes minutes"
+ case class PlayerLog(fragsLog: SortedMap[Long, Int], weaponsLog: SortedMap[Long, Int])
+  
+  case class PlayerStatistics(frags: Int, fragsLog: SortedMap[Int, Int], weapon: Int)
+  
+  val duelModeNames = Set("ffa", "instagib", "efficiency")
+
+  def isSwitch(from: ConvertedServerInfoReply, to: ConvertedServerInfoReply) =
+    from.remain < to.remain || from.mapname != to.mapname || from.gamemode != to.gamemode
+
+  type StateTransition = PartialFunction[ParsedMessage, DuelState Or Every[ErrorMessage]]
+
+  trait DuelState {
+    def gameHeader: GameHeader
+    def next: StateTransition
   }
-  private def meaningfulMinutes(seconds: Int): Int = {
-    Math.round(seconds.toDouble / 60).toInt
+
+  case class CompletedDuel(gameHeader: GameHeader, nextMessage: Option[ConvertedServerInfoReply],
+                           winner: Option[(PlayerId, PlayerStatistics)],
+                            playerStatistics: Map[PlayerId, PlayerStatistics],
+                            playedAt: Set[Int], duration: Int) extends DuelState {
+    lazy val next: StateTransition = throw new NotImplementedError("Should not get here...")
+    override def toString =
+      s"""|Header: $gameHeader
+         |Winner: $winner,
+         |Player statistics:
+         |${playerStatistics mkString "\n"}
+         |Duration: $duration
+         |Play activity: $playedAt
+         |Next message: $nextMessage
+       """.stripMargin
   }
 
-  private case class Duel(timestamp: String, server: Server, map: String, mode: String, winner: Option[String], gameDuration: Int, players: Map[String, Player], playing: Boolean, activeAt: List[Int])
+  case class GameHeader(startTime: Long, startMessage: ConvertedServerInfoReply, server: String, mode: String, map: String) {
+    def startTimeText: String = ISODateTimeFormat.dateTimeNoMillis().print(startTime)
+    override def toString =
+      s"""|Server: $server
+         |Mode: $mode
+         |Map: $map
+         |Start time: $startTimeText
+         |Start message: $startMessage
+       """.stripMargin
+  }
 
-  private case class Player(name: String, ip: String, fragsLog: Map[Int, Int], weaponsLog: Map[Int, Int], frags: Int, mainWeapon: Int)
+  case class PlayerId(name: String, ip: String)
 
-  private type PotentialGame = Either[String, Duel]
-  def makeDuel(gameData: GameData) = {
-
-    val initialDuel: PotentialGame = for {
-      cw <- Right{
-        import gameData.firstTime._
-        import message._
-        Duel(timestamp = ISODateTimeFormat.dateTimeNoMillis().print(gameData.firstTime.time), server = server, map = mapname, mode = gamemode.map {
-          _.toString
-        }.getOrElse(""), winner = None, gameDuration = 0, players = Map.empty, playing = true, activeAt = List.empty)
-      }.right
-
-      gameMode <- Try(cw.mode.toInt).map{Right(_)}.getOrElse{Left(s"Unknown mode: ${cw.mode}")}.right
-      modeDetail <- (ModesList.modes.get(gameMode) match {
-        case Some(mode) => Right(mode)
-        case None => Left(s"Mode $gameMode not found")
-      }).right
-      allowedMode <- (if (!modeDetail.keys.contains(ModesList.ModeParams.M_TEAM)) Right(true) else Left(s"Mode not a teammode")).right
-    } yield cw.copy(mode = modeDetail.name)
-
-    object PlayerInfoUpdate {
-      def unapply(msg: ParsedMessage) = for {
-        ParsedTypedMessagePlayerExtInfo(ParsedTypedMessage(_, _, playerExtInfo)) <- Option(msg)
-      } yield playerExtInfo
-    }
-    object ServerInfoUpdate {
-      def unapply(msg: ParsedMessage) = for {
-        ParsedTypedMessageConvertedServerInfoReply(ParsedTypedMessage(_, _, serverInfo)) <- Option(msg)
-      } yield serverInfo
+  object Duel {
+    
+    def beginDuelParsedMessage(parsedMessage: ParsedMessage): DuelState Or Every[ErrorMessage] = {
+      parsedMessage match {
+        case ParsedMessage(s, time, message: ConvertedServerInfoReply) =>
+          beginDuelCSIR(s, time, message)
+        case other =>
+          Bad(One(s"Input not a ConvertedServerInfoReply, found ${other.message.getClass.getName}"))
+      }
     }
 
-    val duelModes = List(1,4,6)
-    val duelCalculation = gameData.gameMessages.foldLeft[PotentialGame](initialDuel){
+    def beginDuelCSIR(server: Server, startTime: Long, message: ConvertedServerInfoReply): DuelState Or Every[ErrorMessage] = {
 
-      case (fault @ Left(_), _) => fault
+      val clients =
+        if (message.clients >= 2) Good(message.clients)
+        else Bad(One(s"Expected 2 or more clients, got ${message.clients}"))
 
-      case (Right(duel), ServerInfoUpdate(serverUpdate)) if duel.playing && serverUpdate.gamepaused =>
-        Right(duel.copy(playing = !duel.playing, gameDuration = duel.gameDuration + 3))
+      val duelModeName = ModesList.modes.get(message.gamemode).map(_.name) match {
+        case Some(modeName) if duelModeNames contains modeName  => Good(modeName)
+        case other => Bad(One(s"Mode $other (${message.gamemode})  not in $duelModeNames"))
+      }
 
-      case (Right(duel), ServerInfoUpdate(serverUpdate)) if !duel.playing && !serverUpdate.gamepaused =>
-        Right(duel.copy(playing = !duel.playing, gameDuration = duel.gameDuration + 3, activeAt = duel.activeAt :+ duel.gameDuration))
+      val hasEnoughTime =
+        if ( message.remain > 550 ) Good(true)
+        else Bad(One(s"Time remaining not enough: ${message.remain} (expected 550+ seconds)"))
 
-      case (Right(duel), ServerInfoUpdate(serverUpdate)) if duel.playing =>
-        Right(duel.copy(activeAt = duel.activeAt :+ duel.gameDuration, gameDuration = duel.gameDuration + 3))
+      withGood(clients, duelModeName, hasEnoughTime) { (_, modeName, _) =>
+        DuelTransitive(
+          gameHeader = GameHeader(startTime, message, s"${server.ip}:${server.port}", modeName, message.mapname),
+          playerLogs = Map.empty,
+          playing = !message.gamepaused,
+          playingAt = SortedSet.empty
+        )
+      }
+    }
+  }
 
-      case (Right(duel), PlayerInfoUpdate(info)) if info.state < 5 =>
-        val player = duel.players.getOrElse(info.name, Player(info.name, info.ip, Map.empty, Map.empty, frags = 0, mainWeapon = 0))
-        if (player.ip != info.ip) {
-          Left(s"IP for '${info.name}' has changed from '${player.ip}' to '${info.ip}. Discarding duel")
-        } else {
-          val newFragsLog = player.fragsLog.updated(meaningfulMinutes(duel.gameDuration), info.frags)
-          if ( info.teamkills > 0  ) {
-            println("OK")
-          }
-          val newWeaponsLog = player.weaponsLog.updated(duel.gameDuration, info.gun)
-          val mainWeapon = newWeaponsLog.toList.map{_.swap}.groupBy{_._1}.mapValues{_.size}.toList.sorted.reverse.head._1
-          val newPlayers =
-            duel.players.updated(
-              player.name,
-              player.copy(
-                fragsLog = newFragsLog,
-                weaponsLog = newWeaponsLog,
-                frags = info.frags,
-                mainWeapon = mainWeapon
-              )
+
+  case class DuelTransitive(gameHeader: GameHeader,
+                            playerLogs: Map[PlayerId, PlayerLog],
+                  playing: Boolean, playingAt: Set[Long]) extends DuelState {
+
+    override val next: StateTransition = {
+      case ParsedMessage(_, time, info: PlayerExtInfo) if info.state <= 3 =>
+        val playerId = PlayerId(info.name, info.ip)
+        val player = playerLogs.getOrElse(playerId, PlayerLog(SortedMap.empty, SortedMap.empty))
+        Good(copy(
+          playerLogs = playerLogs.updated(
+            playerId,
+            player.copy(
+              fragsLog = player.fragsLog.updated(time, info.frags),
+              weaponsLog = player.weaponsLog.updated(time, info.gun)
             )
-          if ( newPlayers.size > 2 ) {
-            Left(s"More than 2 players in-game (${info.name} joined)")
-          } else {
-            Right(duel.copy(players = newPlayers))
-          }
-        }
-      case (Right(duel), _ ) => Right(duel)
+          )
+        ))
+      case ParsedMessage(_, time, info: ConvertedServerInfoReply) if isSwitch(gameHeader.startMessage, info) =>
+        completeDuel(Option(info))
+      case ParsedMessage(_, time, update: ConvertedServerInfoReply) if !update.gamepaused && update.clients < 2 =>
+        Bad(One(s"Game has finished unexpectedly as now ${update.clients} clients"))
+      case ParsedMessage(_, time, update: ConvertedServerInfoReply) if !update.gamepaused =>
+        Good(copy(
+          playingAt = playingAt + time
+        ))
+      case other => Good(this)
     }
 
-    def gameMatching(game: Duel): PotentialGame =
-      if ( game.gameDuration > 280) Right(game) else Left(s"Game only lasted ~${game.gameDuration} seconds")
+    def completeDuel(nextMessage: Option[ConvertedServerInfoReply]): CompletedDuel Or Every[ErrorMessage] = {
 
-    for {
-      duel <- duelCalculation.right
-      _ <- gameMatching(duel).right
-      _ <- (if (duel.players.size < 2) Left(s"Not enough players") else Right(duel)).right
-    } yield
-    <duel>
-      <server>{duel.server.ip}:{duel.server.port}</server>
-      <map>{duel.map}</map>
-      <timestamp>{duel.timestamp}</timestamp>
-      <mode>{duel.mode}</mode>
-      <duration>{meaningfulDuration(duel.gameDuration)}</duration>
-      {
-      val sortedByScore = duel.players.mapValues{_.frags}.toList.sortBy{_._2}
-      if ( sortedByScore.map{_._2}.toSet.size > 1 ) {
-        val (name, winner) = sortedByScore.last
-        <winner>{name}</winner>
+      // per-minute player statistics (for frags log)
+      val playerStatistics = playerLogs.mapValues(player => {
+        val secondlyPlayerStatistics = PlayerStatistics(
+          frags = player.fragsLog.maxBy(_._1)._2,
+          fragsLog = player.fragsLog.map{case (a, b) => (a - gameHeader.startTime).toInt-> b},
+          weapon = player.weaponsLog.groupBy(_._2).mapValues(_.size).maxBy(_._2)._1
+        )
+        secondlyPlayerStatistics.copy(
+          fragsLog = SortedMap(secondlyPlayerStatistics.fragsLog.groupBy(_._1 / 60000).mapValues(_.maxBy(_._1)._2).toVector :_*)
+          .map{case(t, v) => (t + 1) -> v}.filterKeys(_ <= 10)
+        )
+      })
+
+      // per-minute activity of games
+      val gameActive = playingAt.map(_ - gameHeader.startTime).map(_.toInt).groupBy(_ / 60000).mapValues(_.max / 60000).values.map(_+1).filter(_<=10).toSet
+
+      val activeForOver8Minutes =
+        if (gameActive.size >= 8) Good(gameActive)
+        else Bad(One(s"Game was active ${gameActive.size} minutes, expected at least 8 minutes"))
+
+      val totalNumberOfPlayers =
+        if (playerStatistics.size == 2) Good(playerStatistics)
+        else Bad(One(s"Game had != 2 players, found $playerStatistics"))
+
+      withGood(activeForOver8Minutes, totalNumberOfPlayers) {
+        (gameActivity, playerStats) =>
+          CompletedDuel(
+            winner = Option {
+              playerStats.groupBy(_._2.frags).filter(_._2.size == 1)
+            }.filter(_.nonEmpty).flatMap(_.maxBy(_._2.size)._2.headOption),
+            gameHeader = gameHeader,
+            nextMessage = nextMessage,
+            playerStatistics = playerStats,
+            playedAt = gameActivity,
+            duration = gameActivity.max
+          )
       }
-      }
-      {
-        for {
-          (name, player) <- duel.players
-        } yield <player>
-        <name>{name}</name>
-          {Weapon(player.mainWeapon).xml}
-          <frags>{player.frags}</frags>
-          <ip>{player.ip}</ip>
-          {
-          List(player.fragsLog).filter{_.nonEmpty}.map{sl =>
-            <log>{
-              val gameMinutes = meaningfulMinutes(duel.gameDuration)
-            (1 to gameMinutes).flatMap{ min => sl.get(min).toList.map{min -> _}}.map {
-              case (y, x) => s"""$y:$x"""
-            }.mkString(",")}</log>}}
-        </player>
-      }
-    </duel>
+    }
   }
-
 
 }

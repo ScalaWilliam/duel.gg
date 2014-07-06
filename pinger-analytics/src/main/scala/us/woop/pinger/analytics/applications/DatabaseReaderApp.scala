@@ -1,15 +1,9 @@
 package us.woop.pinger.analytics.applications
 
-import java.io.{PrintWriter, File}
+import java.io.{File, PrintWriter}
+
 import org.fusesource.leveldbjni.JniDBFactory._
 import org.iq80.leveldb.Options
-import us.woop.pinger.analytics.data.GameData
-import us.woop.pinger.data.ParsedPongs.{PlayerExtInfo, ParsedMessage}
-import scala.annotation.tailrec
-import us.woop.pinger.analytics.processing.Collector._
-import us.woop.pinger.analytics.processing.Collector
-import us.woop.pinger.data.ParsedPongs.TypedMessages.ParsedTypedMessages.ParsedTypedMessageConvertedServerInfoReply
-import org.joda.time.DateTime
 import us.woop.pinger.data.persistence.Format
 
 

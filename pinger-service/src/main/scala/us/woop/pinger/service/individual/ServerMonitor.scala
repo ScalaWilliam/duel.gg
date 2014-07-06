@@ -7,7 +7,6 @@ import us.woop.pinger.data.Stuff.Server
 import us.woop.pinger.service.PingPongProcessor.{BadHash, ReceivedBytes}
 import us.woop.pinger.service.RawToExtracted.ExtractedMessage
 import us.woop.pinger.service.individual.ServerMonitor._
-
 import scala.concurrent.duration._
 
 object ServerMonitor {

@@ -1,22 +1,19 @@
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.Flow
-import akka.stream.{MaterializerSettings, FlowMaterializer}
-import akka.util.ByteString
 import java.io.File
+
+import akka.actor.ActorSystem
+import akka.stream.{FlowMaterializer, MaterializerSettings}
+import akka.util.ByteString
 import org.fusesource.leveldbjni.JniDBFactory._
 import org.iq80.leveldb.Options
-import us.woop.pinger.analytics.processing.Collector
+import us.woop.pinger.Extractor
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.persistence.Format._
-import us.woop.pinger.data.persistence.Format.Server
-import us.woop.pinger.data.persistence.Format.ServerIndexIndexKey
-import us.woop.pinger.{Extractor}
 
 object ReadCollections extends App {
 
   val target = new File("***REMOVED***/Projects/14/ladder.sauer/indexed-data/15-06")
   val db = factory.open(target, new Options())
-  import collection.JavaConverters._
+  import scala.collection.JavaConverters._
 
   def listServers() = {
     val iter = db.iterator()
@@ -70,16 +67,16 @@ object ReadCollections extends App {
       case _ => None
     }.takeWhile(_.isDefined).flatMap{_.toIterator}.flatMap{
       case ((index,server), data) =>
-      for { v <- exxa apply data} yield ParsedMessage(Server(server.ip, server.port), index, v)
+      for { v <- exxa apply data } yield ParsedMessage(Server(server.ip, server.port), index, v)
     }
   }
-  Collector.multiplexFlows(Flow(listEverythingPossible).toProducer(materializer)).map(Collector.processGameData).filter{_.isRight}.map{_.right.get}.take(50).foreach{
-//  Collector.multiplexFlows(Flow(datums).toProducer(materializer)).map(Collector.processGameData).foreach{
-    println
-  }.onComplete(materializer) {
-    x =>
-      println(s"Done! with $x")
-      system.shutdown()
-      db.close()
-  }
+//  Collector.multiplexFlows(Flow(listEverythingPossible).toProducer(materializer)).map(Collector.processGameData).filter{_.isRight}.map{_.right.get}.take(50).foreach{
+////  Collector.multiplexFlows(Flow(datums).toProducer(materializer)).map(Collector.processGameData).foreach{
+//    println
+//  }.onComplete(materializer) {
+//    x =>
+//      println(s"Done! with $x")
+//      system.shutdown()
+//      db.close()
+//  }
 }
