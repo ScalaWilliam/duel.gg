@@ -1,23 +1,18 @@
 package us.woop.pinger.service.publish
 
-import akka.actor.{PoisonPill, ActorSystem}
+import akka.actor.{ActorSystem, PoisonPill}
 import akka.testkit.{ImplicitSender, TestKit}
-import com.amazonaws.regions.Regions
-import org.scalatest.{BeforeAndAfterAll, Matchers, FunSuiteLike}
+import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
 import us.woop.pinger.analytics.processing.DuelMaker.CompletedDuel
-import us.woop.pinger.service.publish.PublishDuelsToS3Actor.{Persisted, StackedDuels, PushStackedDuels, S3Access}
-import us.woop.pinger.{MyId, AmazonCredentials, ParentedProbe}
+import us.woop.pinger.service.publish.PublishDuelsToS3Actor.{Persisted, PushStackedDuels, S3Access, StackedDuels}
+import us.woop.pinger.{MyId, ParentedProbe}
 
 
-class PublishDuelsToS3ActorTest(sys: ActorSystem) extends TestKit(sys) with FunSuiteLike with Matchers with ImplicitSender with BeforeAndAfterAll with ParentedProbe with AmazonCredentials {
+class PublishDuelsToS3ActorTest(sys: ActorSystem) extends TestKit(sys) with FunSuiteLike with Matchers with ImplicitSender with BeforeAndAfterAll with ParentedProbe  {
 
   def this() = this(ActorSystem())
 
   val access = S3Access(
-    accessKeyId = accessKeyId,
-    secretAccessKey = secretAccessKey,
-    bucketName = "duelgg-data",
-    region = Regions.EU_WEST_1,
     myId = MyId.default
   )
 

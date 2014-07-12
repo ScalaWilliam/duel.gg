@@ -1,6 +1,7 @@
 package us.woop.pinger.service
 import akka.actor.ActorDSL._
 import akka.actor.{ActorRef, PoisonPill, Props}
+import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.Stuff.Server
 import us.woop.pinger.service.PingPongProcessor._
 import us.woop.pinger.service.PingerController.{Monitor, Unmonitor}
@@ -21,6 +22,8 @@ object PingerController {
   case object Ready
   case class Monitor(server: Server)
   case class Unmonitor(server: Server)
+
+  def props = Props(classOf[PingerController])
 }
 class PingerController extends Act with ActWithStash {
 
@@ -60,6 +63,8 @@ class PingerController extends Act with ActWithStash {
     case e: ExtractedMessage[_] if servers contains e.server =>
       servers(e.server) ! e
       context.parent ! e
+    case p: ParsedMessage if servers contains Server(p.server.ip, p.server.port) =>
+      context.parent ! p
     case Monitor(server) =>
       val actorName = s"${server.ip.ip}:${server.port}"
       servers.getOrElseUpdate(

@@ -2,7 +2,7 @@ package us.woop.pinger
 
 import java.lang.management.ManagementFactory
 
-import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
+import org.joda.time.format.DateTimeFormat
 
 case class MyId(myId: String) {
   override def toString = s"$myId"

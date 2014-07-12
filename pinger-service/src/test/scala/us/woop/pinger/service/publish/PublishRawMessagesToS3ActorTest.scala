@@ -1,24 +1,19 @@
 package us.woop.pinger.service.publish
 
-import akka.actor.{PoisonPill, ActorSystem}
+import akka.actor.{ActorSystem, PoisonPill}
 import akka.testkit.{ImplicitSender, TestKit}
 import akka.util.ByteString
-import com.amazonaws.regions.Regions
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
-import us.woop.pinger.data.Stuff.{Server, IP}
+import us.woop.pinger.data.Stuff.{IP, Server}
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
-import us.woop.pinger.{MyId, AmazonCredentials, ParentedProbe}
 import us.woop.pinger.service.publish.PublishRawMessagesToS3Actor.{PublishedData, S3Access}
+import us.woop.pinger.{MyId, ParentedProbe}
 
-class PublishRawMessagesToS3ActorTest(sys: ActorSystem) extends TestKit(sys) with FunSuiteLike with Matchers with ImplicitSender with BeforeAndAfterAll with ParentedProbe with AmazonCredentials {
+class PublishRawMessagesToS3ActorTest(sys: ActorSystem) extends TestKit(sys) with FunSuiteLike with Matchers with ImplicitSender with BeforeAndAfterAll with ParentedProbe  {
 
   def this() = this(ActorSystem())
 
   val access = S3Access(
-    accessKeyId = accessKeyId,
-    secretAccessKey = secretAccessKey,
-    bucketName = "duelgg-data",
-    region = Regions.EU_WEST_1,
     myId = MyId.default
   )
 
