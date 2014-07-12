@@ -5,21 +5,18 @@ import java.security.MessageDigest
 
 import akka.actor.ActorDSL._
 import akka.actor.Props
+import akka.pattern.pipe
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.util.{Base64, CodecUtils}
-import us.woop.pinger.MyId
-import us.woop.pinger.data.ParsedPongs.ParsedMessage
+import us.woop.pinger.{SystemConfiguration, MyId}
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
-import us.woop.pinger.service.publish.PublishRawMessagesToS3Actor.{PublishedData, PushData, FailedToPush, S3Access}
+import us.woop.pinger.service.publish.PublishRawMessagesToS3Actor.{FailedToPush, PublishedData, PushData, S3Access}
 
 import scala.concurrent.Future
-import akka.pattern
-
-import akka.pattern.pipe
-import concurrent.duration._
+import scala.concurrent.duration._
 class PublishRawMessagesToS3Actor(s3Access: S3Access, splitAt: Int) extends Act {
   whenStarting {
     s3Access.pushParsedMessages(Vector.empty)
@@ -33,7 +30,7 @@ class PublishRawMessagesToS3Actor(s3Access: S3Access, splitAt: Int) extends Act 
         currentStack = Vector.empty
       }
     case PushData(data) =>
-      import concurrent.ExecutionContext.Implicits.global
+      import scala.concurrent.ExecutionContext.Implicits.global
       Future(data).map(s3Access.pushParsedMessages).
         map { x => PublishedData(x.getVersionId) }.
         recover { case failure => FailedToPush(data, failure) }.
@@ -41,7 +38,7 @@ class PublishRawMessagesToS3Actor(s3Access: S3Access, splitAt: Int) extends Act 
     case m: PublishedData =>
       context.parent ! m
     case f @ FailedToPush(data, _) =>
-      import concurrent.ExecutionContext.Implicits.global
+      import scala.concurrent.ExecutionContext.Implicits.global
       context.system.scheduler.scheduleOnce(5.seconds, self, PushData(data))
       context.parent ! f
   }
@@ -60,6 +57,9 @@ object PublishRawMessagesToS3Actor {
   case class PublishedData(versionId: String)
   case class PushData(data: Vector[ReceivedBytes])
   case class FailedToPush(data: Vector[ReceivedBytes], cause: Throwable)
+  object S3Access {
+    def apply(myId: MyId):S3Access = S3Access(Regions.EU_WEST_1, SystemConfiguration.accessKeyId, SystemConfiguration.secretAccessKey, SystemConfiguration.bucketName, myId)
+  }
   case class S3Access(region: Regions, accessKeyId: String, secretAccessKey: String, bucketName: String, myId: MyId) {
     lazy val credentials = new BasicAWSCredentials(accessKeyId, secretAccessKey)
     lazy val client = new AmazonS3Client(credentials) {

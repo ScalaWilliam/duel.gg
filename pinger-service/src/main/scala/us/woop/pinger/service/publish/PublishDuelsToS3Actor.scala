@@ -12,7 +12,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata
 import com.amazonaws.util.{Base64, CodecUtils}
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
-import us.woop.pinger.MyId
+import us.woop.pinger.{SystemConfiguration, MyId}
 import us.woop.pinger.analytics.processing.DuelMaker.CompletedDuel
 import us.woop.pinger.service.publish.PublishDuelsToS3Actor._
 
@@ -86,12 +86,21 @@ object PublishDuelsToS3Actor {
 
   case class StackedDuels(myId: MyId, id: Int, dateTime: String, duels: Vector[CompletedDuel])
 
+  object S3Access {
+    def apply(myId: MyId):S3Access = S3Access(
+      region = Regions.EU_WEST_1,
+      accessKeyId = SystemConfiguration.accessKeyId,
+      secretAccessKey = SystemConfiguration.secretAccessKey,
+      bucketName = SystemConfiguration.bucketName,
+      myId
+    )
+  }
+
   case class S3Access(region: Regions, accessKeyId: String, secretAccessKey: String, bucketName: String, myId: MyId) {
     lazy val credentials = new BasicAWSCredentials(accessKeyId, secretAccessKey)
     lazy val client = new AmazonS3Client(credentials) {
       setRegion(Region.getRegion(region))
     }
-
 
     def pushObject(key: String, stackedDuels: StackedDuels) = {
       pushBytes(key, bytes = {
