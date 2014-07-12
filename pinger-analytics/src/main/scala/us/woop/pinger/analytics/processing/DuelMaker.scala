@@ -1,6 +1,9 @@
 package us.woop.pinger.analytics.processing
 
 import org.joda.time.format.ISODateTimeFormat
+import org.json4s.NoTypeHints
+import org.json4s.native.Serialization
+import org.json4s.native.Serialization._
 import org.scalactic.Accumulation._
 import org.scalactic._
 import us.woop.pinger.analytics.data.ModesList
@@ -8,13 +11,13 @@ import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoRepl
 import us.woop.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
 import us.woop.pinger.data.persistence.Format.Server
 
-import scala.collection.immutable.{SortedMap, SortedSet}
+import scala.collection.immutable.SortedMap
 
 object DuelMaker {
 
- case class PlayerLog(fragsLog: SortedMap[Long, Int], weaponsLog: SortedMap[Long, Int])
+  case class PlayerLog(fragsLog: Map[Long, Int], weaponsLog: Map[Long, Int])
   
-  case class PlayerStatistics(frags: Int, fragsLog: SortedMap[Int, Int], weapon: Int)
+  case class PlayerStatistics(frags: Int, fragsLog: Map[Int, Int], weapon: String)
   
   val duelModeNames = Set("ffa", "instagib", "efficiency")
 
@@ -42,6 +45,50 @@ object DuelMaker {
          |Play activity: $playedAt
          |Next message: $nextMessage
        """.stripMargin
+
+
+    def toSimpleCompletedDuel = {
+      SimpleCompletedDuel(
+        duration = duration,
+        playedAt = playedAt,
+        startTimeText = gameHeader.startTimeText,
+        startTime = gameHeader.startTime,
+        map = gameHeader.map,
+        mode = gameHeader.mode,
+        server = gameHeader.server,
+        players =
+          for {(playerId, playerStats) <- playerStatistics}
+          yield playerId.name -> SimplePlayerStatistics(
+            name = playerId.name,
+            ip = playerId.ip,
+            frags = playerStats.frags,
+            weapon = playerStats.weapon,
+            fragLog = playerStats.fragsLog.map { case (x, y) => s"$x" -> y}
+          ),
+        winner = winner.map(_._1.name)
+      )
+    }
+  }
+
+  object CompletedDuel {
+    def test = CompletedDuel(
+      gameHeader = GameHeader(
+        startTime = System.currentTimeMillis,
+        startMessage = ConvertedServerInfoReply(2, 2, 2, 2, 2, false, 2, "yes", "testServer"),
+        server = "TEST:1234",
+        mode = "test",
+        map = "test"
+      ),
+      nextMessage =  None,
+      winner = Option(PlayerId("Test", "a.b.c.x") -> PlayerStatistics(frags = 5, fragsLog = Map(1 -> 2), weapon = "test")),
+      playerStatistics = Map(
+        PlayerId("Test", "a.b.c.x") -> PlayerStatistics(frags = 5, fragsLog = Map(1 -> 2), weapon = "test")
+      ),
+      playedAt = Set(1,2,5),
+      duration = 5
+    )
+
+
   }
 
   case class GameHeader(startTime: Long, startMessage: ConvertedServerInfoReply, server: String, mode: String, map: String) {
@@ -53,6 +100,14 @@ object DuelMaker {
          |Start time: $startTimeText
          |Start message: $startMessage
        """.stripMargin
+  }
+  object GameHeader {
+    val testServer = "test:1234"
+    def test = GameHeader(
+      startTime = System.currentTimeMillis,
+      startMessage = ConvertedServerInfoReply(0,0,0,0,0,true,0,"test","test"),
+      server = testServer, mode = "test", map = "test"
+    )
   }
 
   case class PlayerId(name: String, ip: String)
@@ -88,7 +143,7 @@ object DuelMaker {
           gameHeader = GameHeader(startTime, message, s"${server.ip}:${server.port}", modeName, message.mapname),
           playerLogs = Map.empty,
           playing = !message.gamepaused,
-          playingAt = SortedSet.empty
+          playingAt = Set.empty
         )
       }
     }
@@ -102,7 +157,7 @@ object DuelMaker {
     override val next: StateTransition = {
       case ParsedMessage(_, time, info: PlayerExtInfo) if info.state <= 3 =>
         val playerId = PlayerId(info.name, info.ip)
-        val player = playerLogs.getOrElse(playerId, PlayerLog(SortedMap.empty, SortedMap.empty))
+        val player = playerLogs.getOrElse(playerId, PlayerLog(Map.empty, Map.empty))
         Good(copy(
           playerLogs = playerLogs.updated(
             playerId,
@@ -130,13 +185,15 @@ object DuelMaker {
         val secondlyPlayerStatistics = PlayerStatistics(
           frags = player.fragsLog.maxBy(_._1)._2,
           fragsLog = player.fragsLog.map{case (a, b) => (a - gameHeader.startTime).toInt-> b},
-          weapon = player.weaponsLog.groupBy(_._2).mapValues(_.size).maxBy(_._2)._1
+          weapon = {
+            val weaponId = player.weaponsLog.groupBy(_._2).mapValues(_.size).maxBy(_._2)._1
+            ModesList.guns.getOrElse(weaponId, "unknown")
+          }
         )
         secondlyPlayerStatistics.copy(
-          fragsLog = SortedMap(secondlyPlayerStatistics.fragsLog.groupBy(_._1 / 60000).mapValues(_.maxBy(_._1)._2).toVector :_*)
-          .map{case(t, v) => (t + 1) -> v}.filterKeys(_ <= 10)
+          fragsLog = Map(SortedMap(secondlyPlayerStatistics.fragsLog.groupBy(_._1 / 60000).mapValues(_.maxBy(_._1)._2).toVector :_*).map{case(t, v) => (t + 1) -> v}.filterKeys(_ <= 10).toVector :_*)
         )
-      })
+      }).map(identity)
 
       // per-minute activity of games
       val gameActive = playingAt.map(_ - gameHeader.startTime).map(_.toInt).groupBy(_ / 60000).mapValues(_.max / 60000).values.map(_+1).filter(_<=10).toSet
@@ -149,8 +206,14 @@ object DuelMaker {
         if (playerStatistics.size == 2) Good(playerStatistics)
         else Bad(One(s"Game had != 2 players, found $playerStatistics"))
 
-      withGood(activeForOver8Minutes, totalNumberOfPlayers) {
-        (gameActivity, playerStats) =>
+      val uniquePlayerNames = {
+        val uniqueNames = playerStatistics.keySet.map(_.name)
+        if (uniqueNames.size == 2) Good(true)
+        else Bad(One(s"Game does not have unique player names. Found: $uniqueNames"))
+      }
+
+      withGood(activeForOver8Minutes, totalNumberOfPlayers, uniquePlayerNames) {
+        (gameActivity, playerStats, _) =>
           CompletedDuel(
             winner = Option {
               playerStats.groupBy(_._2.frags).filter(_._2.size == 1)
@@ -163,6 +226,38 @@ object DuelMaker {
           )
       }
     }
+  }
+
+  case class SimpleCompletedDuel
+  (
+    duration: Int,
+    playedAt: Set[Int],
+    startTimeText: String,
+    startTime: Long,
+    map: String,
+    mode: String,
+    server: String,
+    players: Map[String, SimplePlayerStatistics],
+    winner: Option[String]) {
+    def toJson = {
+      import org.json4s._
+      import org.json4s.native.Serialization
+      import org.json4s.native.Serialization.write
+      implicit val formats = Serialization.formats(NoTypeHints)
+      write(this)
+    }
+  }
+
+  case class SimplePlayerStatistics
+  (
+    name: String,
+    ip: String,
+    frags: Int,
+    weapon: String,
+    fragLog: Map[String, Int])
+
+  object Yay {
+
   }
 
 }

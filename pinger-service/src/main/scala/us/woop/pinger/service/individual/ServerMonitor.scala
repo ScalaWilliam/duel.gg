@@ -25,7 +25,6 @@ object ServerMonitor {
 
 /**
  * Determine a server's status - whether it's offline, online-empty, online-active.
- * @param server
  */
 class ServerMonitor(server: Server) extends Act {
 

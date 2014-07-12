@@ -12,8 +12,20 @@
     </parent>
     <artifactId>pinger-service</artifactId>
     <version>1.0</version>
-
+<repositories><repository>
+    <id>wat</id>
+    <url>http://repo.typesafe.com/typesafe/maven-releases</url>
+</repository>
+<repository>
+    <id>spr</id>
+    <url>http://repo.spray.io</url>
+</repository></repositories>
     <dependencies>
+        <dependency>
+            <groupId>io.spray</groupId>
+            <artifactId>spray-client_2.11</artifactId>
+            <version>1.3.1</version>
+        </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -90,6 +102,10 @@
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.version.short}</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.spray</groupId>
+            <artifactId>spray-json_${scala.version.short}</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
