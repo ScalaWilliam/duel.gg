@@ -1,13 +1,12 @@
-package us.woop.pinger
+package us.woop.pinger.data
 
-import PongParser._
 import akka.util.ByteString
-import us.woop.pinger.data.ParsedPongs.Conversions.{ConvertHopmodUptime, ConvertTeamScore, ConvertThomasExt, ConvertServerInfoReply}
+import PongParser._
+import us.woop.pinger.data.ParsedPongs.Conversions.{ConvertHopmodUptime, ConvertServerInfoReply, ConvertTeamScore, ConvertThomasExt}
 
 object Extractor {
 
   def extract: PartialFunction[ByteString, Seq[Any]] = {
-
 
     {
       case GetRelaxedPlayerExtInfo(x) => Seq(x)

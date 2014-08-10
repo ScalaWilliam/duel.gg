@@ -8,7 +8,7 @@ import akka.actor.{ActorLogging, ActorRef}
 import akka.io
 import akka.io.Udp
 import akka.util.ByteString
-import us.woop.pinger.data.Stuff.{IP, Server}
+import us.woop.pinger.data.Server
 import us.woop.pinger.service.PingPongProcessor._
 
 import scala.util.Random
@@ -16,7 +16,12 @@ import scala.util.Random
 object PingPongProcessor {
 
   case class BadHash(server: Server, time: Long, fullMessage: ByteString, expectedHash: ByteString, haveHash: ByteString)
-  case class ReceivedBytes(server: Server, time: Long, message: ByteString)
+  case class ReceivedBytes(server: Server, time: Long, message: ByteString) {
+    def toSerializable = SerializableBytes(server, time, message.toArray)
+  }
+  case class SerializableBytes(server: Server, time: Long, message: Array[Byte]) {
+    def toReceived = ReceivedBytes(server, time, ByteString(message))
+  }
   case class Ping(server: Server)
   case class Ready(on: InetSocketAddress)
 
@@ -68,8 +73,8 @@ class PingPongProcessorActor extends Act with ActorLogging {
 
   def ready(send: ActorRef, boundTo: InetSocketAddress, lastTime: Long, hashes: Map[Server, ByteString], inet2server: Map[InetSocketAddress, Server], server2inet: Map[Server, InetSocketAddress]): Receive = {
 
-    case Ping(server @ Server(IP(ip), port)) =>
-      val inetAddress = server2inet.getOrElse(server, new InetSocketAddress(ip, port + 1))
+    case Ping(server) =>
+      val inetAddress = server2inet.getOrElse(server, server.getInfoInetSocketAddress)
       val hash = hasher.makeHash(server)
       for {
         (message, idx) <- outboundMessages.zipWithIndex

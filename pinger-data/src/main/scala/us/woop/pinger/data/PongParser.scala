@@ -1,18 +1,8 @@
-package us.woop.pinger
+package us.woop.pinger.data
 
 import akka.util.ByteString
 import com.typesafe.scalalogging.slf4j.StrictLogging
-import us.woop.pinger.data.ParsedPongs.ThomasD
-import us.woop.pinger.data.ParsedPongs.ServerInfoReply
-import us.woop.pinger.data.ParsedPongs.ThomasExt
-import us.woop.pinger.data.ParsedPongs.TeamScores
-import us.woop.pinger.data.ParsedPongs.Uptime
-import us.woop.pinger.data.ParsedPongs.ThomasR
-import us.woop.pinger.data.ParsedPongs.PlayerCns
-import us.woop.pinger.data.ParsedPongs.TeamScore
-import us.woop.pinger.data.ParsedPongs.OlderClient
-import us.woop.pinger.data.ParsedPongs.PlayerExtInfo
-import us.woop.pinger.data.ParsedPongs.HopmodUptime
+import us.woop.pinger.data.ParsedPongs.{HopmodUptime, OlderClient, PlayerCns, PlayerExtInfo, ServerInfoReply, TeamScore, TeamScores, ThomasD, ThomasExt, ThomasR, Uptime}
 
 /** 01/02/14 */
 object PongParser extends StrictLogging {

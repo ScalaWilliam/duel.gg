@@ -10,7 +10,6 @@ import ParsedPongs.PlayerCns
 import ParsedPongs.ServerInfoReply
 import ParsedPongs.PlayerExtInfo
 import ParsedPongs.HopmodUptime
-import us.woop.pinger.PongParser
 
 class MappingParsingTest extends WordSpecLike with Matchers with Inspectors {
 

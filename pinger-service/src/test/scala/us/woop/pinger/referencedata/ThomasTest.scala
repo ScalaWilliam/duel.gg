@@ -1,7 +1,7 @@
 package us.woop.pinger.referencedata
 
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-import us.woop.pinger.PongParser
+import us.woop.pinger.data.PongParser
 
 /** 01/02/14 */
 class ThomasTest extends WordSpecLike with Matchers with BeforeAndAfterAll {

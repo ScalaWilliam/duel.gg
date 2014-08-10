@@ -5,7 +5,7 @@ import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
 import us.woop.pinger.ParentedProbe
 import us.woop.pinger.data.ParsedPongs.ServerInfoReply
-import us.woop.pinger.data.Stuff.Server
+import us.woop.pinger.data.Server
 import us.woop.pinger.service.PingPongProcessor.Ping
 import us.woop.pinger.service.RawToExtracted.ExtractedMessage
 import us.woop.pinger.service.individual.ServerMonitor.{Active, Online, ServerStateChanged}

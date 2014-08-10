@@ -30,8 +30,7 @@ object SimpleUdpServer {
         val dataBytes = data.map(_.toInt).toVector
         val head = dataBytes.take(3)
         val hash = dataBytes.drop(3)
-        val recombiner = recombine.curried(head)(hash)
-        mappings.apply(dataBytes).map(recombiner).map{
+        mappings.apply(dataBytes).map(recombine(head, hash, _)).map{
           x =>
             ByteString(x.map(_.toByte) :_*)
         }.map(Udp.Send(_, clientAddress)).foreach{ response =>
