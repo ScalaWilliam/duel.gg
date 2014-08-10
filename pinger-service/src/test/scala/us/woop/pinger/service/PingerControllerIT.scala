@@ -6,7 +6,8 @@ import akka.actor.{ActorSystem, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import org.scalatest.{Inspectors, BeforeAndAfterAll, FlatSpecLike, Matchers}
 import us.woop.pinger.ParentedProbe
-import us.woop.pinger.data.Stuff.Server
+import us.woop.pinger.data.ParsedPongs.ParsedMessage
+import us.woop.pinger.data.Server
 import us.woop.pinger.referencedata.SimpleUdpServer
 import us.woop.pinger.referencedata.SimpleUdpServer.GoodHashSauerbratenPongServer
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
@@ -20,20 +21,21 @@ class PingerControllerIT(sys: ActorSystem) extends TestKit(sys) with FlatSpecLik
   val server = Server("127.0.0.1", 5010)
 
   override def beforeAll() {
-    parentedProbe(Props(classOf[GoodHashSauerbratenPongServer], new InetSocketAddress(server.ip.ip, server.port + 1)))
+    parentedProbe(Props(classOf[GoodHashSauerbratenPongServer], server.getInfoInetSocketAddress))
     expectMsgClass(classOf[SimpleUdpServer.Ready])
   }
 
   "Pinger service" should "integrate properly with a monitor message + stub" in {
     import concurrent.duration._
 
-    val pingerService = parentedProbe(Props(classOf[PingerController]))
+    val pingerService = parentedProbe(PingerController.props)
     expectMsg(PingerController.Ready)
     pingerService ! Monitor(server)
     // expect a state change
-    val results = receiveN(17, 2.seconds)
+    val results = receiveN(25, 2.seconds)
     forExactly(1, results) { _ shouldBe a [ServerStateChanged] }
     forExactly(8, results) { _ shouldBe a [ReceivedBytes] }
+    forExactly(8, results) { _ shouldBe a [ParsedMessage] }
     forExactly(8, results) { _ shouldBe a [ExtractedMessage[_]] }
     val probe = TestProbe()
     probe watch pingerService
@@ -44,14 +46,14 @@ class PingerControllerIT(sys: ActorSystem) extends TestKit(sys) with FlatSpecLik
 
   "Pinger service" should "send a message for an active server every three seconds" in {
 
-    val pingerService = parentedProbe(Props(classOf[PingerController]))
+    val pingerService = parentedProbe(PingerController.props)
     expectMsg(PingerController.Ready)
     pingerService ! Monitor(server)
     import concurrent.duration._
     val stuffs = receiveWhile(max = 2.seconds){ case x => x }
-    stuffs should have size 17
+    stuffs should have size 25
     expectNoMsg(1.second)
-    receiveN(16, 2.seconds)
+    receiveN(24, 2.seconds)
 
     val probe = TestProbe()
     probe watch pingerService

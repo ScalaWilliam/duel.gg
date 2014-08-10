@@ -2,7 +2,7 @@ package us.woop.pinger.service
 import akka.actor.ActorDSL._
 import akka.actor.{ActorRef, PoisonPill, Props}
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
-import us.woop.pinger.data.Stuff.Server
+import us.woop.pinger.data.Server
 import us.woop.pinger.service.PingPongProcessor._
 import us.woop.pinger.service.PingerController.{Monitor, Unmonitor}
 import us.woop.pinger.service.RawToExtracted.ExtractedMessage
@@ -23,9 +23,12 @@ object PingerController {
   case class Monitor(server: Server)
   case class Unmonitor(server: Server)
 
-  def props = Props(classOf[PingerController])
+  def props = Props(classOf[PingerController], None)
+  def props(parent: ActorRef) = Props(classOf[PingerController], Option(parent))
 }
-class PingerController extends Act with ActWithStash {
+class PingerController(parentO: Option[ActorRef]) extends Act with ActWithStash {
+
+  val parent = parentO.getOrElse(context.parent)
 
   case class Dependencies(pinger: ActorRef, parser: ActorRef)
 
@@ -38,13 +41,12 @@ class PingerController extends Act with ActWithStash {
     )
   }
 
-
   become {
     case Dependencies(pinger, parser) =>
       become {
         case Ready(addr) =>
           unstashAll()
-          context.parent ! PingerController.Ready
+          parent ! PingerController.Ready
           become(ready(pinger, parser))
         case _ => stash()
       }
@@ -54,17 +56,17 @@ class PingerController extends Act with ActWithStash {
   def ready(pinger: ActorRef, parser: ActorRef): Receive = {
     case badHash: BadHash if servers contains badHash.server =>
       servers(badHash.server) ! badHash
-      context.parent ! badHash
+      parent ! badHash
     case receivedBytes: ReceivedBytes if servers contains receivedBytes.server =>
       parser ! receivedBytes
-      context.parent ! receivedBytes
+      parent ! receivedBytes
     case serverStateChange: ServerStateChanged =>
-      context.parent ! serverStateChange
+      parent ! serverStateChange
     case e: ExtractedMessage[_] if servers contains e.server =>
       servers(e.server) ! e
-      context.parent ! e
+      parent ! e
     case p: ParsedMessage if servers contains Server(p.server.ip, p.server.port) =>
-      context.parent ! p
+      parent ! p
     case Monitor(server) =>
       val actorName = s"${server.ip.ip}:${server.port}"
       servers.getOrElseUpdate(

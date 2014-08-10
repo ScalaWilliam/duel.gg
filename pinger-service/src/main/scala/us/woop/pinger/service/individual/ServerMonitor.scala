@@ -1,9 +1,9 @@
 package us.woop.pinger.service.individual
 
 import akka.actor.ActorDSL._
-import us.woop.pinger.PongParser.GetServerInfoReply
 import us.woop.pinger.data.ParsedPongs.ServerInfoReply
-import us.woop.pinger.data.Stuff.Server
+import us.woop.pinger.data.PongParser.GetServerInfoReply
+import us.woop.pinger.data.Server
 import us.woop.pinger.service.PingPongProcessor.{BadHash, ReceivedBytes}
 import us.woop.pinger.service.RawToExtracted.ExtractedMessage
 import us.woop.pinger.service.individual.ServerMonitor._
@@ -39,7 +39,6 @@ class ServerMonitor(server: Server) extends Act {
   whenStarting {
     context.system.scheduler.schedule(3.seconds, 3.seconds, self, CheckIfGone)
   }
-
 
   become {
     uninitialised()

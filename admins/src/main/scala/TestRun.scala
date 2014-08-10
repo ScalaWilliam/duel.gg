@@ -3,29 +3,25 @@ import org.eclipse.jetty.server.handler.HandlerList
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.{DefaultServlet, ServletContextHandler, ServletHolder}
 import org.eclipse.jetty.webapp.WebAppContext
+import org.slf4j.bridge.SLF4JBridgeHandler
 
 object TestRun extends App {
+
+  SLF4JBridgeHandler.install()
 
   val servah = new Server(55555)
   val handlerList = new HandlerList
   servah.setHandler(handlerList)
 
-  case class Key(index: Long, seq: Int, ip: String, port: Int)
-  def decodeKey(key: Array[Byte])  = {
-    val bb = ByteBuffer.wrap(key).order(ByteOrder.LITTLE_ENDIAN)
-    val idx = bb.getLong
-    val seq = bb.getInt
-    val ip = ByteBuffer.allocate(4)
-    bb.get(ip.array(), 0, 4)
-    val port = bb.getInt
-    Key(idx, seq, ip.array().map{_.toInt & 0xFF}.mkString("."), port)
-  }
-
   val context = new ServletContextHandler(ServletContextHandler.SESSIONS)
 
   context.addServlet(
     new ServletHolder(new vaadin.scala.server.ScaladinServlet()) {
-      this.setInitParameter("ScaladinUI", "TestBrowser")
+//      this.setInitParameter("UI", classOf[TestBrowser].getCanonicalName)
+//      this.setInitParameter("UI", "TestBrowser")
+      this.setInitParameter("pushmode", "automatic")
+      this.setAsyncSupported(true)
+      this.setInitParameter("ScaladinUIProvider", "TestProvider")
     }, "/*"
   )
   val staticHandler = new ServletContextHandler {

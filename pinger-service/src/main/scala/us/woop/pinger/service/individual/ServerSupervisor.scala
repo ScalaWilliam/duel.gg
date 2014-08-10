@@ -2,7 +2,7 @@ package us.woop.pinger.service.individual
 
 import akka.actor.ActorDSL._
 import akka.actor.{ActorRef, Props}
-import us.woop.pinger.data.Stuff.Server
+import us.woop.pinger.data.Server
 
 class ServerSupervisor(server: Server) extends Act {
 

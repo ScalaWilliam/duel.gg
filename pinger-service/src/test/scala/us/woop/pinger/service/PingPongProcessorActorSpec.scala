@@ -6,7 +6,7 @@ import akka.actor.{PoisonPill, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
 import us.woop.pinger.ParentedProbe
-import us.woop.pinger.data.Stuff.Server
+import us.woop.pinger.data.Server
 import us.woop.pinger.referencedata.SimpleUdpServer
 import us.woop.pinger.referencedata.SimpleUdpServer.{BadHashSauerbratenPongServer, GoodHashSauerbratenPongServer}
 import us.woop.pinger.service.PingPongProcessor.{BadHash, Ping, ReceivedBytes}
@@ -20,12 +20,6 @@ class PingPongProcessorActorSpec(sys: ActorSystem) extends TestKit(sys) with Fun
 
   override def beforeAll() {
 
-    parentedProbe(Props(classOf[GoodHashSauerbratenPongServer], new InetSocketAddress(server.ip.ip, server.port + 1)))
-    expectMsgClass(classOf[SimpleUdpServer.Ready])
-
-    parentedProbe(Props(classOf[BadHashSauerbratenPongServer], new InetSocketAddress(serverBad.ip.ip, serverBad.port + 1)))
-    expectMsgClass(classOf[SimpleUdpServer.Ready])
-
   }
 
   override def afterAll() {
@@ -33,6 +27,10 @@ class PingPongProcessorActorSpec(sys: ActorSystem) extends TestKit(sys) with Fun
   }
 
   test("That PPPA sends a bad hash message when a bad hash is given by the server") {
+
+    parentedProbe(Props(classOf[BadHashSauerbratenPongServer], serverBad.getInfoInetSocketAddress))
+    expectMsgClass(classOf[SimpleUdpServer.Ready])
+
     val pingProcessor = parentedProbe(Props(classOf[PingPongProcessorActor]))
     expectMsgClass(classOf[PingPongProcessor.Ready])
     pingProcessor ! Ping(serverBad)
@@ -45,6 +43,8 @@ class PingPongProcessorActorSpec(sys: ActorSystem) extends TestKit(sys) with Fun
   }
 
   test("That PPPA sends a ReceivedMessage when a good message is given by the server") {
+    parentedProbe(Props(classOf[GoodHashSauerbratenPongServer], server.getInfoInetSocketAddress))
+    expectMsgClass(classOf[SimpleUdpServer.Ready])
     val pingProcessor = parentedProbe(Props(classOf[PingPongProcessorActor]))
     expectMsgClass(classOf[PingPongProcessor.Ready])
     pingProcessor ! Ping(server)
