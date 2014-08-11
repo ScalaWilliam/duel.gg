@@ -71,10 +71,10 @@ object StandaloneApp extends App with StandaloneAppMBean {
     main ! Monitor(server)
   }
 
-  val mbeanServer = ManagementFactory.getPlatformMBeanServer
-
-  val mbeanName = new ObjectName("us.woop.pinger.app:type=Main")
-
-  mbeanServer.registerMBean(this, mbeanName)
+//  val mbeanServer = ManagementFactory.getPlatformMBeanServer
+//
+//  val mbeanName = new ObjectName("us.woop.pinger.app:type=Main")
+//
+//  mbeanServer.registerMBean(this, mbeanName)
 
 }
