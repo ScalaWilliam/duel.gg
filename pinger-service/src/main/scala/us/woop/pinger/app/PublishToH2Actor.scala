@@ -1,6 +1,15 @@
 package us.woop.pinger.app
+
+import java.io.{OutputStream, FileOutputStream, FileWriter, File}
+import java.nio.{ByteOrder, ByteBuffer}
+
 import akka.actor.ActorDSL._
-import org.h2.mvstore.{MVMap, MVStore}
+import akka.util.ByteStringBuilder
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
+import org.apache.commons.compress.compressors.{CompressorOutputStream, CompressorStreamFactory}
+import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream
+import org.h2.mvstore.`type`.DataType
+import org.h2.mvstore.{WriteBuffer, MVMap, MVStore}
 import us.woop.pinger.service.PingPongProcessor.{SerializableBytes, ReceivedBytes}
 
 class PublishToH2Actor extends Act {
@@ -12,28 +21,30 @@ class PublishToH2Actor extends Act {
   def newUUID = java.util.UUID.randomUUID().toString
 
   def startWriting(): Unit = {
-    val newStore = new MVStore.Builder().compressHigh().fileName(newUUID).open()
-    val newMap = newStore.openMap[Long, SerializableBytes]("receivedBytes")
-
-    currentStore = newStore
-    become(writing(newStore, newMap))
+    val fn = new File(s"db.$newUUID.db")
+    val fo = new FileOutputStream(fn)
+    fo.write(Array[Byte](5,4,3,2,1,2,3,4,5))
+    become(writing(fo))
   }
 
   whenStarting {
     startWriting()
     import concurrent.duration._
     import context.dispatcher
-    context.system.scheduler.schedule(5.seconds, 1.hour, self, Rotate)
+    context.system.scheduler.schedule(1.day, 1.day, self, Rotate)
   }
 
-  def writing(to: MVStore, map: MVMap[Long, SerializableBytes]): Receive = {
+  def writing(to: OutputStream): Receive = {
     case Rotate =>
-      to.commit()
+      to.flush()
       to.close()
       startWriting()
     case m @ ReceivedBytes(server, time, message) =>
-      map.put(map.sizeAsLong() + 1, m.toSerializable)
-      to.commit()
+      val serialized = m.toBytes.take(Integer.MAX_VALUE)
+      implicit val byteOrdering = ByteOrder.BIG_ENDIAN
+      val byteArray = new ByteStringBuilder().putInt(serialized.size).putBytes(serialized).result().toArray
+      to.write(byteArray)
+      to.flush()
   }
 
   whenStopping {
