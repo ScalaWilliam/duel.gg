@@ -1,15 +1,13 @@
 package us.woop.pinger.service
 
 import java.net.InetSocketAddress
-import java.nio.{ByteOrder, ByteBuffer}
 import java.security.MessageDigest
-
 import akka.actor.ActorDSL._
 import akka.actor.{ActorLogging, ActorRef}
 import akka.io
 import akka.io.Udp
-import akka.util.{ByteStringBuilder, ByteString}
-import us.woop.pinger.data.Server
+import akka.util.ByteString
+import us.woop.pinger.data.{SauerBytes, Server}
 import us.woop.pinger.service.PingPongProcessor._
 
 import scala.util.Random
@@ -18,31 +16,12 @@ object PingPongProcessor {
 
   case class BadHash(server: Server, time: Long, fullMessage: ByteString, expectedHash: ByteString, haveHash: ByteString)
   case class ReceivedBytes(server: Server, time: Long, message: ByteString) {
-    def toSerializable = SerializableBytes(server, time, message.toArray)
-    def toBytes = ReceivedBytes.toBytes(this)
+    def toSauerBytes = SauerBytes(server, time, message.toVector)
+    def toBytes = toSauerBytes.toBytes
   }
   object ReceivedBytes {
-    def toBytes(receivedBytes: ReceivedBytes): Array[Byte] = {
-      implicit val byteOrdering = ByteOrder.BIG_ENDIAN
-      val ipBytes = receivedBytes.server.ip.ip.split('.').map(_.toInt.toByte)
-      assert(ipBytes.size == 4, s"ipBytes must be of size 4. Input = ${receivedBytes.server}")
-      new ByteStringBuilder().putBytes(ipBytes).putInt(receivedBytes.server.port).putLong(receivedBytes.time).append(receivedBytes.message).result().toArray
-    }
-    def fromBytes(bytes: Array[Byte]): ReceivedBytes = {
-      val byteBuffer = ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN)
-      val ip = Iterator.fill(4)(byteBuffer.get).map(_.toInt & 0xFF).mkString(".")
-      val port = byteBuffer.getInt
-      val time = byteBuffer.getLong
-      val receivedBytes = byteBuffer.array()
-      ReceivedBytes(
-        server = Server(ip, port),
-        time = time,
-        message = ByteString(receivedBytes)
-      )
-    }
-  }
-  case class SerializableBytes(server: Server, time: Long, message: Array[Byte]) {
-    def toReceived = ReceivedBytes(server, time, ByteString(message))
+    def fromSauerBytes(sauerBytes: SauerBytes) = 
+      ReceivedBytes(sauerBytes.server, sauerBytes.time, ByteString(sauerBytes.message.toArray))
   }
   case class Ping(server: Server)
   case class Ready(on: InetSocketAddress)

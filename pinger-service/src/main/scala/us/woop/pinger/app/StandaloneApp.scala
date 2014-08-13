@@ -20,7 +20,7 @@ object StandaloneApp extends App with StandaloneAppMBean {
 
   val main = actor(sys, "main")(new Act {
 
-    val h2Publisher = actor(context, "h2Publisher")(new PublishToH2Actor)
+    val filePublisher = actor(context, "filePublisher")(new PublishToSauerFile)
 
     val pingerController =
       context.actorOf(RoundRobinPool(1, supervisorStrategy =  OneForOneStrategy(){
@@ -33,7 +33,7 @@ object StandaloneApp extends App with StandaloneAppMBean {
 
     become {
       case r: ReceivedBytes =>
-        h2Publisher ! r
+        filePublisher ! r
       case m: Monitor =>
         pingerController ! m
       case u: Unmonitor =>

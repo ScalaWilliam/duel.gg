@@ -5,14 +5,12 @@ import javax.management.ObjectName
 import akka.actor._
 import akka.kernel.Bootable
 import akka.routing.RoundRobinPool
-import com.hazelcast.core.Hazelcast
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.Server
-import us.woop.pinger.service.HazelcastBridgeActor.HazelcastConnectionLost
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 import us.woop.pinger.service.PingerController.{Monitor, Unmonitor}
 import us.woop.pinger.service.individual.ServerMonitor.ServerStateChanged
-import us.woop.pinger.service.{HazelcastBridgeActor, PingerController}
+import us.woop.pinger.service.PingerController
 
 class HelloKernel extends Bootable {
 
@@ -59,15 +57,15 @@ class AppActor extends Act {
 
   self ! Monitor(Server("85.214.66.181", 2000))
   // Restart Hazelcast when it's stopped
-  val hazelcast =
-    context.actorOf(RoundRobinPool(1, supervisorStrategy =  OneForOneStrategy(){
-      case _: ActorInitializationException => SupervisorStrategy.Restart
-      case _: ActorKilledException => SupervisorStrategy.Restart
-      case _: HazelcastConnectionLost => SupervisorStrategy.Restart
-      case _: DeathPactException => SupervisorStrategy.Stop
-      case _: Exception => SupervisorStrategy.Restart
-    }).props(HazelcastBridgeActor.props(Hazelcast.newHazelcastInstance,Option(context.self))),
-      "hazelcast")
+//  val hazelcast =
+//    context.actorOf(RoundRobinPool(1, supervisorStrategy =  OneForOneStrategy(){
+//      case _: ActorInitializationException => SupervisorStrategy.Restart
+//      case _: ActorKilledException => SupervisorStrategy.Restart
+//      case _: HazelcastConnectionLost => SupervisorStrategy.Restart
+//      case _: DeathPactException => SupervisorStrategy.Stop
+//      case _: Exception => SupervisorStrategy.Restart
+//    }).props(HazelcastBridgeActor.props(Hazelcast.newHazelcastInstance,Option(context.self))),
+//      "hazelcast")
 
   val pingerController =
     context.actorOf(RoundRobinPool(1, supervisorStrategy =  OneForOneStrategy(){
@@ -79,12 +77,12 @@ class AppActor extends Act {
       "pingerController")
 
   become {
-    case p: ParsedMessage =>
-      hazelcast ! p
-    case s: ServerStateChanged =>
-      hazelcast ! s
-    case r: ReceivedBytes =>
-      hazelcast ! r
+//    case p: ParsedMessage =>
+//      hazelcast ! p
+//    case s: ServerStateChanged =>
+//      hazelcast ! s
+//    case r: ReceivedBytes =>
+//      hazelcast ! r
     case m: Monitor =>
       pingerController ! m
     case u: Unmonitor =>

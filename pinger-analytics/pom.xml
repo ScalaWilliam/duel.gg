@@ -62,8 +62,12 @@
             <artifactId>scala-library</artifactId>
         </dependency>
         <dependency>
-            <groupId>ladder.sauer</groupId>
+            <groupId>us.woop.pinger</groupId>
             <artifactId>pinger-data</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>us.woop.pinger</groupId>
+            <artifactId>pinger-service</artifactId>
         </dependency>
         <dependency>
             <groupId>com.typesafe.scala-logging</groupId>

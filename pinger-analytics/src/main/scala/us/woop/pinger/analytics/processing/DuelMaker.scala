@@ -1,16 +1,12 @@
 package us.woop.pinger.analytics.processing
 
 import org.joda.time.format.ISODateTimeFormat
-import org.json4s.NoTypeHints
-import org.json4s.native.Serialization
-import org.json4s.native.Serialization._
 import org.scalactic.Accumulation._
 import org.scalactic._
 import us.woop.pinger.analytics.data.ModesList
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import us.woop.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
-import us.woop.pinger.data.persistence.Format.Server
-
+import us.woop.pinger.data.Server
 import scala.collection.immutable.SortedMap
 
 object DuelMaker {
@@ -79,7 +75,7 @@ object DuelMaker {
         mode = "test",
         map = "test"
       ),
-      nextMessage =  None,
+      nextMessage = None,
       winner = Option(PlayerId("Test", "a.b.c.x") -> PlayerStatistics(frags = 5, fragsLog = Map(1 -> 2), weapon = "test")),
       playerStatistics = Map(
         PlayerId("Test", "a.b.c.x") -> PlayerStatistics(frags = 5, fragsLog = Map(1 -> 2), weapon = "test")
@@ -87,7 +83,6 @@ object DuelMaker {
       playedAt = Set(1,2,5),
       duration = 5
     )
-
 
   }
 
@@ -140,7 +135,7 @@ object DuelMaker {
 
       withGood(clients, duelModeName, hasEnoughTime) { (_, modeName, _) =>
         DuelTransitive(
-          gameHeader = GameHeader(startTime, message, s"${server.ip}:${server.port}", modeName, message.mapname),
+          gameHeader = GameHeader(startTime, message, s"${server.ip.ip}:${server.port}", modeName, message.mapname),
           playerLogs = Map.empty,
           playing = !message.gamepaused,
           playingAt = Set.empty
@@ -228,6 +223,15 @@ object DuelMaker {
     }
   }
 
+
+  case class SimplePlayerStatistics
+  (
+    name: String,
+    ip: String,
+    frags: Int,
+    weapon: String,
+    fragLog: Map[String, Int])
+
   case class SimpleCompletedDuel
   (
     duration: Int,
@@ -246,16 +250,30 @@ object DuelMaker {
       implicit val formats = Serialization.formats(NoTypeHints)
       write(this)
     }
+    def toXml = <completed-duel
+    duration={s"$duration"}
+    start-time={startTimeText}
+    map={map}
+    mode={mode}
+    server={server}
+    winner={winner.orNull}>
+      <played-at>{playedAt.mkString(" ")}</played-at>
+      <players>
+        {for {(name, stats) <- players} yield
+        <player name={name} ip={stats.name} frags={s"${stats.frags}"}
+                weapon={stats.weapon}>
+          {for {(at, frags) <- stats.fragLog}
+        yield
+          <frags at={at}>
+            {frags}
+          </frags>}
+        </player>
+        }
+      </players>
+    </completed-duel>
+
+
   }
-
-  case class SimplePlayerStatistics
-  (
-    name: String,
-    ip: String,
-    frags: Int,
-    weapon: String,
-    fragLog: Map[String, Int])
-
   object Yay {
 
   }
