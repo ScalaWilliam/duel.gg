@@ -4,7 +4,7 @@ import java.io.{File, FileInputStream, FileOutputStream}
 import java.nio.{ByteBuffer, ByteOrder}
 
 import akka.util.ByteStringBuilder
-import us.woop.pinger.data.SauerBytes
+import us.woop.pinger.data.{SauerBytes2, SauerBytes}
 import us.woop.pinger.data.persistence.SauerReaderWriter.ByteWriter
 
 import scala.collection.mutable.ArrayBuffer
@@ -13,7 +13,7 @@ object SauerReaderWriter {
 
   case class ByteWriter(write: Array[Byte] => Unit, flush: () => Unit, close: () => Unit)
 
-  val HEADER = Array[Byte](5, 4, 3, 2, 1, 2, 3, 4, 5)
+  val HEADER = Array[Byte](5, 4, 3, 2, 2, 2, 3, 4, 5)
 
   def writeToFile(file: File) = {
     val fos = new FileOutputStream(file)
@@ -49,7 +49,7 @@ object SauerReaderWriter {
         size = ByteBuffer.wrap(sizeBit).getInt
         bytes = iterator.take(size).toArray
         if bytes.size == size
-      } yield SauerBytes.fromBytes(bytes)
+      } yield SauerBytes2.fromBytes(bytes)
     }.takeWhile(_.isDefined).map(_.get)
   }
   def readFromFile(file: File) = {
@@ -68,7 +68,7 @@ class SauerWriter(byteWriter: ByteWriter, writeHeader: Boolean = true) {
 
   def write(sauerBytes: SauerBytes): Unit = {
     implicit val byteOrdering = ByteOrder.BIG_ENDIAN
-    val serialized = sauerBytes.toBytes.take(Integer.MAX_VALUE)
+    val serialized = SauerBytes2.toBytes(sauerBytes).take(Integer.MAX_VALUE)
     val byteArray = new ByteStringBuilder().putInt(serialized.size).putBytes(serialized).result().toArray
     byteWriter.write(byteArray)
   }
