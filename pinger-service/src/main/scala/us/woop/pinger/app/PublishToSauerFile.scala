@@ -3,7 +3,7 @@ package us.woop.pinger.app
 import java.io.{FileWriter, FileOutputStream, File}
 import akka.actor.ActorDSL._
 import akka.actor.ActorLogging
-import us.woop.pinger.data.log.{SauerBytes, SauerBytesWriter, MetaData}
+import us.woop.pinger.data.journal.{SauerBytes, SauerBytesWriter, MetaData}
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 
 object PublishToSauerFile {

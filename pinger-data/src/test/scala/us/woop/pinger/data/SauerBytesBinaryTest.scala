@@ -2,7 +2,7 @@ package us.woop.pinger.data
 
 import akka.util.ByteString
 import org.scalatest.{Matchers, WordSpecLike}
-import us.woop.pinger.data.log.{SauerBytesBinary, SauerBytes}
+import us.woop.pinger.data.journal.{SauerBytesBinary, SauerBytes}
 
 class SauerBytesBinaryTest extends WordSpecLike with Matchers {
   "Received bytes binary converter" must {

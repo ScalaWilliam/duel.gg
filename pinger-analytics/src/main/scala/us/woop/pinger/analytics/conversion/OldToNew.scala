@@ -3,7 +3,7 @@ package us.woop.pinger.analytics.conversion
 import java.io.File
 import java.nio.{ByteOrder, ByteBuffer}
 import us.woop.pinger.data.Server
-import us.woop.pinger.data.log.SauerBytes
+import us.woop.pinger.data.journal.SauerBytes
 
 object OldToNew {
 

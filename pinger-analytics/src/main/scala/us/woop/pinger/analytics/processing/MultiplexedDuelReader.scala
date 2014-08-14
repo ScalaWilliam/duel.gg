@@ -4,7 +4,7 @@ import akka.util.ByteString
 import us.woop.pinger.analytics.processing.DuelMaker.CompletedDuel
 import us.woop.pinger.analytics.processing.StreamedDuelMaker.{ZOutOfDuelState, ZFoundGame, ZIteratorState}
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
-import us.woop.pinger.data.log.SauerBytes
+import us.woop.pinger.data.journal.SauerBytes
 import us.woop.pinger.data.{Server, Extractor}
 import scala.util.Try
 
