@@ -7,7 +7,8 @@ import akka.actor.{ActorLogging, ActorRef}
 import akka.io
 import akka.io.Udp
 import akka.util.ByteString
-import us.woop.pinger.data.{SauerBytes2, SauerBytes, Server}
+import us.woop.pinger.data.log.{SauerBytesBinary, SauerBytes}
+import us.woop.pinger.data.Server
 import us.woop.pinger.service.PingPongProcessor._
 
 import scala.util.Random
@@ -17,7 +18,7 @@ object PingPongProcessor {
   case class BadHash(server: Server, time: Long, fullMessage: ByteString, expectedHash: ByteString, haveHash: ByteString)
   case class ReceivedBytes(server: Server, time: Long, message: ByteString) {
     def toSauerBytes = SauerBytes(server, time, message.toVector)
-    def toBytes = SauerBytes2.toBytes(toSauerBytes)
+    def toBytes = SauerBytesBinary.toBytes(toSauerBytes)
   }
   object ReceivedBytes {
     def fromSauerBytes(sauerBytes: SauerBytes) = 

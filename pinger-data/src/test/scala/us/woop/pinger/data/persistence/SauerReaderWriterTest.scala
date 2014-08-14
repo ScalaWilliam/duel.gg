@@ -2,7 +2,8 @@ package us.woop.pinger.data.persistence
 
 import akka.util.ByteString
 import org.scalatest.{Matchers, WordSpec}
-import us.woop.pinger.data.{SauerBytes, Server}
+import us.woop.pinger.data.Server
+import us.woop.pinger.data.log.SauerBytes
 
 import scala.collection.mutable.ArrayBuffer
 

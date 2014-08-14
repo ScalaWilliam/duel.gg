@@ -101,7 +101,6 @@
             <artifactId>h2</artifactId>
             <version>1.4.180</version>
         </dependency>
-
     </dependencies>
 
     <build>
@@ -149,7 +148,29 @@
                     </execution>
                 </executions>
             </plugin>
-        </plugins>
-    </build>
+        <plugin>
+            <groupId>pl.project13.maven</groupId>
+            <artifactId>git-commit-id-plugin</artifactId>
+            <version>2.1.10</version>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>revision</goal>
+                    </goals>
+                </execution>
+            </executions>
+
+            <configuration>
+                <!-- ... -->
+
+                <!-- this is false by default, forces the plugin to generate the git.properties file -->
+                <generateGitPropertiesFile>true</generateGitPropertiesFile>
+
+                <!-- The path for the to be generated properties file, it's relative to ${project.basedir} -->
+                <generateGitPropertiesFilename>src/main/resources/git.properties</generateGitPropertiesFilename>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
 
 </project>

@@ -1,3 +1,6 @@
+sb-*.log
+sb-*.json
+sb-*.log.bz2
 data/
 db-*.db
 db.*.db
@@ -17,7 +20,7 @@ syntax: glob
 *.bak
 #*.off
 *.old
-
+pinger-service/src/main/resources/git.properties
 # eclipse conf file
 .settings
 .classpath

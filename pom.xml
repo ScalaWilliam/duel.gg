@@ -29,6 +29,13 @@
         <aws.sdk.version>1.8.2</aws.sdk.version>
         <hazelcast.version>3.2.3</hazelcast.version>
     </properties>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>sonatype-snapshots</id>
+            <name>Sonatype Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <repositories>
         <repository>
