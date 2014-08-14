@@ -43,7 +43,10 @@ class PublishToSauerFile extends Act with ActorLogging {
 
     outputLog = new File(s"${metaData.id}.log")
     currentStream = new FileOutputStream(outputLog)
-    become(writing(metaData, SauerBytesWriter.createInjectedWriter(currentStream.write)))
+    become(writing(metaData, SauerBytesWriter.createInjectedWriter(b => {
+      currentStream.write(b)
+      currentStream.flush()
+    })))
   }
 
   whenStarting {
