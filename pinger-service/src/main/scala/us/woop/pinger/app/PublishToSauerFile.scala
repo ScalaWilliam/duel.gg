@@ -1,51 +1,68 @@
 package us.woop.pinger.app
 
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-
+import java.io.{FileWriter, FileOutputStream, File}
 import akka.actor.ActorDSL._
-import us.woop.pinger.data.persistence.{SauerReaderWriter, SauerWriter}
+import akka.actor.ActorLogging
+import us.woop.pinger.data.log.{SauerBytes, SauerBytesWriter, MetaData}
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 
-class PublishToSauerFile extends Act {
+object PublishToSauerFile {
 
-  var currentStore: SauerWriter = _
+}
+class PublishToSauerFile extends Act with ActorLogging {
+
+  var currentStream: FileOutputStream = _
+  var currentMetadata: MetaData = _
+  var outputLog: File = _
+  var outputJson: File = _
 
   case object Rotate
 
-  def newUUID = java.util.UUID.randomUUID().toString
+  def newMetaData = MetaData.build
+
+  def stopWriting(): Unit = {
+    if ( currentStream != null ) {
+      currentStream.flush()
+      currentStream.close()
+    }
+    compress(outputLog)
+  }
+
+  def compress(from: File): Unit = {
+    import sys.process._
+    Seq("bzip2", "-k", from.getCanonicalPath).run(ProcessLogger(log.debug, log.debug))
+  }
 
   def startWriting(): Unit = {
-    val dateFormat = new SimpleDateFormat("yyyyMMdd-HHmm")
-    val dateFormatted = dateFormat.format(new Date())
-    val fn = new File(s"db-$dateFormatted-$newUUID.db")
-    currentStore = SauerReaderWriter.writeToFile(fn)
-    become(writing(currentStore))
+    val metaData = newMetaData
+    outputJson = new File(s"${metaData.id}.json")
+    val os = new FileWriter(outputJson)
+    os.write(metaData.toJson)
+    os.flush()
+    os.close()
+
+    outputLog = new File(s"${metaData.id}.log")
+    currentStream = new FileOutputStream(outputLog)
+    become(writing(metaData, SauerBytesWriter.createInjectedWriter(currentStream.write)))
   }
 
   whenStarting {
     startWriting()
     import context.dispatcher
-
-import scala.concurrent.duration._
+    import scala.concurrent.duration._
     context.system.scheduler.schedule(1.day, 1.day, self, Rotate)
   }
 
-  def writing(to: SauerWriter): Receive = {
+  def writing(metadata: MetaData, write: SauerBytes => Unit): Receive = {
     case Rotate =>
-      to.flush()
-      to.close()
+      stopWriting()
       startWriting()
     case m @ ReceivedBytes(server, time, message) =>
-      to.write(m.toSauerBytes)
-      to.flush()
+      write(m.toSauerBytes)
   }
 
   whenStopping {
-    if ( currentStore != null ) {
-      currentStore.close()
-    }
+    stopWriting()
   }
 
 }

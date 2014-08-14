@@ -2,6 +2,7 @@ package us.woop.pinger.data
 
 import akka.util.ByteString
 import org.scalatest.{Matchers, WordSpecLike}
+import us.woop.pinger.data.log.{SauerBytesBinary, SauerBytes}
 
 class SauerBytesBinaryTest extends WordSpecLike with Matchers {
   "Received bytes binary converter" must {
@@ -10,12 +11,12 @@ class SauerBytesBinaryTest extends WordSpecLike with Matchers {
         1, 102, 114, 111, 122, 101, 110, 0, 115, 97, 117, 101, 114, 46, 119, 111, 111, 112, 46, 117, 115, 0
       )
       val receivedBytes = SauerBytes(Server("127.1.1.1", 1234), 12314, byteString.toVector)
-      val byteArray = SauerBytes2.toBytes(receivedBytes)
+      val byteArray = SauerBytesBinary.toBytes(receivedBytes)
 
       val expectedByteArraySize = 4 + 4 + 8 + byteString.size
       byteArray.size shouldBe expectedByteArraySize
 
-      val haveBytes = SauerBytes2.fromBytes(byteArray)
+      val haveBytes = SauerBytesBinary.fromBytes(byteArray)
       haveBytes.server.ip shouldBe receivedBytes.server.ip
       haveBytes.server.port shouldBe receivedBytes.server.port
       haveBytes.server shouldBe receivedBytes.server
