@@ -1,7 +1,7 @@
+/data/
 sb-*.log
 sb-*.json
 sb-*.log.bz2
-data/
 db-*.db
 db.*.db
 back-up.zip
