@@ -7,7 +7,7 @@ import akka.actor.{ActorLogging, ActorRef}
 import akka.io
 import akka.io.Udp
 import akka.util.ByteString
-import us.woop.pinger.data.log.{SauerBytesBinary, SauerBytes}
+import us.woop.pinger.data.journal.{SauerBytesBinary, SauerBytes}
 import us.woop.pinger.data.Server
 import us.woop.pinger.service.PingPongProcessor._
 

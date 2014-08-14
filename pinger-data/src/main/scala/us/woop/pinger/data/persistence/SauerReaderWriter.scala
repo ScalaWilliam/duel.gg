@@ -4,7 +4,7 @@ import java.io.{File, FileInputStream, FileOutputStream}
 import java.nio.{ByteBuffer, ByteOrder}
 
 import akka.util.ByteStringBuilder
-import us.woop.pinger.data.log.{SauerBytesBinary, SauerBytes}
+import us.woop.pinger.data.journal.{SauerBytesBinary, SauerBytes}
 import us.woop.pinger.data.persistence.SauerReaderWriter.ByteWriter
 
 import scala.collection.mutable.ArrayBuffer

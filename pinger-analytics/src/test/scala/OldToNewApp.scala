@@ -5,7 +5,7 @@ import akka.util.ByteStringBuilder
 import org.h2.mvstore.MVStore
 import us.woop.pinger.analytics.conversion.OldToNew
 import us.woop.pinger.data.SauerBytesBinary
-import us.woop.pinger.data.log.SauerBytesBinary
+import us.woop.pinger.data.journal.SauerBytesBinary
 import us.woop.pinger.data.persistence.SauerReaderWriter
 
 object OldToNewApp extends App {
