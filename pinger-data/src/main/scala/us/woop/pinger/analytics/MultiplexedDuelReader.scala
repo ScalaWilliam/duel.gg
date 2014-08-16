@@ -1,11 +1,12 @@
-package us.woop.pinger.analytics.processing
+package us.woop.pinger.analytics
 
 import akka.util.ByteString
-import us.woop.pinger.analytics.processing.DuelMaker.CompletedDuel
-import us.woop.pinger.analytics.processing.StreamedDuelMaker.{ZOutOfDuelState, ZFoundGame, ZIteratorState}
+import us.woop.pinger.analytics.DuelMaker.CompletedDuel
+import us.woop.pinger.analytics.StreamedDuelMaker.{ZIteratorState, ZOutOfDuelState, ZFoundGame}
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.journal.SauerBytes
-import us.woop.pinger.data.{Server, Extractor}
+import us.woop.pinger.data.{Extractor, Server}
+
 import scala.util.Try
 
 object MultiplexedDuelReader {

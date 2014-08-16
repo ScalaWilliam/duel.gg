@@ -1,14 +1,13 @@
-package us.woop.pinger.analytics.processing
+package us.woop.pinger.analytics
 
 import org.joda.time.format.ISODateTimeFormat
-import org.scalactic.Accumulation._
-import org.scalactic._
-import us.woop.pinger.analytics.data.ModesList
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import us.woop.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
-import us.woop.pinger.data.Server
-import scala.collection.immutable.SortedMap
+import us.woop.pinger.data.{ModesList, Server}
 
+import scala.collection.immutable.SortedMap
+import org.scalactic._
+import org.scalactic.Accumulation._
 object DuelMaker {
 
   case class PlayerLog(fragsLog: Map[Long, Int], weaponsLog: Map[Long, Int])
@@ -30,7 +29,7 @@ object DuelMaker {
   case class CompletedDuel(gameHeader: GameHeader, nextMessage: Option[ConvertedServerInfoReply],
                            winner: Option[(PlayerId, PlayerStatistics)],
                             playerStatistics: Map[PlayerId, PlayerStatistics],
-                            playedAt: Set[Int], duration: Int) extends DuelState {
+                            playedAt: Set[Int], duration: Int, metaId: Option[String] = None) extends DuelState {
     lazy val next: StateTransition = throw new NotImplementedError("Should not get here...")
     override def toString =
       s"""|Header: $gameHeader
@@ -45,6 +44,7 @@ object DuelMaker {
 
     def toSimpleCompletedDuel = {
       SimpleCompletedDuel(
+        simpleId= s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
         duration = duration,
         playedAt = playedAt,
         startTimeText = gameHeader.startTimeText,
@@ -190,6 +190,16 @@ object DuelMaker {
         )
       }).map(identity)
 
+      val haveStatsForEndOfGame = {
+        if ( playerStatistics.values.exists(_.fragsLog.isEmpty))
+          Bad(One(s"Player had an empty frag log"))
+        else {
+          val latestPlayerStatistic = playerStatistics.values.map(_.fragsLog.keys.max)
+          if (latestPlayerStatistic.toSet.size == 1) Good(latestPlayerStatistic)
+          else Bad(One(s"Player stats were unavailable at the end of the game: have $latestPlayerStatistic"))
+        }
+      }
+
       // per-minute activity of games
       val gameActive = playingAt.map(_ - gameHeader.startTime).map(_.toInt).groupBy(_ / 60000).mapValues(_.max / 60000).values.map(_+1).filter(_<=10).toSet
 
@@ -207,8 +217,8 @@ object DuelMaker {
         else Bad(One(s"Game does not have unique player names. Found: $uniqueNames"))
       }
 
-      withGood(activeForOver8Minutes, totalNumberOfPlayers, uniquePlayerNames) {
-        (gameActivity, playerStats, _) =>
+      withGood(haveStatsForEndOfGame, activeForOver8Minutes, totalNumberOfPlayers, uniquePlayerNames) {
+        (_, gameActivity, playerStats, _) =>
           CompletedDuel(
             winner = Option {
               playerStats.groupBy(_._2.frags).filter(_._2.size == 1)
@@ -234,6 +244,7 @@ object DuelMaker {
 
   case class SimpleCompletedDuel
   (
+  simpleId: String,
     duration: Int,
     playedAt: Set[Int],
     startTimeText: String,
@@ -249,6 +260,13 @@ object DuelMaker {
       import org.json4s.native.Serialization.write
       implicit val formats = Serialization.formats(NoTypeHints)
       write(this)
+    }
+    def toPrettyJson = {
+      import org.json4s._
+      import org.json4s.native.Serialization
+      import org.json4s.native.Serialization.writePretty
+      implicit val formats = Serialization.formats(NoTypeHints)
+      writePretty(this)
     }
     def toXml = <completed-duel
     duration={s"$duration"}

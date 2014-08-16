@@ -5,11 +5,8 @@ import javax.management.ObjectName
 import akka.actor._
 import akka.kernel.Bootable
 import akka.routing.RoundRobinPool
-import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.Server
-import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 import us.woop.pinger.service.PingerController.{Monitor, Unmonitor}
-import us.woop.pinger.service.individual.ServerMonitor.ServerStateChanged
 import us.woop.pinger.service.PingerController
 
 class HelloKernel extends Bootable {
@@ -28,7 +25,7 @@ class HelloKernel extends Bootable {
 
 }
 
-class StandalonePingerService(val system: ActorSystem) extends StandalonePingerServiceMBean {
+class StandalonePingerService(val system: ActorSystem) {
 
   def mbeanServer = ManagementFactory.getPlatformMBeanServer
 
@@ -41,12 +38,12 @@ class StandalonePingerService(val system: ActorSystem) extends StandalonePingerS
     system.actorOf(AppActor.props, name = "appActor")
   }
 
-  override def shutdown(): Unit = {
+  def shutdown(): Unit = {
     mbeanServer.unregisterMBean(mbeanName)
     system.shutdown()
   }
 
-  override def restartHazelcast(): Unit = {
+  def restartHazelcast(): Unit = {
     system.actorSelection("/user/appActor/hazelcast/*") ! Kill
   }
 
