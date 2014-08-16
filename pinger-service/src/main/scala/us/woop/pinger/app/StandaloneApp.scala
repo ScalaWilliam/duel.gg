@@ -39,14 +39,14 @@ object StandaloneApp extends App {
     var currentMetaData: MetaData = _
 
     become {
-      case r: ReceivedBytes if sender == pingerController =>
+      case r: ReceivedBytes =>
         filePublisher ! r
         duelProcessor ! r
-      case Finished(metaData) if sender == filePublisher =>
+      case Finished(metaData)  =>
 //        metaData
-      case m: MetaData if sender == duelProcessor =>
+      case m: MetaData  =>
         duelProcessor ! m
-      case a: CompletedDuel if sender == duelProcessor =>
+      case a: CompletedDuel =>
         couchPublisher ! a
       case m: Monitor =>
         pingerController ! m
