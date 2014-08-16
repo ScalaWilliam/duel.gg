@@ -18,13 +18,14 @@ class ProcessDuels extends Act with ActWithStash {
       nextState match {
         case SFoundGame(_, completedDuel) =>
           context.parent ! completedDuel.copy(metaId = Option(metaData.id))
+        case _ =>
       }
       become(stated(nextState, metaData))
   }
 
   become {
     case m: MetaData =>
-      stated(SInitial, m)
+      become(stated(SInitial, m))
       unstashAll()
     case r: ReceivedBytes =>
       stash()
