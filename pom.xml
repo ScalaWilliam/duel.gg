@@ -65,6 +65,12 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>io.spray</groupId>
+                <artifactId>spray-client_2.11</artifactId>
+                <version>1.3.1</version>
+            </dependency>
             <dependency>
                 <groupId>us.woop.pinger</groupId>
                 <artifactId>pinger-data</artifactId>

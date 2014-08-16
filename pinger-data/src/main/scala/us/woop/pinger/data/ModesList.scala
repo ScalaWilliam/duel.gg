@@ -1,4 +1,4 @@
-package us.woop.pinger.analytics.data
+package us.woop.pinger.data
 
 import scala.xml.NodeSeq
 
@@ -19,7 +19,7 @@ object ModesList {
   case class Mode(num: Int, name: String, keys: ModeParams.ValueSet)
 
   val modes = {
-    import ModeParams._
+    import us.woop.pinger.data.ModesList.ModeParams._
     val NULL = null
     implicit def toSet(key: ModeParams.Value): ModeParams.ValueSet = ModeParams.ValueSet(key)
     implicit class combine(keySet: ModeParams.ValueSet) {

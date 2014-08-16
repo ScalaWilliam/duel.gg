@@ -32,6 +32,7 @@
     </plugins>
     </build>
     <dependencies>
+
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor_${scala.version.short}</artifactId>

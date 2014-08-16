@@ -5,6 +5,7 @@ import java.net.InetAddress
 import java.text.SimpleDateFormat
 import java.util.Date
 import com.typesafe.config.ConfigFactory
+import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
 import scala.util.Try
@@ -12,11 +13,21 @@ import scala.util.Try
 case class MetaData
 (id: String, unixTime: Long, timestamp: String,
  processStartTime: Long, processStartTimestamp: String,
- processName: String, commitId: Option[String], cliOptions: List[String],
+ processName: String, commitId: Option[String], cliOptions: Option[List[String]],
  user: String, machineName: String,
- version: Option[String], currentDir: String) {
+ version: Option[String], currentDir: String, source: Option[String] = None) {
 
-  def withNewId = copy(id = MetaData.newId)
+  def withNewId = copy(id = MetaData.newId())
+
+  def withRecordStartTime(time: Long) = {
+    val date = new Date(time)
+    val dateFormat = ISODateTimeFormat.dateTimeNoMillis
+    copy(
+      id = MetaData.newId(date),
+      unixTime = time,
+      timestamp = dateFormat.print(new DateTime(time))
+    )
+  }
 
   def toJson = {
     import org.json4s._
@@ -29,10 +40,17 @@ case class MetaData
 
 object MetaData {
 
-  def newId = {
+  def fromJson(json: String): MetaData = {
+    import org.json4s._
+    import org.json4s.native.Serialization
+    import org.json4s.native.Serialization.read
+    implicit val formats = Serialization.formats(NoTypeHints)
+    read[MetaData](json)
+  }
+  def newId(date: Date = new Date) = {
     val uuid = java.util.UUID.randomUUID().toString
     val dateFormat = new SimpleDateFormat("yyyyMMdd-HHmm")
-    val dateString = dateFormat.format(new Date)
+    val dateString = dateFormat.format(date)
     s"sb-$dateString-${uuid.take(8)}"
   }
   
@@ -52,14 +70,14 @@ object MetaData {
     val processName = ManagementFactory.getRuntimeMXBean.getName
     val commitIdO = Try(ConfigFactory.load("/git.properties").getString("git.commit.id")).toOption.flatMap(Option.apply)
     MetaData(
-      id = newId,
+      id = newId(),
       unixTime = unixTime,
       timestamp = timestamp,
       processStartTime = processStartTime,
       processStartTimestamp = processStartTimestamp,
       processName = processName,
       commitId = commitIdO,
-      cliOptions = cliOptions,
+      cliOptions = Option(cliOptions).filterNot(_.isEmpty),
       user = user,
       machineName = hostname,
       version = metadataVersion,

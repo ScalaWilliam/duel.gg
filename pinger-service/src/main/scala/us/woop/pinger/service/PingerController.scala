@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, PoisonPill, Props}
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.Server
 import us.woop.pinger.service.PingPongProcessor._
-import us.woop.pinger.service.PingerController.{Monitor, Unmonitor}
+import us.woop.pinger.service.PingerController.{ServersList, ListServers, Monitor, Unmonitor}
 import us.woop.pinger.service.RawToExtracted.ExtractedMessage
 import us.woop.pinger.service.individual.ServerMonitor.ServerStateChanged
 import us.woop.pinger.service.individual.ServerSupervisor
@@ -19,12 +19,16 @@ import us.woop.pinger.service.individual.ServerSupervisor
  * It will route pinger responses into the event stream.
  */
 object PingerController {
+
   case object Ready
   case class Monitor(server: Server)
   case class Unmonitor(server: Server)
+  case object ListServers
+  case class ServersList(servers: Set[Server])
 
   def props = Props(classOf[PingerController], None)
   def props(parent: ActorRef) = Props(classOf[PingerController], Option(parent))
+
 }
 class PingerController(parentO: Option[ActorRef]) extends Act with ActWithStash {
 
@@ -57,6 +61,8 @@ class PingerController(parentO: Option[ActorRef]) extends Act with ActWithStash 
     case badHash: BadHash if servers contains badHash.server =>
       servers(badHash.server) ! badHash
       parent ! badHash
+    case ListServers =>
+      sender ! ServersList(servers.keySet.toSet)
     case receivedBytes: ReceivedBytes if servers contains receivedBytes.server =>
       parser ! receivedBytes
       parent ! receivedBytes

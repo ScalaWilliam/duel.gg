@@ -1,20 +1,24 @@
-package us.woop.pinger.app
+package us.woop.pinger.service.journal
 
-import java.io.{FileWriter, FileOutputStream, File}
+import java.io.{File, FileOutputStream, FileWriter}
+
 import akka.actor.ActorDSL._
 import akka.actor.ActorLogging
-import us.woop.pinger.data.journal.{SauerBytes, SauerBytesWriter, MetaData}
+import us.woop.pinger.data.journal.{MetaData, SauerBytes, SauerBytesWriter}
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
+import us.woop.pinger.service.journal.JournalSauerBytes.Finished
 
-object PublishToSauerFile {
-
+object JournalSauerBytes {
+  case class Finished(metaData: MetaData)
 }
-class PublishToSauerFile extends Act with ActorLogging {
+class JournalSauerBytes extends Act with ActorLogging {
 
   var currentStream: FileOutputStream = _
   var currentMetadata: MetaData = _
   var outputLog: File = _
   var outputJson: File = _
+  var newCount: Int = _
+  val countLimit = 5000000
 
   case object Rotate
 
@@ -29,7 +33,7 @@ class PublishToSauerFile extends Act with ActorLogging {
   }
 
   def compress(from: File): Unit = {
-    import sys.process._
+    import scala.sys.process._
     Seq("bzip2", "-k", from.getCanonicalPath).run(ProcessLogger(log.debug, log.debug))
   }
 
@@ -40,28 +44,31 @@ class PublishToSauerFile extends Act with ActorLogging {
     os.write(metaData.toJson)
     os.flush()
     os.close()
-
+    newCount = 0
     outputLog = new File(s"${metaData.id}.log")
     currentStream = new FileOutputStream(outputLog)
     become(writing(metaData, SauerBytesWriter.createInjectedWriter(b => {
       currentStream.write(b)
       currentStream.flush()
     })))
+    context.parent ! metaData
   }
 
   whenStarting {
     startWriting()
-    import context.dispatcher
-    import scala.concurrent.duration._
-    context.system.scheduler.schedule(1.day, 1.day, self, Rotate)
   }
 
   def writing(metadata: MetaData, write: SauerBytes => Unit): Receive = {
     case Rotate =>
+      context.parent ! Finished(metadata)
       stopWriting()
       startWriting()
     case m @ ReceivedBytes(server, time, message) =>
+      newCount = newCount + 1
       write(m.toSauerBytes)
+      if ( newCount == countLimit ) {
+        self ! Rotate
+      }
   }
 
   whenStopping {

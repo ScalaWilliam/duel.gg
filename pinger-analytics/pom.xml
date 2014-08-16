@@ -13,9 +13,21 @@
 
     <artifactId>pinger-analytics</artifactId>
     <version>1.0</version>
+    <repositories>
+        <repository>
+            <id>spray</id>
+            <url>http://repo.spray.io</url>
+            <name>spray</name>
+        </repository>
+    </repositories>
 
 
-    <dependencies>
+    <dependencies><dependency>
+        <groupId>com.ning</groupId>
+        <artifactId>async-http-client</artifactId>
+        <version>1.8.13</version>
+    </dependency>
+
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-native_${scala.version.short}</artifactId>
@@ -29,6 +41,7 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-stream-experimental_${scala.version.short}</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.basex</groupId>
             <artifactId>basex</artifactId>

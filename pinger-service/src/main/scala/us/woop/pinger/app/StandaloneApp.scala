@@ -1,29 +1,34 @@
 package us.woop.pinger.app
 
-import java.lang.management.ManagementFactory
-import javax.management.ObjectName
-
 import akka.actor._
 import akka.routing.RoundRobinPool
-import us.woop.pinger.data.ParsedPongs.ParsedMessage
+import us.woop.pinger.analytics.DuelMaker.CompletedDuel
 import us.woop.pinger.data.Server
+import us.woop.pinger.data.journal.MetaData
+import us.woop.pinger.service.analytics.CouchDbDuels.CouchDbPath
+import us.woop.pinger.service.analytics.{CouchDbDuels, ProcessDuels}
+import us.woop.pinger.service.journal.JournalSauerBytes
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 import us.woop.pinger.service.PingerController
 import us.woop.pinger.service.PingerController.{Monitor, Unmonitor}
-import us.woop.pinger.service.individual.ServerMonitor.ServerStateChanged
-
+import us.woop.pinger.service.journal.JournalSauerBytes.Finished
 import scala.util.Try
 
-object StandaloneApp extends App with StandaloneAppMBean {
+object StandaloneApp extends App {
+
   val sys = ActorSystem("YES")
   import akka.actor.ActorDSL._
 
   val main = actor(sys, "main")(new Act {
 
-    val filePublisher = actor(context, "filePublisher")(new PublishToSauerFile)
+    val filePublisher = actor(context, "filePublisher")(new JournalSauerBytes)
+
+    val duelProcessor = actor(context, "duelProcessor")(new ProcessDuels)
+
+    val couchPublisher = actor(context, "couchPublisher")(new CouchDbDuels(CouchDbPath("http://127.0.0.1:5984/duels")))
 
     val pingerController =
-      context.actorOf(RoundRobinPool(1, supervisorStrategy =  OneForOneStrategy(){
+      context.actorOf(RoundRobinPool(1, supervisorStrategy = OneForOneStrategy(){
         case _: ActorInitializationException => SupervisorStrategy.Restart
         case _: DeathPactException  => Stop
         case _: ActorKilledException => SupervisorStrategy.Restart
@@ -31,9 +36,18 @@ object StandaloneApp extends App with StandaloneAppMBean {
       }).props(PingerController.props(context.self)),
         "pingerController")
 
+    var currentMetaData: MetaData = _
+
     become {
-      case r: ReceivedBytes =>
+      case r: ReceivedBytes if sender == pingerController =>
         filePublisher ! r
+        duelProcessor ! r
+      case Finished(metaData) if sender == filePublisher =>
+//        metaData
+      case m: MetaData if sender == duelProcessor =>
+        duelProcessor ! m
+      case a: CompletedDuel if sender == duelProcessor =>
+        couchPublisher ! a
       case m: Monitor =>
         pingerController ! m
       case u: Unmonitor =>

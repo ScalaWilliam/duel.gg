@@ -5,7 +5,7 @@ import javax.xml.namespace.QName
 import javax.xml.xquery.XQItemType
 
 import com.xqj2.XQConnection2
-import us.woop.pinger.analytics.processing.DuelMaker.CompletedDuel
+import DuelMaker.CompletedDuel
 
 import scala.xml.PrettyPrinter
 
