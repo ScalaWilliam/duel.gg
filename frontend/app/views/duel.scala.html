@@ -1,0 +1,27 @@
+@(duel: scala.xml.Elem)
+<html>
+<head><title>@{((duel \\ "player")(0) \ "@name").text} vs @{((duel \\ "player")(1) \ "@name").text}</title>
+    <link rel="stylesheet" href="/assets/stylesheets/main.css" type="text/css"/></head>
+<body>
+
+<header id="top">
+    <h1><a href="/">Duel? GG!</a></h1>
+</header>
+<article class="duel">
+    <header>
+        <h3>@{(duel \\ "@mode").text} @@ @{(duel \\ "@map").text} </h3>
+        <h2>@{((duel \\ "@start-time")(0) \ "@name").text}</h2>
+    </header>
+    <section class="duel">
+        <section class="score score-left">
+            <p class="score">@{((duel \\ "player")(0) \ "@frags").text}</p>
+            <p class="name">@{((duel \\ "player")(0) \ "@name").text}</p>
+        </section>
+        <section class="score score-right">
+            <p class="score">@{((duel \\ "player")(1) \ "@frags").text}</p>
+            <p class="name">@{((duel \\ "player")(1) \ "@name").text.take(10)}</p>
+        </section>
+    </section>
+</article>
+</body>
+</html>

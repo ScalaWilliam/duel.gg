@@ -2,7 +2,7 @@ import java.io.{File, FileInputStream}
 
 import akka.actor.ActorSystem
 import us.woop.pinger.analytics.MultiplexedDuelReader
-import us.woop.pinger.data.journal.{MetaData, SauerBytesWriter}
+import us.woop.pinger.data.journal.{IterationMetaData, SauerBytesWriter}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
@@ -37,9 +37,9 @@ object AnalyseGamesApp extends App {
 
   import scalax.io.JavaConverters._
 
-  val metaDatas = TrieMap.empty[String, MetaData].withDefault {
+  val metaDatas = TrieMap.empty[String, IterationMetaData].withDefault {
     id =>
-      MetaData.fromJson(new File(s"$id.json").asInput.string)
+      IterationMetaData.fromJson(new File(s"$id.json").asInput.string)
   }
 
 

@@ -1,0 +1,3 @@
+GET                  /                                   controllers.Duelgg.index
+GET                  /:id                               controllers.Duelgg.showPage(id: String)
+GET  /assets/*file               controllers.Assets.at(path="/public", file)

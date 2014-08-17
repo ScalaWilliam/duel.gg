@@ -3,14 +3,17 @@ package us.woop.pinger.analytics
 import java.util.Properties
 import javax.xml.namespace.QName
 import javax.xml.xquery.XQItemType
-
 import com.xqj2.XQConnection2
 import DuelMaker.CompletedDuel
+import org.basex.BaseXClient
 
 import scala.xml.PrettyPrinter
 
 object BaseXTestApp extends App {
+
   val conn =  new net.xqj.basex.local.BaseXXQDataSource().getConnection.asInstanceOf[XQConnection2]
+
+  val ha: BaseXClient = ???
 
   val yes = CompletedDuel.test.toSimpleCompletedDuel.toJson
 
