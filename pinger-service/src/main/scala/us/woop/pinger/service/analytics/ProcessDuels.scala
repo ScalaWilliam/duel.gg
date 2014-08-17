@@ -1,16 +1,14 @@
 package us.woop.pinger.service.analytics
 import akka.actor.ActorDSL._
 import us.woop.pinger.analytics.MultiplexedDuelReader.{SInitial, SFoundGame, SIteratorState}
-import us.woop.pinger.data.journal.MetaData
+import us.woop.pinger.data.journal.IterationMetaData
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 
 object ProcessDuels {
-
 }
 class ProcessDuels extends Act with ActWithStash {
-
-  def stated(state: SIteratorState, metaData: MetaData): Receive = {
-    case newMetaData: MetaData =>
+  def stated(state: SIteratorState, metaData: IterationMetaData): Receive = {
+    case newMetaData: IterationMetaData =>
       become(stated(state, newMetaData))
 
     case r: ReceivedBytes =>
@@ -24,7 +22,7 @@ class ProcessDuels extends Act with ActWithStash {
   }
 
   become {
-    case m: MetaData =>
+    case m: IterationMetaData =>
       become(stated(SInitial, m))
       unstashAll()
     case r: ReceivedBytes =>

@@ -61,7 +61,8 @@ object DuelMaker {
             weapon = playerStats.weapon,
             fragLog = playerStats.fragsLog.map { case (x, y) => s"$x" -> y}
           ),
-        winner = winner.map(_._1.name)
+        winner = winner.map(_._1.name),
+        metaId = metaId
       )
     }
   }
@@ -78,7 +79,8 @@ object DuelMaker {
       nextMessage = None,
       winner = Option(PlayerId("Test", "a.b.c.x") -> PlayerStatistics(frags = 5, fragsLog = Map(1 -> 2), weapon = "test")),
       playerStatistics = Map(
-        PlayerId("Test", "a.b.c.x") -> PlayerStatistics(frags = 5, fragsLog = Map(1 -> 2), weapon = "test")
+        PlayerId("Test", "a.b.c.x") -> PlayerStatistics(frags = 5, fragsLog = Map(1 -> 2), weapon = "test"),
+          PlayerId("Best", "a.b.c.x") -> PlayerStatistics(frags = 20, fragsLog = Map(1 -> 2, 3-> 4), weapon = "rocket launcher")
       ),
       playedAt = Set(1,2,5),
       duration = 5
@@ -185,8 +187,11 @@ object DuelMaker {
             ModesList.guns.getOrElse(weaponId, "unknown")
           }
         )
-        secondlyPlayerStatistics.copy(
+        val thirdly = secondlyPlayerStatistics.copy(
           fragsLog = Map(SortedMap(secondlyPlayerStatistics.fragsLog.groupBy(_._1 / 60000).mapValues(_.maxBy(_._1)._2).toVector :_*).map{case(t, v) => (t + 1) -> v}.filterKeys(_ <= 10).toVector :_*)
+        )
+        thirdly.copy(
+          frags = thirdly.fragsLog.maxBy(_._1)._2
         )
       }).map(identity)
 
@@ -253,7 +258,7 @@ object DuelMaker {
     mode: String,
     server: String,
     players: Map[String, SimplePlayerStatistics],
-    winner: Option[String]) {
+    winner: Option[String], metaId: Option[String]) {
     def toJson = {
       import org.json4s._
       import org.json4s.native.Serialization
@@ -269,6 +274,8 @@ object DuelMaker {
       writePretty(this)
     }
     def toXml = <completed-duel
+    simple-id={simpleId}
+    meta-id={metaId.orNull}
     duration={s"$duration"}
     start-time={startTimeText}
     map={map}
@@ -282,9 +289,7 @@ object DuelMaker {
                 weapon={stats.weapon}>
           {for {(at, frags) <- stats.fragLog}
         yield
-          <frags at={at}>
-            {frags}
-          </frags>}
+          <frags at={at}>{frags}</frags>}
         </player>
         }
       </players>

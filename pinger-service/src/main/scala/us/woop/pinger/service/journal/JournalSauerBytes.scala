@@ -4,25 +4,20 @@ import java.io.{File, FileOutputStream, FileWriter}
 
 import akka.actor.ActorDSL._
 import akka.actor.ActorLogging
-import us.woop.pinger.data.journal.{MetaData, SauerBytes, SauerBytesWriter}
+import us.woop.pinger.data.journal.{IterationMetaData, SauerBytes, SauerBytesWriter}
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
-import us.woop.pinger.service.journal.JournalSauerBytes.Finished
+import us.woop.pinger.service.journal.JournalSauerBytes.{Rotate, WritingStopped}
 
 object JournalSauerBytes {
-  case class Finished(metaData: MetaData)
+  case class Rotate(metaData: IterationMetaData)
+  case class WritingStopped(metaData: IterationMetaData)
 }
-class JournalSauerBytes extends Act with ActorLogging {
+
+class JournalSauerBytes(initialMetaData: IterationMetaData) extends Act with ActorLogging {
 
   var currentStream: FileOutputStream = _
-  var currentMetadata: MetaData = _
   var outputLog: File = _
-  var outputJson: File = _
-  var newCount: Int = _
-  val countLimit = 5000000
-
-  case object Rotate
-
-  def newMetaData = MetaData.build
+  var currentMetadata: IterationMetaData = initialMetaData
 
   def stopWriting(): Unit = {
     if ( currentStream != null ) {
@@ -30,45 +25,36 @@ class JournalSauerBytes extends Act with ActorLogging {
       currentStream.close()
     }
     compress(outputLog)
+    context.parent ! WritingStopped(currentMetadata)
   }
 
   def compress(from: File): Unit = {
     import scala.sys.process._
     Seq("bzip2", "-k", from.getCanonicalPath).run(ProcessLogger(log.debug, log.debug))
   }
+  
+  val writeToJournal = SauerBytesWriter.createInjectedWriter(b => {
+    currentStream.write(b)
+    currentStream.flush()
+  })
 
-  def startWriting(): Unit = {
-    val metaData = newMetaData
-    outputJson = new File(s"${metaData.id}.json")
-    val os = new FileWriter(outputJson)
-    os.write(metaData.toJson)
-    os.flush()
-    os.close()
-    newCount = 0
+  def startWriting(metaData: IterationMetaData): Unit = {
     outputLog = new File(s"${metaData.id}.log")
     currentStream = new FileOutputStream(outputLog)
-    become(writing(metaData, SauerBytesWriter.createInjectedWriter(b => {
-      currentStream.write(b)
-      currentStream.flush()
-    })))
+    become(writingState(metaData))
     context.parent ! metaData
   }
 
-  whenStarting {
-    startWriting()
+  def writingState(metadata: IterationMetaData): Receive = {
+    case m @ ReceivedBytes(server, time, message) =>
+      writeToJournal(m.toSauerBytes)
+    case Rotate(newMetaData) =>
+      stopWriting()
+      startWriting(newMetaData)
   }
 
-  def writing(metadata: MetaData, write: SauerBytes => Unit): Receive = {
-    case Rotate =>
-      context.parent ! Finished(metadata)
-      stopWriting()
-      startWriting()
-    case m @ ReceivedBytes(server, time, message) =>
-      newCount = newCount + 1
-      write(m.toSauerBytes)
-      if ( newCount == countLimit ) {
-        self ! Rotate
-      }
+  whenStarting {
+    startWriting(initialMetaData)
   }
 
   whenStopping {

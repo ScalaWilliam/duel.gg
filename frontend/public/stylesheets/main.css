@@ -1,0 +1,110 @@
+/* latin */
+@font-face {
+    font-family: 'Permanent Marker';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Permanent Marker'), local('PermanentMarker'),
+    url(9vYsg5VgPHKK8SXYbf3sMsW72xVeg1938eUHStY_AJ4.woff2) format('woff2'),
+    url(9vYsg5VgPHKK8SXYbf3sMupm9E4gBdgiUiSJePew_SQ.woff) format('woff');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+body {
+    font-family: 'Permanent Marker', cursive;
+    background-color: #303048;
+    color:#d8f0f0;
+    margin:0 auto;
+    padding:0;
+    text-align: center;
+    cursor: default;
+}
+#top {
+    background-color: #fcfbe3;
+    color: #303048;
+    padding-top:0.5em;
+    font-size:4em;
+    margin-bottom:0.5em;
+}
+#top h1 {
+    font-size:inherit;
+    margin:0;
+}
+ol {
+    list-style-type: none;
+    width:40em;
+    margin:0 auto;
+}
+ol li {
+
+}
+li header {
+    color:#d8f0f0;
+    width:69%;
+    text-align: left;
+    display:inline-block;
+    margin:0; padding:0
+}
+li footer {
+    color:#fcfbe3;
+    text-align: left;
+    width:29%;
+    display: inline-block;
+    margin:0; padding:0
+}
+article header {
+    color:#d8f0f0;
+}
+li {
+    padding:0;
+    margin-bottom:1em;
+    font-size:1.6em;
+}
+.score h2 {
+    color: #fcfbe3;
+}
+li h2, li h3, li p {
+    font-size:inherit;
+    margin:0;
+    padding:0;
+}
+
+.duel p.score {
+    font-size:10em;
+    color:#fcfbe3;
+}
+.duel section.score {
+    display:inline-block;
+    width:49%;
+}
+.duel p.name {
+    font-size:3em;
+}
+.duel p {
+    margin:0;
+}
+section.duel {
+    width:40em;
+    margin:0 auto;
+}
+article.duel header {
+    font-size:2em;
+}
+article.duel header * {
+    font-size:inherit;
+    margin:0;
+}
+ol.duels li a {
+    text-decoration: none;
+    display:block;
+    -webkit-transition:all 0.4s;
+    transition:all 0.4s;
+    border-radius:0.2em;
+    padding:0.5em;
+
+}
+ol.duels li a:hover {
+    background:#1b325f;
+}
+#top a {
+    color:inherit;
+    text-decoration: none;
+}
