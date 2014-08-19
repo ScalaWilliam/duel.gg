@@ -6,12 +6,10 @@ import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 import javax.xml.xquery.XQItemType
-
 import BaseXPersister.PublicDuelId
 import com.xqj2.XQConnection2
 import us.woop.pinger.analytics.DuelMaker.SimpleCompletedDuel
 import us.woop.pinger.data.journal.IterationMetaData
-
 import scala.util.control.NonFatal
 import scala.xml.Elem
 
@@ -131,7 +129,7 @@ class SimpleBaseXPerister(dbName: String, database: XQConnection2, chars: String
           |  else ()
         """.stripMargin
 
-  protected val getSimilarDuel = database.prepareExpression(
+  protected lazy val getSimilarDuel = database.prepareExpression(
       s"""
           |$duelsAreSimilar
           |$within
@@ -142,13 +140,13 @@ class SimpleBaseXPerister(dbName: String, database: XQConnection2, chars: String
           |return $$duel
         """.stripMargin
     )
-  protected val readDuels = database.prepareExpression(
+  protected lazy val readDuels = database.prepareExpression(
       s"""
            |/duel
          """.stripMargin)
-  protected val pushDuelOut = database.prepareExpression(q)
+  protected lazy val pushDuelOut = database.prepareExpression(q)
 
-    protected val listDuelsE = database.prepareExpression(
+    protected lazy val listDuelsE = database.prepareExpression(
       s"""
            |/duel
          """.stripMargin

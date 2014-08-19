@@ -81,6 +81,9 @@ li h2, li h3, li p {
 .duel p {
     margin:0;
 }
+body {
+    overflow-y:scroll;
+}
 section.duel {
     width:40em;
     margin:0 auto;

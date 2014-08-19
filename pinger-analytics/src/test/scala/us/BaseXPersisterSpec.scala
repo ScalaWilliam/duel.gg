@@ -11,9 +11,10 @@ class BaseXPersisterSpec extends WordSpec with Matchers {
 
 
   "Duel pusher" must {
-    val conn =  new net.xqj.basex.local.BaseXXQDataSource().getConnection.asInstanceOf[XQConnection2]
+    val ds =  new net.xqj.basex.local.BaseXXQDataSource()
     val sampleDuel = CompletedDuel.test.toSimpleCompletedDuel.copy(metaId=Option(IterationMetaData.build.id)).copy(duration = 15)
     val dbName = "lozlzozlolozol"
+    val conn = ds.getConnection.asInstanceOf[XQConnection2]
     val xqe = conn.createExpression()
     xqe.executeCommand(s"CHECK $dbName")
     xqe.executeCommand(s"CLOSE")
