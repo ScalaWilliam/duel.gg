@@ -1,4 +1,4 @@
-@(elems: List[scala.xml.Elem])
+@(duelsItems: play.twirl.api.Html)
 <html>
 <head><title>duel.gg!</title>
     <link rel="stylesheet" href="/assets/stylesheets/main.css" type="text/css"/></head>
@@ -8,18 +8,7 @@
 </header>
 <article class="duels">
     <ol class="duels">
-        @for(item <- elems) {
-        <li><a href="/@{(item \ "@web-id").text}">
-            <header>
-                <h2>@{((item \\ "player")(0) \ "@name").text} vs @{((item \\ "player")(1) \ "@name").text}</h2>
-                <h3>@{(item \ "@mode").text} @@ @{(item \ "@map").text} </h3>
-            </header>
-            <footer>
-                <p class="score">@{((item \\ "player")(0) \ "@frags").text}-@{((item \\ "player")(1) \ "@frags").text}</p>
-                <p class="when">@{(item \ "@start-time").text.take(10)}</p>
-            </footer></a>
-        </li>
-        }
+        @duelsItems
     </ol>
 </article>
 </body>

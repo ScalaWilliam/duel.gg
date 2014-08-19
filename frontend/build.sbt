@@ -11,3 +11,9 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 scalaVersion := "2.11.2"
 
 resolvers += Resolver.mavenLocal
+
+libraryDependencies += "net.xqj" % "xqj-connection-pool" % "0.9.0-SNAPSHOT"
+
+libraryDependencies += "org.apache.commons" % "commons-pool2" % "2.2"
+
+libraryDependencies += ws

@@ -90,9 +90,9 @@ val source = """{"total_rows":63,"offset":0,"rows":[
   xqe.executeCommand(s"CLOSE")
   xqe.executeCommand(s"DROP DB $dbName")
   xqe.executeCommand(s"CHECK $dbName")
-  val sda = new us.SimpleBaseXPerister(dbName, conn, "antpquio")
-  yes.rows map(_.value) foreach (d =>
-    sda.pushDuel(d,IterationMetaData.build.copy(id = "test"))
-  )
+//  val sda = new us.SimpleBaseXPerister(dbName, conn, "antpquio")
+//  yes.rows map(_.value) foreach (d =>
+//    sda.pushDuel(d,IterationMetaData.build.copy(id = "test"))
+//  )
 
 }
