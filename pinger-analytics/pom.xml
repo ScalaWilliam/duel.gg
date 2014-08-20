@@ -19,14 +19,28 @@
             <url>http://repo.spray.io</url>
             <name>spray</name>
         </repository>
+        <repository>
+            <id>typesafe</id>
+            <name>typesafe-releases</name>
+            <url>http://repo.typesafe.com/typesafe/releases</url>
+        </repository>
+        <repository>
+            <id>Sonatype Releases</id>
+            <url>http://oss.sonatype.org/content/repositories/releases</url>
+        </repository>
     </repositories>
 
-
-    <dependencies><dependency>
-        <groupId>com.ning</groupId>
-        <artifactId>async-http-client</artifactId>
-        <version>1.8.13</version>
-    </dependency>
+    <dependencies>
+        <dependency>
+            <groupId>com.typesafe.play</groupId>
+            <artifactId>play-ws_2.11</artifactId>
+            <version>2.3.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.play</groupId>
+            <artifactId>play-test_2.11</artifactId>
+            <version>2.3.3</version>
+        </dependency>
         <dependency>
             <groupId>net.xqj</groupId>
             <artifactId>xqj-connection-pool</artifactId>
@@ -45,7 +59,6 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-stream-experimental_${scala.version.short}</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.basex</groupId>
             <artifactId>basex</artifactId>
