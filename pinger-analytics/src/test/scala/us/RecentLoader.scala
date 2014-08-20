@@ -1,11 +1,9 @@
 package us
 
-import javax.xml.xquery.XQException
-
-import com.xqj2.XQConnection2
-import org.json4s.native.Serialization
 import us.woop.pinger.analytics.DuelMaker.{CompletedDuel, SimpleCompletedDuel}
 import us.woop.pinger.data.journal.IterationMetaData
+
+import scala.concurrent.{Await, Future}
 
 object RecentLoader extends App {
 val source = """{"total_rows":63,"offset":0,"rows":[
@@ -84,31 +82,33 @@ val source = """{"total_rows":63,"offset":0,"rows":[
   println(yes)
 //  goodies map (_.extract[SimpleCompletedDuel])
 
-  val conn = {
-    val ds = new net.xqj.basex.BaseXXQDataSource()
-    ds.setUser("admin")
-    ds.setPassword("admin")
-    ds.getConnection.asInstanceOf[XQConnection2]
-  }
-  val sampleDuel = CompletedDuel.test.toSimpleCompletedDuel.copy(metaId=Option(IterationMetaData.build.id)).copy(duration = 15)
-  val dbName = "duelsz"
-  val xqe = conn.createExpression()
-//  xqe.executeCommand(s"CHECK $dbName")
-//  xqe.executeCommand(s"CLOSE")
-//  xqe.executeCommand(s"DROP DB $dbName")
-  xqe.executeCommand(s"CHECK $dbName")
-  try {
-    xqe.executeCommand("CREATE EVENT new-duels")
-    xqe.executeCommand("CREATE EVENT new-duels")
-    xqe.executeCommand("CREATE EVENT new-duels")
-  } catch {
-    case e: XQException if e.getVendorCode == "XQJBX018" =>
-      // XQJBX018 - Event 'new-duels' already exists. - ignore
-  }
-  val sda = new us.SimpleBaseXPerister(dbName, conn, "antpquio")
-  val got = yes.rows take 1 map(_.value) map (d =>
-    sda.pushDuel(d.copy(startTimeText = "2014-08-08T15:49:36+02:00"),IterationMetaData.build.copy(id = "test"))
-  )
-  println(got)
+  val ws = new StandaloneWSAPI
 
+  import scala.concurrent.ExecutionContext.Implicits.global
+  val persisterA = new WSAsyncDuelPersister(ws, "http://localhost:8984", "duelsza", "yesz")
+  import concurrent.duration._
+  try {
+    println(Await.result(persisterA.dropDatabase, 10.seconds))
+    println(Await.result(persisterA.createDatabase, 10.seconds))
+  } catch {
+    case e => println(e)
+  }
+  println("Created DB")
+  val persisterB = new WSAsyncDuelPersister(ws, "http://localhost:8984", "yesz", "antpquio")
+
+  val out = yes.rows.map(x =>
+    println(Await.result(persisterB.pushDuel(x.value, IterationMetaData.build.copy(id = "test")), 10.seconds))
+  )
+  println(out)
+//  val got = yes.rows map(_.value) map { d =>
+//    println("OK!")
+//    for {a <- persisterB.pushDuel(d, IterationMetaData.build.copy(id = "test"))}
+//    yield {
+//      println(a)
+//      a
+//    }
+//  }
+//
+//  Await.ready(Future.sequence(got), 20.seconds)
+  ws.close()
 }
