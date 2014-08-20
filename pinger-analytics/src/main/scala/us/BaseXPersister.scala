@@ -125,8 +125,8 @@ class SimpleBaseXPerister(dbName: String, database: XQConnection2, chars: String
           |  return $$updated-duel
           |return
           |  if ( empty($$similar-duels) )
-          |  then (db:add("$dbName", $$updated-duel, $$meta-data-id))
-          |  else ()
+          |  then (db:add("$dbName", $$updated-duel, $$meta-data-id), db:event("new-duels", "WUT") )
+          |  else (db:event("new-duels", "WUT?"))
         """.stripMargin
 
   protected lazy val getSimilarDuel = database.prepareExpression(
@@ -160,7 +160,7 @@ class SimpleBaseXPerister(dbName: String, database: XQConnection2, chars: String
 
       getSimilarDuel.bindNode(new QName("new-duel"), xml.asJava, null)
       val res = getSimilarDuel.executeQuery()
-      try {
+      val duelId = try {
         if (!res.next()) {
           throw new IllegalStateException("Query returned no result, expected to have a result!")
         }
@@ -170,6 +170,7 @@ class SimpleBaseXPerister(dbName: String, database: XQConnection2, chars: String
       } finally {
         res.close()
       }
+      duelId
     }
 
     override def getDuel(duelId: PublicDuelId): Option[Elem] = {

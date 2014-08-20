@@ -1,5 +1,7 @@
 package controllers
 
+import org.basex.examples.api.BaseXClient
+import org.basex.examples.api.BaseXClient.EventNotifier
 import play.api.mvc._
 import play.twirl.api.Html
 
@@ -82,8 +84,21 @@ object Duelgg extends Controller {
     )
   }
 
+  lazy val eventClient = {
+    val b = new BaseXClient("127.0.0.1", 1984, "admin", "admin")
+    b.execute("CHECK duelsz")
+    b.watch("new-duels", new EventNotifier {
+      override def notify(value: String): Unit = {
+        println(s"Received event $value")
+      }
+
+    })
+    b
+  }
+
   def index = Action.async {
     request =>
+      eventClient.hashCode()
       import scala.concurrent.ExecutionContext.Implicits.global
       getIndex.map(_.body).map(x => Ok(views.html.index(Html(x))))
   }

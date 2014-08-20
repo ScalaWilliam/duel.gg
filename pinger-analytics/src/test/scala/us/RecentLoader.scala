@@ -1,5 +1,7 @@
 package us
 
+import javax.xml.xquery.XQException
+
 import com.xqj2.XQConnection2
 import org.json4s.native.Serialization
 import us.woop.pinger.analytics.DuelMaker.{CompletedDuel, SimpleCompletedDuel}
@@ -82,17 +84,31 @@ val source = """{"total_rows":63,"offset":0,"rows":[
   println(yes)
 //  goodies map (_.extract[SimpleCompletedDuel])
 
-  val conn =  new net.xqj.basex.local.BaseXXQDataSource().getConnection.asInstanceOf[XQConnection2]
+  val conn = {
+    val ds = new net.xqj.basex.BaseXXQDataSource()
+    ds.setUser("admin")
+    ds.setPassword("admin")
+    ds.getConnection.asInstanceOf[XQConnection2]
+  }
   val sampleDuel = CompletedDuel.test.toSimpleCompletedDuel.copy(metaId=Option(IterationMetaData.build.id)).copy(duration = 15)
   val dbName = "duelsz"
   val xqe = conn.createExpression()
+//  xqe.executeCommand(s"CHECK $dbName")
+//  xqe.executeCommand(s"CLOSE")
+//  xqe.executeCommand(s"DROP DB $dbName")
   xqe.executeCommand(s"CHECK $dbName")
-  xqe.executeCommand(s"CLOSE")
-  xqe.executeCommand(s"DROP DB $dbName")
-  xqe.executeCommand(s"CHECK $dbName")
-//  val sda = new us.SimpleBaseXPerister(dbName, conn, "antpquio")
-//  yes.rows map(_.value) foreach (d =>
-//    sda.pushDuel(d,IterationMetaData.build.copy(id = "test"))
-//  )
+  try {
+    xqe.executeCommand("CREATE EVENT new-duels")
+    xqe.executeCommand("CREATE EVENT new-duels")
+    xqe.executeCommand("CREATE EVENT new-duels")
+  } catch {
+    case e: XQException if e.getVendorCode == "XQJBX018" =>
+      // XQJBX018 - Event 'new-duels' already exists. - ignore
+  }
+  val sda = new us.SimpleBaseXPerister(dbName, conn, "antpquio")
+  val got = yes.rows take 1 map(_.value) map (d =>
+    sda.pushDuel(d.copy(startTimeText = "2014-08-08T15:49:36+02:00"),IterationMetaData.build.copy(id = "test"))
+  )
+  println(got)
 
 }
