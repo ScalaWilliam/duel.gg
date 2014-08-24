@@ -1,15 +1,9 @@
-@(duelsItems: play.twirl.api.Html)
-<html>
-<head><title>duel.gg!</title>
-    <link rel="stylesheet" href="/assets/stylesheets/main.css" type="text/css"/></head>
-<body>
-<header id="top">
-    <h1><a href="/">Duel? GG!</a></h1>
-</header>
+@(duelsItems: Html)
+@template("index-view")("duel.gg") {
 <article class="duels">
-    <ol class="duels">
-        @duelsItems
-    </ol>
+    @duelsItems
 </article>
-</body>
-</html>
+        <script type="text/javascript">
+            DuelGG();
+        </script>
+}

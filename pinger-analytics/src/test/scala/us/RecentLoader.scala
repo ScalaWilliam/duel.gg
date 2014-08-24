@@ -79,8 +79,6 @@ val source = """{"total_rows":63,"offset":0,"rows":[
   case class CouchItem[T](value: T)
   case class CouchListing[T](rows: List[CouchItem[T]])
   val yes= parse(source).extract[CouchListing[SimpleCompletedDuel]]
-  println(yes)
-//  goodies map (_.extract[SimpleCompletedDuel])
 
   val ws = new StandaloneWSAPI
 
@@ -91,7 +89,7 @@ val source = """{"total_rows":63,"offset":0,"rows":[
     println(Await.result(persisterA.dropDatabase, 10.seconds))
     println(Await.result(persisterA.createDatabase, 10.seconds))
   } catch {
-    case e => println(e)
+    case e: Throwable => println(e)
   }
   println("Created DB")
   val persisterB = new WSAsyncDuelPersister(ws, "http://localhost:8984", "yesz", "antpquio")

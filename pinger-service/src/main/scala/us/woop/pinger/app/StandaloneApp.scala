@@ -5,11 +5,11 @@ import akka.routing.RoundRobinPool
 import us.woop.pinger.data.{ServersListing, Server}
 import us.woop.pinger.data.journal.IterationMetaData
 import us.woop.pinger.service.analytics.ProcessDuels
-import us.woop.pinger.service.journal.JournalSauerBytes
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 import us.woop.pinger.service.PingerController
 import us.woop.pinger.service.PingerController.{Monitor, Unmonitor}
-import us.woop.pinger.service.journal.JournalSauerBytes.WritingStopped
+import us.woop.pinger.service.delivery.JournalSauerBytes
+import JournalSauerBytes.WritingStopped
 
 object StandaloneApp extends App {
 
