@@ -1,12 +1,12 @@
-package us.woop.pinger.service.journal
+package us.woop.pinger.service.delivery
 
-import java.io.{File, FileOutputStream, FileWriter}
+import java.io.{File, FileOutputStream}
 
 import akka.actor.ActorDSL._
 import akka.actor.ActorLogging
-import us.woop.pinger.data.journal.{IterationMetaData, SauerBytes, SauerBytesWriter}
+import us.woop.pinger.data.journal.{IterationMetaData, SauerBytesWriter}
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
-import us.woop.pinger.service.journal.JournalSauerBytes.{Rotate, WritingStopped}
+import us.woop.pinger.service.delivery.JournalSauerBytes.{Rotate, WritingStopped}
 
 object JournalSauerBytes {
   case class Rotate(metaData: IterationMetaData)

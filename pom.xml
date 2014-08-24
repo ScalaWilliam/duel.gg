@@ -20,7 +20,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scala.version.short>2.11</scala.version.short>
         <scala.version>2.11.1</scala.version>
-        <akka.version>2.3.4</akka.version>
+        <akka.version>2.3.5</akka.version>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
         <scalatest.version>2.2.0</scalatest.version>
@@ -42,6 +42,10 @@
             <id>Scalaz Bintray Repo</id>
             <url>http://dl.bintray.com/scalaz/releases</url>
             <releases><enabled>true</enabled></releases>
+        </repository>
+        <repository>
+            <id>Sonatype Releases</id>
+            <url>http://oss.sonatype.org/content/repositories/releases</url>
         </repository>
         <repository>
             <id>xqj</id>
@@ -74,6 +78,11 @@
             <dependency>
                 <groupId>us.woop.pinger</groupId>
                 <artifactId>pinger-data</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>us.woop.pinger</groupId>
+                <artifactId>pinger-analytics</artifactId>
                 <version>1.0</version>
             </dependency>
             <dependency>
@@ -187,14 +196,14 @@
                 <version>${vaadin.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.scalaz.stream</groupId>
-                <artifactId>scalaz-stream_${scala.version.short}</artifactId>
-                <version>0.4.1</version>
+                <groupId>com.typesafe.akka</groupId>
+                <artifactId>akka-stream-experimental_${scala.version.short}</artifactId>
+                <version>0.6</version>
             </dependency>
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-stream-experimental_${scala.version.short}</artifactId>
-                <version>0.4</version>
+                <artifactId>akka-http-experimental_${scala.version.short}</artifactId>
+                <version>0.6</version>
             </dependency>
             <dependency>
                 <groupId>org.fusesource.leveldbjni</groupId>

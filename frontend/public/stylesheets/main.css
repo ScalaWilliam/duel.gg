@@ -9,7 +9,8 @@
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
 }
 body {
-    font-family: 'Permanent Marker', cursive;
+    font-faxmily: 'Permanent Marker', cursive;
+    font-family: Signika;
     background-color: #303048;
     color:#d8f0f0;
     margin:0 auto;
@@ -17,42 +18,50 @@ body {
     text-align: center;
     cursor: default;
 }
+.index-view {
+
+}
+.index-view
+ol {
+    list-style-type: none;
+    width:40em;
+    margin:0 auto;
+}
+.index-view ol li {
+    padding-right:14%;
+}
 #top {
     background-color: #fcfbe3;
     color: #303048;
     padding-top:0.5em;
     font-size:4em;
     margin-bottom:0.5em;
+    font-family: 'Permanent Marker', cursive;
 }
 #top h1 {
     font-size:inherit;
     margin:0;
 }
-ol {
-    list-style-type: none;
-    width:40em;
-    margin:0 auto;
-}
-ol li {
-
-}
+.index-view
 li header {
     color:#d8f0f0;
-    width:69%;
-    text-align: left;
+    width:61%;
+    text-align: right;
     display:inline-block;
-    margin:0; padding:0
+    margin:0; padding:0;
+    margin-right:2%;
 }
+.index-view
 li footer {
+    vertical-align: top;
     color:#fcfbe3;
-    text-align: left;
-    width:29%;
+    text-align: center;
+    width:35%;
     display: inline-block;
-    margin:0; padding:0
+    margin:0; padding:0;
+
 }
-article header {
-    color:#d8f0f0;
-}
+.index-view
 li {
     padding:0;
     margin-bottom:1em;
@@ -61,7 +70,10 @@ li {
 .score h2 {
     color: #fcfbe3;
 }
-li h2, li h3, li p {
+.index-view
+li h2,
+.index-view li h3,
+.index-view li p {
     font-size:inherit;
     margin:0;
     padding:0;
@@ -95,19 +107,32 @@ article.duel header * {
     font-size:inherit;
     margin:0;
 }
-ol.duels li a {
+.index-view .duels ol li a {
     text-decoration: none;
     display:block;
-    -webkit-transition:all 0.4s;
-    transition:all 0.4s;
+    -webkit-transition:opacity 3s, background 0.4s, color 0.4s;
+    transition:opacity 3s,background 0.4s,color 0.4s;
     border-radius:0.2em;
     padding:0.5em;
-
 }
-ol.duels li a:hover {
+.index-view .duels ol li a.new {
+    background:#c7325f;
+}
+.index-view .duels ol li a:hover {
     background:#1b325f;
+}
+.mode-map {
+    text-align: center;
 }
 #top a {
     color:inherit;
     text-decoration: none;
 }
+.index-view .duels ol li a footer p.score {
+    font-size:2em;
+}
+.index-view .duels ol li a header h3 {
+    font-weight: normal;
+}
+
+

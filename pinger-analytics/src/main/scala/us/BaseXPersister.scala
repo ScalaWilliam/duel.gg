@@ -151,11 +151,15 @@ class WSAsyncDuelPersister(client: WSAPI, basexContextPath: String, dbName: Stri
     r
   }
   override def pushDuel(duelXml: SimpleCompletedDuel, metadata: IterationMetaData)(implicit ec: ExecutionContext): Future[PublicDuelId] = {
+    pushDuelTakeMeta(duelXml.copy(metaId = Option(metadata.id)))
+  }
+  def pushDuelTakeMeta(duelXml: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[PublicDuelId] = {
     val xml = duelXml.toXml
+    val metadataId = duelXml.metaId.get
     for {
       push <- postIntoDatabase(<query xmlns="http://basex.org/rest">
         <text>{pushDuelOut(xml)}</text>
-        <variable name="meta-data-id" value={metadata.id}/>
+        <variable name="meta-data-id" value={metadataId}/>
       </query>)
       webIdResponse <- postIntoDatabase(<query xmlns="http://basex.org/rest">
         <text>{getSimilarDuel(xml)}</text>
