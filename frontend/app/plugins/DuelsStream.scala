@@ -2,7 +2,7 @@ package plugins
 
 import akka.actor.{Props, ActorRef}
 import com.hazelcast.client.HazelcastClient
-import com.hazelcast.core.{Message, MessageListener}
+import com.hazelcast.core.{Hazelcast, Message, MessageListener}
 import play.api._
 import play.api.libs.concurrent.Akka
 import play.api.libs.json.{JsValue, JsString, JsObject}
@@ -10,7 +10,13 @@ import plugins.DuelsStream.NewDuelContent
 class DuelsStream(implicit app: Application) extends Plugin {
 
   override def enabled = true
-  lazy val hazelcast = HazelcastClient.newHazelcastClient()
+  lazy val hazelcast = {
+    val path = "plugins.DuelsStream.hazelcast.type"
+    app.configuration.getString(path) match {
+      case Some("member") => Hazelcast.newHazelcastInstance()
+      case _ => HazelcastClient.newHazelcastClient()
+    }
+  }
   lazy val newDuelsTopic = hazelcast.getTopic[String]("new-duels")
   lazy val messageListener = new MessageListener[String] {
     override def onMessage(p1: Message[String]): Unit = {
