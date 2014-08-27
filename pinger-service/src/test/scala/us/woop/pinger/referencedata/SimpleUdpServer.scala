@@ -3,7 +3,7 @@ package us.woop.pinger.referencedata
 import java.net.InetSocketAddress
 
 import akka.actor.ActorDSL._
-import akka.actor.{ActorLogging, ActorRef}
+import akka.actor.{Props, ActorLogging, ActorRef}
 import akka.event.LoggingReceive
 import akka.io.{IO, Udp}
 import akka.util.ByteString
@@ -63,6 +63,9 @@ object SimpleUdpServer {
       mapped(sender, StubServer.mappings) orElse restOfUdp(sender)
     }
   }
+  object GoodHashSauerbratenPongServer {
+    def props(address: InetSocketAddress) = Props(classOf[GoodHashSauerbratenPongServer], address)
+  }
   class BadHashSauerbratenPongServer(address: InetSocketAddress) extends SauerbratenPongServer(address) {
 
     override val recombine = (_: Vector[Int]) ++ Vector(1) ++ (_: Vector[Int]) ++ (_: Vector[Int])
@@ -70,6 +73,9 @@ object SimpleUdpServer {
     becomeStart { sender =>
       mapped(sender, StubServer.mappings) orElse restOfUdp(sender)
     }
+  }
+  object BadHashSauerbratenPongServer {
+    def props(address: InetSocketAddress) = Props(classOf[BadHashSauerbratenPongServer], address)
   }
 
 }

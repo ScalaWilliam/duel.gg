@@ -3,7 +3,7 @@ package us.woop.pinger.service.delivery
 import java.io.{File, FileOutputStream}
 
 import akka.actor.ActorDSL._
-import akka.actor.ActorLogging
+import akka.actor.{Props, ActorLogging}
 import us.woop.pinger.data.journal.{IterationMetaData, SauerBytesWriter}
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 import us.woop.pinger.service.delivery.JournalSauerBytes.{Rotate, WritingStopped}
@@ -11,6 +11,7 @@ import us.woop.pinger.service.delivery.JournalSauerBytes.{Rotate, WritingStopped
 object JournalSauerBytes {
   case class Rotate(metaData: IterationMetaData)
   case class WritingStopped(metaData: IterationMetaData)
+  def props(imd: IterationMetaData) = Props(classOf[JournalSauerBytes], imd)
 }
 
 class JournalSauerBytes(initialMetaData: IterationMetaData) extends Act with ActorLogging {

@@ -1,24 +1,38 @@
 package us
-import BaseXPersister.PublicDuelId
+import us.BaseXPersister.{MetaId, PublicDuelId}
 import play.api.libs.ws.WSAPI
 import us.woop.pinger.analytics.DuelMaker.SimpleCompletedDuel
 import us.woop.pinger.data.journal.IterationMetaData
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-import scala.xml.Elem
+import scala.xml.{PCData, Elem}
 
 object BaseXPersister {
 
   case class PublicDuelId(value: String)
+  case class MetaId(value: String)
 
 }
 trait AsyncDuelPersister {
-  def pushDuel(duelXml: SimpleCompletedDuel, metadata: IterationMetaData)(implicit ec: ExecutionContext): Future[PublicDuelId]
+  def pushDuel(duelXml: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[Unit]
+
   def getDuel(duelId: PublicDuelId)(implicit ec: ExecutionContext): Future[Option[scala.xml.Elem]]
+
+  def getSimilarDuel(duelId: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[Option[scala.xml.Elem]]
+
   def listDuels(implicit ec: ExecutionContext): Future[List[scala.xml.Elem]]
 }
-class WSAsyncDuelPersister(client: WSAPI, basexContextPath: String, dbName: String, chars: String) extends AsyncDuelPersister {
+trait MetaPersister {
+  def pushMeta(metaXml: IterationMetaData)(implicit ec: ExecutionContext): Future[Unit]
+  def getMeta(metaId: MetaId)(implicit ec: ExecutionContext): Future[Option[scala.xml.Elem]]
+  def listMetas(implicit ec: ExecutionContext): Future[List[scala.xml.Elem]]
+}
+
+trait BaseXClient {
   import play.api.libs.ws._
+  def client: WSAPI
+  def dbName: String
+  def basexContextPath: String
 
   def createDatabase(implicit ec: ExecutionContext) = {
     postIntoRoot(
@@ -49,148 +63,106 @@ class WSAsyncDuelPersister(client: WSAPI, basexContextPath: String, dbName: Stri
       .withHeaders("Accept" -> "application/xml")
       .withRequestTimeout(10000)
       .post(xml)
-      .map(filterFailed) recover {
-        case NonFatal(e) =>
-          throw new RuntimeException(s"Request to $url with body $xml failed due to $e", e)
-      }
-  }
-
-
-  protected val within =
-    """
-      |declare function local:within($first as xs:dateTime, $second as xs:dateTime, $maxInterval as xs:dayTimeDuration) {
-      |  let $zero := xs:dayTimeDuration("PT0S")
-      |  let $smf := $second - $first
-      |  let $fms := $first - $second
-      |  return (
-      |    ($smf ge $zero) and ($smf lt $maxInterval)
-      |  ) or ( ($fms ge $zero ) and ($fms lt $maxInterval))
-      |};
-      |"""
-
-  protected val getRandomId =
-    """declare function local:get-random-id($chars as xs:string) {
-      |  let $length := string-length($chars)
-      |  let $new-chars :=
-      |    for $i in 1 to $length
-      |    let $idx := 1 + random:integer($length)
-      |    return substring($chars, $idx, 1)
-      |  return string-join($new-chars)
-      |};""".stripMargin
-
-  protected val getNewDuelId =
-    """declare function local:get-new-duel-id($duels as node()*, $chars as xs:string) {
-      |  let $length := string-length($chars)
-      |  let $new-id := local:get-random-id($chars)
-      |  return
-      |    if (empty($duels[@web-id = $new-id]))
-      |    then ($new-id)
-      |    else (local:get-new-duel-id($duels, $chars))
-      |};""".stripMargin
-
-  protected  val duelsAreSimilar =
-    """
-      |declare function local:duels-are-similar($a as node(), $b as node()) {
-      |  (
-      |    $a/@server eq $b/@server
-      |  ) and (
-      |    local:within(
-      |      xs:dateTime($a/@start-time),
-      |      xs:dateTime($b/@start-time),
-      |      xs:dayTimeDuration("PT5M")
-      |    )
-      |  )
-      |};
-    """.stripMargin
-
-  protected def pushDuelOut(newDuel: scala.xml.Elem) =
-    s"""
-          |$duelsAreSimilar
-          |$getNewDuelId
-          |$getRandomId
-          |$within
-          |
-          |declare variable $$new-duel as node() external;
-          |declare variable $$meta-data-id as xs:string external;
-          |let $$new-duel := $newDuel
-          |let $$new-duel-id := local:get-new-duel-id(/duel, "$chars")
-          |let $$similar-duels :=
-          |  for $$duel in /duel
-          |  where local:duels-are-similar($$duel, $$new-duel)
-          |  return data($$duel/@web-id)
-          |let $$updated-duel :=
-          |  copy $$updated-duel := $$new-duel
-          |  modify (
-          |    rename node $$updated-duel as 'duel',
-          |    insert node (attribute {'web-id'} { $$new-duel-id }) into $$updated-duel
-          |  )
-          |  return $$updated-duel
-          |return
-          |  if ( empty($$similar-duels) )
-          |  then (db:add("$dbName", $$updated-duel, $$meta-data-id), db:event("new-duels", "WUT") )
-          |  else (db:event("new-duels", "WUT?"))
-        """.stripMargin
-
-  protected def getSimilarDuel(newDuel: scala.xml.Elem) =
-    s"""
-          |$duelsAreSimilar
-          |$within
-          |
-          |let $$new-duel := $newDuel
-          |for $$duel in /duel
-          |where local:duels-are-similar($$duel, $$new-duel)
-          |return $$duel
-        """.stripMargin
-
-  protected val readDuels =s"""/duel"""
-
-  protected lazy val listDuelsE = "/duel"
-  
-  protected def filterFailed(r: WSResponse) = {
-    if ( r.status != 200 ) { throw new RuntimeException(s"Expected 200, got ${r.status}. Body ${r.body}") }
-    r
-  }
-  override def pushDuel(duelXml: SimpleCompletedDuel, metadata: IterationMetaData)(implicit ec: ExecutionContext): Future[PublicDuelId] = {
-    pushDuelTakeMeta(duelXml.copy(metaId = Option(metadata.id)))
-  }
-  def pushDuelTakeMeta(duelXml: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[PublicDuelId] = {
-    val xml = duelXml.toXml
-    val metadataId = duelXml.metaId.get
-    for {
-      push <- postIntoDatabase(<query xmlns="http://basex.org/rest">
-        <text>{pushDuelOut(xml)}</text>
-        <variable name="meta-data-id" value={metadataId}/>
-      </query>)
-      webIdResponse <- postIntoDatabase(<query xmlns="http://basex.org/rest">
-        <text>{getSimilarDuel(xml)}</text>
-        </query>)
-    } yield PublicDuelId(webIdResponse.xml \ "@web-id" text)
-  }
-
-  override def getDuel(duelId: PublicDuelId)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
-    for { r <- postIntoDatabase(<query xmlns="http://basex.org/rest">
-      <text><![CDATA[
-        declare variable $web-id as xs:string external;
-        /duel[@web-id=$web-id]
-        ]]>
-      </text>
-      <variable name="web-id" value={duelId.value}/>
-    </query>)
-    } yield {
-      if ( r.body.nonEmpty ) {
-        Option(r.xml)
-      } else {
-        None
-      }
+      .map{r =>
+      if ( r.status != 200 ) { throw new RuntimeException(s"Expected 200, got ${r.status}. Body ${r.body}") }
+      r} recover {
+      case NonFatal(e) =>
+        throw new RuntimeException(s"Request to $url with body $xml failed due to $e", e)
     }
   }
 
+
+}
+
+class WSAsyncDuelPersister(val client: WSAPI, val basexContextPath: String, val dbName: String, val chars: String) extends AsyncDuelPersister with BaseXClient
+
+with MetaPersister {
+
+  lazy val functions = {
+    import scalax.io.JavaConverters._
+    this.getClass.getResource("/functions.xqm").asInput.string
+  }
+
+  override def pushDuel(duelXml: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[Unit] = {
+    val xml = duelXml.toXml
+    postIntoDatabase(
+      <query xmlns="http://basex.org/rest">
+        <text>{PCData(functions +
+          s"""
+            |
+            |if ( empty(((db:open("$dbName")/duel)[local:duels-are-similar(., $xml)])) )
+            |then (
+            | let $$new-duel-id := local:get-new-duel-id(db:open("$dbName")/duel, "$chars")
+            | return local:add-new-duel($$new-duel-id, "$dbName", $xml)
+            |)
+            |else ()
+            |""".stripMargin
+        )}</text>
+      </query>
+    ).map(x => ())
+  }
+
+  override def getDuel(duelId: PublicDuelId)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
+    postIntoDatabase(
+      <query xmlns="http://basex.org/rest">
+      <text>{PCData(functions + s"""
+      declare variable $$duel-id as xs:string external;
+      (db:open("$dbName")/duel)[@web-id=$$duel-id]]
+      """)}</text>
+        <variable name="duel-id" value={duelId.value}/>
+      </query>
+    ).map(x =>
+      if ( x.body.nonEmpty ) Some(x.xml) else None
+    )
+  }
+
   override def listDuels(implicit ec: ExecutionContext): Future[List[Elem]] = {
-    for { r <- postIntoDatabase(<query xmlns="http://basex.org/rest">
-      <text><![CDATA[
-        <duels>{/duel}</duels>]]>
-      </text>
-    </query>)
-    } yield (r.xml \ "duel").toList.map(_.asInstanceOf[Elem])
+    postIntoDatabase(<query xmlns="http://basex.org/rest">
+    <text>{PCData(functions + s"""<duels>{db:open("$dbName")/duel}</duels>""")}</text>
+    </query>).map(_.xml \ "duel").map(_.toList.map(_.asInstanceOf[Elem]))
+  }
+
+  override def getSimilarDuel(duelDefinition: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
+    postIntoDatabase(<query xmlns="http://basex.org/rest">
+    <text>{PCData(functions + s"""(db:open("$dbName")/duel)[local:duels-are-similar(., ${duelDefinition.toXml})]""")}</text>
+    </query>).map(x => if ( x.body.nonEmpty) Some(x.xml) else None)
+  }
+
+  override def pushMeta(metaXml: IterationMetaData)(implicit ec: ExecutionContext): Future[Unit] = {
+    val xml = metaXml.toXml
+    postIntoDatabase(
+    <query xmlns="http://basex.org/rest">
+    <text>{PCData(
+      s"""
+        |declare variable $$meta-id as xs:string external;
+        |if ( not(exists((db:open("$dbName")/meta)[@id = $$meta-id])) )
+        |then (db:add("$dbName", $xml, "meta"))
+        |else ()
+        |
+      """.stripMargin)}</text>
+      <variable name="meta-id" value={metaXml.id}/>
+    </query>
+    ).map(x => ())
+  }
+
+  override def getMeta(metaId: MetaId)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
+
+    postIntoDatabase(
+      <query xmlns="http://basex.org/rest">
+        <text>{PCData(s"""
+      declare variable $$meta-id as xs:string external;
+      (db:open("$dbName")/meta)[@id=$$meta-id]
+      """)}</text>
+        <variable name="meta-id" value={metaId.value}/>
+      </query>
+    ).map(x =>
+      if ( x.body.nonEmpty ) Some(x.xml) else None
+      )
+  }
+
+  override def listMetas(implicit ec: ExecutionContext): Future[List[Elem]] = {
+    postIntoDatabase(<query xmlns="http://basex.org/rest">
+      <text>{PCData(s"""<metas>{db:open("$dbName")/meta}</metas>""")}</text>
+    </query>).map(_.xml \ "meta").map(_.toList.map(_.asInstanceOf[Elem]))
   }
 }

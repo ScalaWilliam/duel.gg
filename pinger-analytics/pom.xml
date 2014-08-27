@@ -46,6 +46,12 @@
             <artifactId>json4s-native_${scala.version.short}</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.github.scala-incubator.io</groupId>
+            <artifactId>scala-io-core_2.11</artifactId>
+            <version>0.4.3-1</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.scalactic</groupId>
             <artifactId>scalactic_2.11</artifactId>
             <version>2.2.0</version>
