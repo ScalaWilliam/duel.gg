@@ -37,6 +37,13 @@ object MultiplexedDuelReader {
     sauerBytesIToParsedMessagesI(serverBytes).scanLeft(MInitial: MIteratorState)(_.next(_)).collect{ case MFoundGame(_, completedDuel) => completedDuel }
   }
 
+  def multiplexParsedMessages(parsedMessages: Iterator[ParsedMessage]): Iterator[CompletedDuel] = {
+    multiplexParsedMessagesStates(parsedMessages).collect{ case MFoundGame(_, completedDuel) => completedDuel }
+  }
+  def multiplexParsedMessagesStates(parsedMessages: Iterator[ParsedMessage]): Iterator[MIteratorState] = {
+    parsedMessages.scanLeft(MInitial: MIteratorState)(_.next(_))
+  }
+
   /** ParsedMessage ==> MFoundGame(_, CompletedDuel) **/
   type MProcessor = ParsedMessage => MIteratorState
   trait MIteratorState {
@@ -51,7 +58,7 @@ object MultiplexedDuelReader {
                 MProcessing(serverStates.updated(server, nextState))
             }
           case None =>
-            MProcessing(serverStates.updated(server, ZOutOfDuelState))
+            MProcessing(serverStates.updated(server, ZOutOfDuelState)).next.apply(parsedMessage)
         }
     }
     def serverStates: Map[Server, ZIteratorState]
