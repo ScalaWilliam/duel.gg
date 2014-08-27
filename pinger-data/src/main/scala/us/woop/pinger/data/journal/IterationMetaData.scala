@@ -31,6 +31,24 @@ case class IterationMetaData
   def completed =
     copy(finishedOn = Option(System.currentTimeMillis))
 
+  def toXml = {
+    <meta
+    id={id}
+    unix-time={unixTime.toString}
+    timestamp={timestamp}
+    process-start-time={processStartTime.toString}
+    process-start-timestamp={processStartTimestamp}
+    process-name={processName}
+    commit-id={commitId.orNull}
+    user={user}
+    machine-name={machineName}
+    version={version.orNull}
+    current-dir={currentDir}
+    source={source.orNull}
+    finishedOn={finishedOn.map(_.toString).orNull}
+    cli-options={cliOptions.map(_.mkString(" ")).orNull}/>
+  }
+
   def toJson = {
     import org.json4s._
     import org.json4s.native.Serialization

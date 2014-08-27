@@ -28,7 +28,7 @@ class PingPongProcessorActorSpec(sys: ActorSystem) extends TestKit(sys) with Fun
 
   test("That PPPA sends a bad hash message when a bad hash is given by the server") {
 
-    parentedProbe(Props(classOf[BadHashSauerbratenPongServer], serverBad.getInfoInetSocketAddress))
+    parentedProbe(BadHashSauerbratenPongServer.props(serverBad.getInfoInetSocketAddress))
     expectMsgClass(classOf[SimpleUdpServer.Ready])
 
     val pingProcessor = parentedProbe(Props(classOf[PingPongProcessorActor]))
@@ -43,7 +43,7 @@ class PingPongProcessorActorSpec(sys: ActorSystem) extends TestKit(sys) with Fun
   }
 
   test("That PPPA sends a ReceivedMessage when a good message is given by the server") {
-    parentedProbe(Props(classOf[GoodHashSauerbratenPongServer], server.getInfoInetSocketAddress))
+    parentedProbe(GoodHashSauerbratenPongServer.props(server.getInfoInetSocketAddress))
     expectMsgClass(classOf[SimpleUdpServer.Ready])
     val pingProcessor = parentedProbe(Props(classOf[PingPongProcessorActor]))
     expectMsgClass(classOf[PingPongProcessor.Ready])

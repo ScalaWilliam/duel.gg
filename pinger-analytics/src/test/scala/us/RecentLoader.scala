@@ -94,10 +94,10 @@ val source = """{"total_rows":63,"offset":0,"rows":[
   println("Created DB")
   val persisterB = new WSAsyncDuelPersister(ws, "http://localhost:8984", "yesz", "antpquio")
 
-  val out = yes.rows.map(x =>
-    println(Await.result(persisterB.pushDuel(x.value, IterationMetaData.build.copy(id = "test")), 10.seconds))
-  )
-  println(out)
+//  val out = yes.rows.map(x =>
+//    println(Await.result(persisterB.pushDuel(x.value, IterationMetaData.build.copy(id = "test")), 10.seconds))
+//  )
+//  println(out)
 //  val got = yes.rows map(_.value) map { d =>
 //    println("OK!")
 //    for {a <- persisterB.pushDuel(d, IterationMetaData.build.copy(id = "test"))}

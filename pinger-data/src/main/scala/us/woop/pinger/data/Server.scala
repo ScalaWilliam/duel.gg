@@ -35,7 +35,7 @@ object Server {
     Server(IP.valid(ip), port)
   def apply(ipPort: String): Server = {
     ipPort match {
-      case regex(ip, port) => Server(ip, port.toInt)
+      case regex(ip, _, port) => Server(ip, port.toInt)
     }
   }
   val defaultSauerbratenPort = 28785
