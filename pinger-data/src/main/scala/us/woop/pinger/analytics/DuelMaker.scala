@@ -128,7 +128,7 @@ object DuelMaker {
 
       val duelModeName = ModesList.modes.get(message.gamemode).map(_.name) match {
         case Some(modeName) if duelModeNames contains modeName  => Good(modeName)
-        case other => Bad(One(s"Mode $other (${message.gamemode})  not in $duelModeNames"))
+        case other => Bad(One(s"Mode $other (${message.gamemode}) not a duel mode, expected one of $duelModeNames"))
       }
 
       val hasEnoughTime =
@@ -225,9 +225,11 @@ object DuelMaker {
       withGood(haveStatsForEndOfGame, activeForOver8Minutes, totalNumberOfPlayers, uniquePlayerNames) {
         (_, gameActivity, playerStats, _) =>
           CompletedDuel(
-            winner = Option {
-              playerStats.groupBy(_._2.frags).filter(_._2.size == 1)
-            }.filter(_.nonEmpty).flatMap(_.maxBy(_._2.size)._2.headOption),
+            winner = {
+              Option {
+                playerStats.groupBy(_._2.frags).filter(_._2.size == 1)
+              }.filter(_.nonEmpty).flatMap(_.maxBy(_._1)._2.headOption)
+            },
             gameHeader = gameHeader,
             nextMessage = nextMessage,
             playerStatistics = playerStats,
