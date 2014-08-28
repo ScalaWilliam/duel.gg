@@ -191,7 +191,7 @@ object DuelMaker {
           fragsLog = Map(SortedMap(secondlyPlayerStatistics.fragsLog.groupBy(_._1 / 60000).mapValues(_.maxBy(_._1)._2).toVector :_*).map{case(t, v) => (t + 1) -> v}.filterKeys(_ <= 10).toVector :_*)
         )
         thirdly.copy(
-          frags = thirdly.fragsLog.maxBy(_._1)._2
+          frags = if ( thirdly.fragsLog.isEmpty ) 0 else thirdly.fragsLog.maxBy(_._1)._2
         )
       }).map(identity)
 
