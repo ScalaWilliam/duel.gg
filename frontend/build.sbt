@@ -14,6 +14,6 @@ libraryDependencies += "com.github.scala-incubator.io" % "scala-io-core_2.11" % 
 
 libraryDependencies += "com.github.scala-incubator.io" % "scala-io-file_2.11" % "0.4.3-1"
 
-libraryDependencies += "com.hazelcast" % "hazelcast" % "3.2.5"
+libraryDependencies += "com.hazelcast" % "hazelcast" % "3.2.3"
 
 libraryDependencies += ws

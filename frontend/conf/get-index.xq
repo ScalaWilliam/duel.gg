@@ -29,4 +29,4 @@ let $dateTime := xs:dateTime($duel/@start-time)
 (:where $dateTime ge $until:)
 order by $dateTime descending
 return local:index-duel($duel)
-return <ol>{fn:subsequence($duels-items, 1, 10)}</ol>
+return <ol>{fn:subsequence($duels-items, 1, 40)}</ol>
