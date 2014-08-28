@@ -7,7 +7,9 @@ import akka.actor._
 import akka.routing.RoundRobinPool
 import com.hazelcast.core.{ItemEvent, ItemListener, HazelcastInstance}
 import us.WSAsyncDuelPersister
-import us.woop.pinger.app.Woot.{JournalGenerator, RotateMeta}
+import us.woop.pinger.analytics.DuelMaker.CompletedDuel
+import us.woop.pinger.analytics.MultiplexedDuelReader.{SInitial, SFoundGame, SIteratorState}
+import us.woop.pinger.app.Woot.{NewlyAddedDuel, MetaCompletedDuel, JournalGenerator, RotateMeta}
 import us.woop.pinger.data.Server
 import us.woop.pinger.data.journal.{SauerBytesWriter, IterationMetaData}
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
@@ -16,6 +18,8 @@ import us.woop.pinger.service.PingerController.{Unmonitor, Monitor}
 import us.woop.pinger.service.analytics.JournalBytes
 import us.woop.pinger.service.delivery.JournalSauerBytes
 import us.woop.pinger.service.delivery.JournalSauerBytes.WritingStopped
+
+import scala.concurrent.Future
 
 class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journalGenerator: JournalGenerator) extends Act {
   val serversSet = hazelcast.getSet[String]("servers")
@@ -45,7 +49,8 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
   actor(context)(new Act {
 
     var journalBytes: ActorRef = _
-    def metas(meta: IterationMetaData): Unit = {
+    def metas(meta: IterationMetaData, state: SIteratorState): Unit = {
+
       hazelcast.getTopic[String]("meta").publish(meta.toJson)
 
 //      JournalSauerBytes.props(meta)
@@ -53,35 +58,98 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
       if ( journalBytes != null ) {
         journalBytes ! Stop
       }
+
+      import scala.concurrent.ExecutionContext.Implicits.global
+
+      persister.pushMeta(meta)
+
       journalBytes = context.actorOf(JournalBytes.props(meta, journalGenerator.generate(meta)))
 
-      become(metad(meta))
+      become(metad(meta, state))
 
       context.parent ! meta
     }
 
-
-
-
-    def metad(meta: IterationMetaData): Receive = {
+    def metad(meta: IterationMetaData, state: SIteratorState): Receive = {
       case RotateMeta =>
-        metas(IterationMetaData.build)
+        metas(IterationMetaData.build, state)
       case m: ReceivedBytes if journalBytes != null =>
         journalBytes ! m.toSauerBytes
+        val nextState = state.next(m.toSauerBytes)
+        nextState match {
+          case SFoundGame(_, game) =>
+            self ! MetaCompletedDuel(meta, game.copy(metaId = Option(meta.id)))
+          case _ =>
+        }
+        become(metad(meta, nextState))
+      case g: MetaCompletedDuel if sender() == self =>
+        context.parent ! g
       case g: JournalBytes.WritingStopped =>
         context.parent ! g
     }
+
     whenStarting {
-      metas(IterationMetaData.build)
+      metas(IterationMetaData.build, SInitial)
+    }
+
+  })
+
+  val completedDuelPublish =
+  actor(context)(new Act {
+    whenStarting {
+      import scala.concurrent.ExecutionContext.Implicits.global
+      persister.createDatabase
+    }
+
+    become {
+      case nd: NewlyAddedDuel =>
+        for { att <- nd.duel \ "@web-id" } {
+          hazelcast.getTopic[String]("new-duels").publish(att.text)
+          context.parent ! nd
+        }
+      case d: MetaCompletedDuel =>
+        val dd = d.completedDuel.copy(metaId = Option(d.metaId.id))
+
+        val sd = dd.toSimpleCompletedDuel
+        import scala.concurrent.ExecutionContext.Implicits.global
+        // left => existing ID
+        // right => new ID
+        val pushDuelResult: Future[Either[scala.xml.Elem, Option[scala.xml.Elem]]] = for {
+          existingDuel <- persister.getSimilarDuel(sd)
+          result <- existingDuel match {
+            case Some(existingId) => Future(Left(existingId))
+            case None => for {
+              _ <- persister.pushDuel(sd)
+              haveIt <- persister.getSimilarDuel(sd)
+            } yield Right(haveIt)
+          }
+        } yield result
+
+        for {
+          Right(Some(newDuel)) <- pushDuelResult
+        } {
+          self ! NewlyAddedDuel(newDuel)
+        }
     }
   })
 
   become {
-    case m: Monitor => pingerController ! m
-    case m: Unmonitor => pingerController ! m
-    case r: ReceivedBytes => context.parent ! r
-    case m: IterationMetaData => context.parent ! m
-    case RotateMeta => metaContext ! RotateMeta
+    case m: Monitor =>
+      pingerController ! m
+    case m: Unmonitor =>
+      pingerController ! m
+    case r: ReceivedBytes =>
+      metaContext ! r
+      context.parent ! r
+    case g: MetaCompletedDuel =>
+      completedDuelPublish ! g
+      context.parent ! g
+    case m: IterationMetaData =>
+      context.parent ! m
+    case RotateMeta =>
+      metaContext ! RotateMeta
+    case nd: NewlyAddedDuel =>
+      context.parent ! nd
     case 1 => println("yay")
   }
 
@@ -91,13 +159,16 @@ object Woot {
              persister: WSAsyncDuelPersister, journalGenerator: JournalGenerator) = {
     Props(classOf[Woot], hazelcast, persister, journalGenerator)
   }
+
+  case class MetaCompletedDuel(metaId: IterationMetaData, completedDuel: CompletedDuel)
+
   case object RotateMeta
 
   case class JournalGenerator
   (
   generate: IterationMetaData => JournalBytes.Writer
     )
-
+case class NewlyAddedDuel(duel: scala.xml.Elem)
   object JournalGenerator {
     def standard = JournalGenerator(
       imd => {

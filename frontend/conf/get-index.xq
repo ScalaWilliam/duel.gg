@@ -23,10 +23,10 @@ declare function local:index-duel($duel as element()) {
         </footer></a>
     </li>
 };
-let $until := xs:dateTime(fn:current-dateTime() - xs:dayTimeDuration("P10D"))
+(:let $until := xs:dateTime(fn:current-dateTime() - xs:dayTimeDuration("P10D")):)
 let $duels-items := for $duel in /duel[@web-id]
 let $dateTime := xs:dateTime($duel/@start-time)
-where $dateTime ge $until
+(:where $dateTime ge $until:)
 order by $dateTime descending
 return local:index-duel($duel)
 return <ol>{fn:subsequence($duels-items, 1, 10)}</ol>
