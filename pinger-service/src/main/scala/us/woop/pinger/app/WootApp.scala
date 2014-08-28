@@ -19,9 +19,12 @@ object WootApp extends App {
   config.getGroupConfig.setName("db-stage")
   val tempHazelcastInstance = Hazelcast.newHazelcastInstance(config)
   val yay = Woot.props(tempHazelcastInstance, persister, JournalGenerator.standard)
-  val main = as.actorOf(yay, "mainStuffs")
-  for { server <- ServersListing.servers } {
-    main ! Monitor(server)
-  }
+  import akka.actor.ActorDSL._
+  val container = actor(new Act{
+    val main = as.actorOf(yay, "mainStuffs")
+    for { server <- ServersListing.servers } {
+      main ! Monitor(server)
+    }
+  })
 
 }
