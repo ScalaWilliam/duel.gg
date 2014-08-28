@@ -37,7 +37,7 @@ trait BaseXClient {
   def createDatabase(implicit ec: ExecutionContext) = {
     postIntoRoot(
       <query xmlns="http://basex.org/rest">
-        <text>db:create(&quot;{dbName}&quot;)</text>
+        <text>if ( not(db:exists(&quot;{dbName}&quot;)) ) then (db:create(&quot;{dbName}&quot;)) else ()</text>
       </query>
     ).map(_.body)
   }

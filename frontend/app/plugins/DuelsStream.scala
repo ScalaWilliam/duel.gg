@@ -2,6 +2,7 @@ package plugins
 
 import akka.actor.{Props, ActorRef}
 import com.hazelcast.client.HazelcastClient
+import com.hazelcast.config.{ManagementCenterConfig, Config}
 import com.hazelcast.core.{Hazelcast, Message, MessageListener}
 import play.api._
 import play.api.libs.concurrent.Akka
@@ -11,10 +12,17 @@ class DuelsStream(implicit app: Application) extends Plugin {
 
   override def enabled = true
   lazy val hazelcast = {
-    val path = "plugins.DuelsStream.hazelcast.type"
+    val path = "plugins.DuelsStream.hazelcast.group-id"
     app.configuration.getString(path) match {
-      case Some("member") => Hazelcast.newHazelcastInstance()
-      case _ => HazelcastClient.newHazelcastClient()
+      case Some(groupId) =>
+
+        val config = new Config
+        config.setManagementCenterConfig(new ManagementCenterConfig("http://localhost:8091/mancenter", 5))
+        config.getManagementCenterConfig.setEnabled(true)
+        config.setLicenseKey("CBGAEHONFMI12W111700370Q67009Z")
+        config.getGroupConfig.setName(groupId)
+        Hazelcast.newHazelcastInstance(config)
+      case _ => Hazelcast.newHazelcastInstance()
     }
   }
   lazy val newDuelsTopic = hazelcast.getTopic[String]("new-duels")
