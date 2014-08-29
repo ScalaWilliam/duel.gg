@@ -3,7 +3,7 @@ function DuelGG() {
     startSocket();
 
     function startSocket() {
-        var url = "ws://127.0.0.1:9000/stream";
+        var url = "ws://" + location.host + "/stream";
         var socket = new WebSocket(url);
         socket.onmessage = function(m) {
             var liHtml = $.parseJSON(m.data)["new index item"];
