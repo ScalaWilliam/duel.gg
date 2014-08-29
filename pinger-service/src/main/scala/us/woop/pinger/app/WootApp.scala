@@ -12,14 +12,7 @@ object WootApp extends App {
 
   val persister = new WSAsyncDuelPersister(new StandaloneWSAPI, "http://127.0.0.1:8984", "db-stage", "ngnsads")
   implicit val as = ActorSystem("cooool")
-  val config = new Config
-  config.setManagementCenterConfig(new ManagementCenterConfig("http://localhost:8091/mancenter", 5))
-  config.getManagementCenterConfig.setEnabled(true)
-  config.getNetworkConfig.getJoin.getMulticastConfig.setEnabled(false)
-  config.getNetworkConfig.getJoin.getTcpIpConfig.setEnabled(true)
-  config.setLicenseKey("CBGAEHONFMI12W111700370Q67009Z")
-  config.getGroupConfig.setName("db-stage")
-  val tempHazelcastInstance = Hazelcast.newHazelcastInstance(config)
+  val tempHazelcastInstance = Hazelcast.newHazelcastInstance()
   val yay = Woot.props(tempHazelcastInstance, persister, JournalGenerator.standard)
   import akka.actor.ActorDSL._
   val container = actor(new Act{
