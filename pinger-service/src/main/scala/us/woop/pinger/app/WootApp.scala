@@ -15,6 +15,8 @@ object WootApp extends App {
   val config = new Config
   config.setManagementCenterConfig(new ManagementCenterConfig("http://localhost:8091/mancenter", 5))
   config.getManagementCenterConfig.setEnabled(true)
+  config.getNetworkConfig.getJoin.getMulticastConfig.setEnabled(false)
+  config.getNetworkConfig.getJoin.getTcpIpConfig.setEnabled(true)
   config.setLicenseKey("CBGAEHONFMI12W111700370Q67009Z")
   config.getGroupConfig.setName("db-stage")
   val tempHazelcastInstance = Hazelcast.newHazelcastInstance(config)

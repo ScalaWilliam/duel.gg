@@ -20,6 +20,8 @@ class DuelsStream(implicit app: Application) extends Plugin {
         config.setManagementCenterConfig(new ManagementCenterConfig("http://localhost:8091/mancenter", 5))
         config.getManagementCenterConfig.setEnabled(true)
         config.setLicenseKey("CBGAEHONFMI12W111700370Q67009Z")
+        config.getNetworkConfig.getJoin.getMulticastConfig.setEnabled(false)
+        config.getNetworkConfig.getJoin.getTcpIpConfig.setEnabled(true)
         config.getGroupConfig.setName(groupId)
         Hazelcast.newHazelcastInstance(config)
       case _ => Hazelcast.newHazelcastInstance()
