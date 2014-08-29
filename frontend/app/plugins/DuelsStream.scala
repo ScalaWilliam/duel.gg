@@ -12,20 +12,7 @@ class DuelsStream(implicit app: Application) extends Plugin {
 
   override def enabled = true
   lazy val hazelcast = {
-    val path = "plugins.DuelsStream.hazelcast.group-id"
-    app.configuration.getString(path) match {
-      case Some(groupId) =>
-
-        val config = new Config
-        config.setManagementCenterConfig(new ManagementCenterConfig("http://localhost:8091/mancenter", 5))
-        config.getManagementCenterConfig.setEnabled(true)
-        config.setLicenseKey("***REMOVED***")
-        config.getNetworkConfig.getJoin.getMulticastConfig.setEnabled(false)
-        config.getNetworkConfig.getJoin.getTcpIpConfig.setEnabled(true)
-        config.getGroupConfig.setName(groupId)
-        Hazelcast.newHazelcastInstance(config)
-      case _ => Hazelcast.newHazelcastInstance()
-    }
+    Hazelcast.newHazelcastInstance()
   }
   lazy val newDuelsTopic = hazelcast.getTopic[String]("new-duels")
   lazy val messageListener = new MessageListener[String] {
