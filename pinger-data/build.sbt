@@ -19,12 +19,12 @@ libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.3.5"
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.0.13"
 
 // for IP addresses
-libraryDependencies += "commons-validator" % "commons-validator" % "1.4.0"
+libraryDependencies += "commons-validator" % "commons-validator" % "1.4.0" exclude ("commons-logging", "commons-logging")
 
 // for serialisation
 libraryDependencies += "org.json4s" %% "json4s-native" % "3.2.10"
 
 // for making sure dates look good
-libraryDependencies += "org.joda" % "joda-convert" % "1.6"
+libraryDependencies += "org.joda" % "joda-convert" % "1.7"
 
 libraryDependencies += "joda-time" % "joda-time" % "2.4"

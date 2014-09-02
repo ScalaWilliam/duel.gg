@@ -24,7 +24,7 @@ libraryDependencies += "us.woop.pinger" %% "pinger-data" % "1.0-SNAPSHOT"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-contrib" % "2.3.5"
 
-libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.3.5"
+libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.3.5" exclude ("commons-logging", "commons-logging")
 
 libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.3.5"
 

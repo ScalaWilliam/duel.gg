@@ -1,12 +1,11 @@
 package us.woop.pinger.app
 
 import akka.actor.ActorSystem
-import com.hazelcast.config.{ManagementCenterConfig, Config}
 import com.hazelcast.core.Hazelcast
 import us.woop.pinger.app.Woot.JournalGenerator
 import us.woop.pinger.data.ServersListing
 import us.woop.pinger.service.PingerController.Monitor
-import us.{WSAsyncDuelPersister, StandaloneWSAPI}
+import us.{StandaloneWSAPI, WSAsyncDuelPersister}
 
 object WootApp extends App {
 
