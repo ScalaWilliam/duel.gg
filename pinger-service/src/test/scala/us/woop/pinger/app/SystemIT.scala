@@ -4,8 +4,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit}
-import com.hazelcast.client.HazelcastClient
-import com.hazelcast.client.config.ClientConfig
+//import com.hazelcast.client.HazelcastClient
+//import com.hazelcast.client.config.ClientConfig
 import com.hazelcast.config.Config
 import com.hazelcast.core.{HazelcastInstance, Message, MessageListener, Hazelcast}
 import org.scalatest._
@@ -39,13 +39,21 @@ class SystemIT (sys: ActorSystem) extends TestKit(sys) with WordSpecLike with Ma
     val config = new Config
     config.getGroupConfig.setName("test-A")
     config.getNetworkConfig.setPort(6661)
+    config.setClassLoader(this.getClass.getClassLoader)
     val tempHazelcastInstance = Hazelcast.newHazelcastInstance(config)
 
+    val config2 = new Config
+    config2.getGroupConfig.setName("test-A")
+    config2.getNetworkConfig.setPort(6661)
+    config2.setClassLoader(this.getClass.getClassLoader)
+    tempHazelcastClient = Hazelcast.newHazelcastInstance(config2)
+
     import collection.JavaConverters._
-    val clientConfig = new ClientConfig
-    clientConfig.getNetworkConfig.setAddresses(List("127.0.0.1:6661").asJava)
-    clientConfig.getGroupConfig.setName("test-A")
-    tempHazelcastClient = HazelcastClient.newHazelcastClient(clientConfig)
+//    val clientConfig = new ClientConfig
+//    clientConfig.getNetworkConfig.setAddresses(List("127.0.0.1:6661").asJava)
+//    clientConfig.setClassLoader(this.getClass.getClassLoader)
+//    clientConfig.getGroupConfig.setName("test-A")
+//    tempHazelcastClient = HazelcastClient.newHazelcastClient(clientConfig)
 
     "Hazelcast connectivity must work" in {
       tempHazelcastClient.getQueue[String]("yay").put("good!")
