@@ -8,7 +8,7 @@ scalaVersion := "2.11.2"
 
 resolvers += "Typesafe Releases" at "https://repo.typesafe.com/typesafe/releases/"
 
-libraryDependencies += "com.typesafe.play" %% "play-ws" % "2.3.3"
+libraryDependencies += "com.typesafe.play" %% "play-ws" % "2.3.4" exclude ("commons-logging", "commons-logging") exclude ("com.typesafe.play","build-link")
 
 libraryDependencies += "org.json4s" %% "json4s-native" % "3.2.10"
 
