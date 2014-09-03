@@ -1,6 +1,9 @@
+import com.typesafe.sbt.SbtNativePackager
 import com.typesafe.sbt.SbtNativePackager._
 import NativePackagerKeys._
 import com.typesafe.sbt.packager.Keys._
+import com.typesafe.sbt.packager.SettingsHelper
+import com.typesafe.sbt.packager.SettingsHelper._
 
 scalaVersion := "2.11.2"
 
@@ -21,6 +24,4 @@ publishArtifact in (Compile, packageBin) := false
 
 publishArtifact in (Universal, packageZipTarball) := true
 
-artifact in (Universal, packageZipTarball) := Artifact("cool")
-
-//addArtifact(artifact in (Universal, packageZipTarball), packageZipTarball in Universal)
+makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
