@@ -16,15 +16,15 @@ lazy val service = project in file("pinger-service") dependsOn analytics
 
 lazy val data = project in file("pinger-data")
 
-lazy val frontend = (project in file("frontend") enablePlugins PlayScala).settings(publisher :_*)
+lazy val frontend = (project in file("frontend") enablePlugins PlayScala)
 
-lazy val serviceApp = ((project in file("service-app")) dependsOn service).settings(publisher :_*)
+lazy val serviceApp = ((project in file("service-app")) dependsOn service)
 
 Seq(com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings :_*)
 
 lazy val publishAll = taskKey[Unit]("Publish Frontend and ServiceApp")
 
-publishAll in Universal := {
+publishAll := {
   val s: TaskStreams = streams.value
   (publish in (serviceApp, Universal)).value
   (publish in (frontend, Universal)).value
