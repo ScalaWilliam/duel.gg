@@ -1,4 +1,6 @@
-
+import com.typesafe.sbt.SbtNativePackager._
+import com.typesafe.sbt.packager.Keys._
+import com.typesafe.sbt.packager.SettingsHelper._
 
 organization := Common.groupId
 
@@ -14,16 +16,17 @@ lazy val service = project in file("pinger-service") dependsOn analytics
 
 lazy val data = project in file("pinger-data")
 
-lazy val frontend = (project in file("frontend") enablePlugins PlayScala)
-//.settings(publishToSsh)
+lazy val frontend = (project in file("frontend") enablePlugins PlayScala).settings(publisher :_*)
 
-logLevel := Level.Warn
+lazy val serviceApp = ((project in file("service-app")) dependsOn service).settings(publisher :_*)
 
-lazy val serviceApp = ((project in file("service-app")) dependsOn service)
-//.settings(publishToSsh)
+Seq(com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings :_*)
 
-//lazy val publishToSsh =
-//  publishTo := {
-//    val keyFile = file(Path.userHome.absolutePath + "/.ssh/id_rsa")
-//    Some(Resolver.ssh("wut", "prod-b.duel.gg") as("saule", keyFile))
-//  }
+lazy val publishAll = taskKey[Unit]("Publish Frontend and ServiceApp")
+
+publishAll in Universal := {
+  val s: TaskStreams = streams.value
+  (publish in (serviceApp, Universal)).value
+  (publish in (frontend, Universal)).value
+  s.log.info("Publishing complete")
+}
