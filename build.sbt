@@ -22,9 +22,9 @@ lazy val serviceApp = ((project in file("service-app")) dependsOn service)
 
 Seq(com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings :_*)
 
-lazy val publishAll = taskKey[Unit]("Publish Frontend and ServiceApp")
+lazy val publishApps = taskKey[Unit]("Publish Frontend and ServiceApp")
 
-publishAll := {
+publishApps := {
   val s: TaskStreams = streams.value
   (publish in (serviceApp, Universal)).value
   (publish in (frontend, Universal)).value
