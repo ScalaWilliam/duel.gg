@@ -10,7 +10,7 @@ import us.woop.pinger.data.Server
 object StubGenerator {
 
   def pei(name: String, frags: Int, ip: String) = {
-    PlayerExtInfo(0, 0, 0, name, "", frags, 0, 0, 0, 100, 0, 1, 0, 1, ip)
+    PlayerExtInfo(0, 0, 0, name, "", frags, 0, 0, 25, 100, 0, 1, 0, 1, ip)
   }
 
   def csr(clients: Int, mode: Int, remain: Int, mapname: String) = {
