@@ -12,13 +12,9 @@ libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.0.13"
 
-libraryDependencies += "us.woop.pinger" %% "pinger-analytics" % "1.0-SNAPSHOT"
-
 libraryDependencies += "com.hazelcast" % "hazelcast" % "3.2.5"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.3.5"
-
-libraryDependencies += "us.woop.pinger" %% "pinger-data" % "1.0-SNAPSHOT"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-contrib" % "2.3.5"
 

@@ -4,8 +4,6 @@ import com.typesafe.sbt.packager.SettingsHelper._
 
 scalaVersion := "2.11.2"
 
-libraryDependencies += "us.woop.pinger" %% "pinger-service" % "1.0-SNAPSHOT"
-
 packageArchetype.java_application
 
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
