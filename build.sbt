@@ -34,3 +34,5 @@ publishApps := {
   (publish in (frontend, Universal)).value
   s.log.info("Publishing complete")
 }
+
+
