@@ -16,8 +16,6 @@ libraryDependencies += "us.woop.pinger" %% "pinger-analytics" % "1.0-SNAPSHOT"
 
 libraryDependencies += "com.hazelcast" % "hazelcast" % "3.2.5"
 
-//libraryDependencies += "com.hazelcast" % "hazelcast-client" % "3.2.5"
-
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.3.5"
 
 libraryDependencies += "us.woop.pinger" %% "pinger-data" % "1.0-SNAPSHOT"
@@ -26,7 +24,7 @@ libraryDependencies += "com.typesafe.akka" %% "akka-contrib" % "2.3.5"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-slf4j" % "2.3.5" exclude ("commons-logging", "commons-logging")
 
-libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.3.5"
+libraryDependencies += "com.typesafe.akka" %% "akka-testkit" % "2.3.5" % Test
 
 libraryDependencies += "com.typesafe.akka" %% "akka-kernel" % "2.3.5"
 

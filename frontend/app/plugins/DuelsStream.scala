@@ -1,8 +1,6 @@
 package plugins
 
 import akka.actor.{Props, ActorRef}
-import com.hazelcast.client.HazelcastClient
-import com.hazelcast.config.{ManagementCenterConfig, Config}
 import com.hazelcast.core.{Hazelcast, Message, MessageListener}
 import play.api._
 import play.api.libs.concurrent.Akka

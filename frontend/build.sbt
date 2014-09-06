@@ -1,13 +1,7 @@
 import com.typesafe.sbt.packager.Keys._
 import com.typesafe.sbt.packager.SettingsHelper._
 
-//import play.Project._
-
 name := "duelgg-frontend"
-
-libraryDependencies += "com.hazelcast" % "hazelcast-client" % "3.2.5"
-
-//playScalaSettings
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
