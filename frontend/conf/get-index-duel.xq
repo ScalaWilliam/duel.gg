@@ -13,7 +13,7 @@ declare function local:display-time($dateTime as xs:dateTime) {
     return $display
 };
 declare function local:index-duel($duel as element()) {
-    <li><a href="{data($duel/@web-id)}">
+    <li class="duel-item"><a href="{data($duel/@web-id)}">
         <header>
             <h2>{data($duel/players/player[1]/@name)} vs {data($duel/players/player[2]/@name)}</h2>
             <h3>{data($duel/@mode)} @ {data($duel/@map)}</h3>

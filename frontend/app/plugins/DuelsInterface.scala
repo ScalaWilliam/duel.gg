@@ -31,7 +31,7 @@ class DuelsInterface(implicit app: Application) extends Plugin {
   }
 
   val getIndexXq = {
-    app.resourceAsStream("/get-index.xq").get.asInput.string
+    app.resourceAsStream("/get-index-with-groups.xq").get.asInput.string
   }
   val getIndexDuelXq = {
     app.resourceAsStream("/get-index-duel.xq").get.asInput.string

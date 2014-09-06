@@ -7,14 +7,18 @@ organization := Common.groupId
 scalaVersion := "2.11.2"
 
 lazy val root = project.in( file(".") )
-  .aggregate(serviceApp, analytics, service, data, frontend)
-  .dependsOn(analytics, service, data, frontend, serviceApp)
+  .aggregate(admins, serviceApp, analytics, service, data, frontend)
+  .dependsOn(admins, analytics, service, data, frontend, serviceApp)
 
 lazy val analytics = project in file("pinger-analytics") dependsOn data
+
+lazy val admins = project in file("admins")dependsOn(scaladinAddon)
 
 lazy val service = project in file("pinger-service") dependsOn analytics
 
 lazy val data = project in file("pinger-data")
+
+lazy val scaladinAddon = ProjectRef(uri("git://github.com/henrikerola/scaladin.git"), "addon")
 
 lazy val frontend = (project in file("frontend") enablePlugins PlayScala)
 
