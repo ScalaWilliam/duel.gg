@@ -51,14 +51,5 @@ let $duels-items :=
             for $duel in $duel
             return local:index-duel($duel)
         }</ol></li>
-return <ol class="duels-days-list"><li class="duels-day"><h3>Just now</h3><ol class="duels-day-items"><li class="duel-item">
-    <a href="nddssaa" >
-        <header>
-            <h2>!s]Gangler vs |&gt;BM&lt;|Partizan</h2>
-            <h3>instagib @ turbine</h3>
-        </header>
-        <footer>
-            <p class="score">118-79</p>
-        </footer>
-    </a>
-</li></ol></li>{fn:subsequence($duels-items, 1, 4)}</ol>
+return <ol class="duels-days-list">
+    {fn:subsequence($duels-items, 1, 4)}</ol>
