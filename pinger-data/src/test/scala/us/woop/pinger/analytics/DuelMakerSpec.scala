@@ -161,12 +161,14 @@ class DuelMakerSpec extends WordSpec with Matchers {
       val drakas = simpleDuel.players("w00p|Drakas")
       drakas.ip shouldBe "123"
       drakas.frags shouldBe 4
+      drakas.accuracy shouldBe 25
       drakas.name shouldBe "w00p|Drakas"
       drakas.fragLog should contain only ("2" -> 2, "9" -> 4)
       drakas.weapon shouldBe "shotgun"
 
       val art = simpleDuel.players("w00p|Art")
       art.frags shouldBe 3
+      art.accuracy shouldBe 25
       art.name shouldBe "w00p|Art"
       art.ip shouldBe "123"
       art.fragLog should contain only ("2" -> 2, "9" -> 3)

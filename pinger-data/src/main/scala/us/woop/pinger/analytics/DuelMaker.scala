@@ -10,9 +10,9 @@ import org.scalactic._
 import org.scalactic.Accumulation._
 object DuelMaker {
 
-  case class PlayerLog(fragsLog: Map[Long, Int], weaponsLog: Map[Long, Int])
+  case class PlayerLog(fragsLog: Map[Long, Int], weaponsLog: Map[Long, Int], accuracyLog: Map[Long, Int])
   
-  case class PlayerStatistics(frags: Int, fragsLog: Map[Int, Int], weapon: String)
+  case class PlayerStatistics(frags: Int, fragsLog: Map[Int, Int], weapon: String, accuracy: Int)
   
   val duelModeNames = Set("ffa", "instagib", "efficiency")
 
@@ -57,6 +57,7 @@ object DuelMaker {
           yield playerId.name -> SimplePlayerStatistics(
             name = playerId.name,
             ip = playerId.ip,
+            accuracy = playerStats.accuracy,
             frags = playerStats.frags,
             weapon = playerStats.weapon,
             fragLog = playerStats.fragsLog.map { case (x, y) => s"$x" -> y}
@@ -77,10 +78,10 @@ object DuelMaker {
         map = "test"
       ),
       nextMessage = None,
-      winner = Option(PlayerId("Test", "a.b.c.x") -> PlayerStatistics(frags = 5, fragsLog = Map(1 -> 2), weapon = "test")),
+      winner = Option(PlayerId("Test", "a.b.c.x") -> PlayerStatistics(frags = 5, accuracy = 35, fragsLog = Map(1 -> 2), weapon = "test")),
       playerStatistics = Map(
-        PlayerId("Test", "a.b.c.x") -> PlayerStatistics(frags = 5, fragsLog = Map(1 -> 2), weapon = "test"),
-          PlayerId("Best", "a.b.c.x") -> PlayerStatistics(frags = 20, fragsLog = Map(1 -> 2, 3-> 4), weapon = "rocket launcher")
+        PlayerId("Test", "a.b.c.x") -> PlayerStatistics(frags = 5, fragsLog = Map(1 -> 2), accuracy = 35, weapon = "test"),
+          PlayerId("Best", "a.b.c.x") -> PlayerStatistics(frags = 20, fragsLog = Map(1 -> 2, 3-> 4), accuracy = 91, weapon = "rocket launcher")
       ),
       playedAt = Set(1,2,5),
       duration = 5
@@ -154,11 +155,12 @@ object DuelMaker {
     override val next: StateTransition = {
       case ParsedMessage(_, time, info: PlayerExtInfo) if info.state <= 3 =>
         val playerId = PlayerId(info.name, info.ip)
-        val player = playerLogs.getOrElse(playerId, PlayerLog(Map.empty, Map.empty))
+        val player = playerLogs.getOrElse(playerId, PlayerLog(Map.empty, Map.empty, Map.empty))
         Good(copy(
           playerLogs = playerLogs.updated(
             playerId,
             player.copy(
+              accuracyLog = player.accuracyLog.updated(time, info.accuracy),
               fragsLog = player.fragsLog.updated(time, info.frags),
               weaponsLog = player.weaponsLog.updated(time, info.gun)
             )
@@ -181,6 +183,7 @@ object DuelMaker {
       val playerStatistics = playerLogs.mapValues(player => {
         val secondlyPlayerStatistics = PlayerStatistics(
           frags = player.fragsLog.maxBy(_._1)._2,
+          accuracy = player.accuracyLog.maxBy(_._1)._2,
           fragsLog = player.fragsLog.map{case (a, b) => (a - gameHeader.startTime).toInt-> b},
           weapon = {
             val weaponId = player.weaponsLog.groupBy(_._2).mapValues(_.size).maxBy(_._2)._1
@@ -245,6 +248,7 @@ object DuelMaker {
   (
     name: String,
     ip: String,
+    accuracy: Int,
     frags: Int,
     weapon: String,
     fragLog: Map[String, Int])
@@ -287,7 +291,7 @@ object DuelMaker {
       <played-at>{playedAt.mkString(" ")}</played-at>
       <players>
         {for {(name, stats) <- players} yield
-        <player name={name} ip={stats.name} frags={s"${stats.frags}"}
+        <player name={name} ip={stats.name} frags={s"${stats.frags}"} accuracy={s"${stats.accuracy}"}
                 weapon={stats.weapon}>
           {for {(at, frags) <- stats.fragLog}
         yield

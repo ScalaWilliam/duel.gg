@@ -104,7 +104,10 @@ class SystemIT (sys: ActorSystem) extends TestKit(sys) with WordSpecLike with Ma
     Iterator.fill(length)(rnd.nextInt(chars.size)).map(chars).mkString
   }
   "Pinger system" must {
-
+    "Give us a meta" in {
+      expectMsgType[HaveMeta]
+      expectMsgType[IterationMetaData]
+    }
     "Start watching a new server when it is pushed to a hazelcast" in {
       parentedProbe(GoodHashSauerbratenPongServer.props(server.getInfoInetSocketAddress))
       expectMsgType[SimpleUdpServer.Ready]

@@ -56,6 +56,7 @@ class MultiplexedDuelReaderSpec extends WordSpec with Matchers with Inspectors {
           game.server shouldBe "123.2.2.22:2134"
           game.winner shouldBe Some("w00p|Drakas")
           game.players("w00p|Drakas").frags shouldBe 4
+          game.players("w00p|Art").accuracy shouldBe 25
       }
 
       // found a bug through here. YAY!
@@ -64,6 +65,7 @@ class MultiplexedDuelReaderSpec extends WordSpec with Matchers with Inspectors {
           game.server shouldBe "32.1.1.1:1222"
           game.winner shouldBe Some("w00p|Art")
           game.players("w00p|Art").frags shouldBe 9
+          game.players("w00p|Art").accuracy shouldBe 25
       }
     }
   }
