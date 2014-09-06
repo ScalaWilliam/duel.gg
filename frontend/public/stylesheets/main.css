@@ -1,13 +1,13 @@
 /* latin */
-@font-face {
-    font-family: 'Permanent Marker';
-    font-style: normal;
-    font-weight: 400;
-    src: local('Permanent Marker'), local('PermanentMarker'),
-    url(9vYsg5VgPHKK8SXYbf3sMsW72xVeg1938eUHStY_AJ4.woff2) format('woff2'),
-    url(9vYsg5VgPHKK8SXYbf3sMupm9E4gBdgiUiSJePew_SQ.woff) format('woff');
-    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
-}
+/*@font-face {*/
+    /*font-family: 'Permanent Marker';*/
+    /*font-style: normal;*/
+    /*font-weight: 400;*/
+    /*src: local('Permanent Marker'), local('PermanentMarker'),*/
+    /*url(9vYsg5VgPHKK8SXYbf3sMsW72xVeg1938eUHStY_AJ4.woff2) format('woff2'),*/
+    /*url(9vYsg5VgPHKK8SXYbf3sMupm9E4gBdgiUiSJePew_SQ.woff) format('woff');*/
+    /*unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;*/
+/*}*/
 body {
     font-faxmily: 'Permanent Marker', cursive;
     font-family: Signika;
@@ -21,11 +21,23 @@ body {
 .index-view {
 
 }
-.index-view
-ol {
+.index-view ol.duels-days-list {
     list-style-type: none;
-    width:40em;
+    width:47em;
     margin:0 auto;
+}
+.index-view ol.duels-days-list li.duels-day {
+    margin-bottom:3em;
+}
+.index-view ol.duels-days-list ol.duels-day-items  {
+    list-style-type: none;
+    margin:0;
+    padding:0;
+}
+.index-view ol.duels-days-list ol.duels-day-items li {
+    margin:0;
+    padding:0;
+    margin-bottom:0.5em;
 }
 .index-view ol li {
     padding-right:14%;
@@ -42,27 +54,32 @@ ol {
     font-size:inherit;
     margin:0;
 }
+#top h2 {
+    margin-top:0;
+    margin-bottom:0;
+    font-size:1.0em;
+}
 .index-view
-li header {
+li.duel-item header {
     color:#d8f0f0;
-    width:61%;
+    width:57%;
     text-align: right;
     display:inline-block;
     margin:0; padding:0;
     margin-right:2%;
 }
 .index-view
-li footer {
+li.duel-item footer {
     vertical-align: top;
     color:#fcfbe3;
     text-align: center;
-    width:35%;
+    width:29%;
     display: inline-block;
     margin:0; padding:0;
 
 }
 .index-view
-li {
+li.duel-item {
     padding:0;
     margin-bottom:1em;
     font-size:1.6em;
@@ -136,3 +153,18 @@ article.duel header * {
 }
 
 
+#top h2 {
+    position:absolute;
+    top:2.5em;
+    left:67%;
+    z-index:2;
+    width:1em;
+    color:#fcfbe3;
+}
+#top h2 a{
+    -webkit-transition: color 0.4s;
+    transition:color 0.4s;
+}
+#top h2 a:hover {
+    color:#d8f0f0;
+}
