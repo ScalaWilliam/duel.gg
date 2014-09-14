@@ -50,4 +50,7 @@ let $duels-items :=
                 for $duel in $duel
                 return local:index-duel($duel)
             }</ol></li>
-return <ol class="duels-days-list">{$duels-items}</ol>
+return
+    if ( not(empty($duels-items)) )
+    then (<ol class="duels-days-list">{$duels-items}</ol>)
+    else ()
