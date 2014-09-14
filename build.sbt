@@ -7,10 +7,12 @@ organization := Common.groupId
 scalaVersion := "2.11.2"
 
 lazy val root = project.in( file(".") )
-  .aggregate(admins, serviceApp, analytics, service, data, frontend)
-  .dependsOn(admins, analytics, service, data, frontend, serviceApp)
+  .aggregate(admins, serviceApp, analytics, service, data, frontend, bobby)
+  .dependsOn(admins, analytics, service, data, frontend, serviceApp, bobby)
 
 lazy val analytics = project in file("pinger-analytics") dependsOn data
+
+lazy val bobby = project in file("bobby")
 
 lazy val admins = project in file("admins")dependsOn(scaladinAddon)
 
@@ -32,6 +34,7 @@ publishApps := {
   val s: TaskStreams = streams.value
   (publish in (serviceApp, Universal)).value
   (publish in (frontend, Universal)).value
+  (publish in (bobby, Universal)).value
   s.log.info("Publishing complete")
 }
 
