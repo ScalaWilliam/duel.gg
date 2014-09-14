@@ -18,21 +18,25 @@ declare function local:display-time-2($dateTime as xs:dateTime) {
 declare variable $web-id as xs:string external;
 for $duel in /duel[@web-id=$web-id]
 let $dateTime := xs:dateTime($duel/@start-time)
+let $a := $duel/players/player[1]
+let $a-url := concat("/?player=", data($a/@name))
+let $b := $duel/players/player[2]
+let $b-url := concat("/?player=", data($b/@name))
 return <duel>
-    <title>{data($duel/players/player[1]/@name)} vs {data($duel/players/player[2]/@name)}</title>,
+    <title>{data($a/@name)} vs {data($b/@name)}</title>,
     <article class="duel single-duel-view">
         <header>
-            <h3 class="mode-map">{data($duel/@mode)} @@ {data($duel/@map)}</h3>
+            <h3 class="mode-map">{data($duel/@mode)} @ {data($duel/@map)}</h3>
             <h2 class="date-time">{local:display-time-2($dateTime)}</h2>
         </header>
         <section class="duel">
             <section class="score score-left">
-                <p class="score">{data($duel/players/player[1]/@frags)}</p>
-                <p class="name">{data($duel/players/player[1]/@name)}</p>
+                <p class="score">{data($a/@frags)}</p>
+                <p class="name"><a href="{$a-url}">{data($a/@name)}</a></p>
             </section>
             <section class="score score-right">
-                <p class="score">{data($duel/players/player[2]/@frags)}</p>
-                <p class="name">{data($duel/players/player[2]/@name)}</p>
+                <p class="score">{data($b/@frags)}</p>
+                <p class="name"><a href="{$b-url}">{data($b/@name)}</a></p>
             </section>
         </section>
     </article></duel>

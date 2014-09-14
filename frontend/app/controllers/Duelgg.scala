@@ -12,9 +12,19 @@ object Duelgg extends Controller {
   def index = Action.async {
     request =>
       import scala.concurrent.ExecutionContext.Implicits.global
-      for {
-        xmlData <- DuelsInterface.duelsInterface.getIndex
-      } yield Ok(views.html.index(Html(s"$xmlData")))
+      request.queryString.get("player").toList.flatten.headOption match {
+        case Some(playerName) =>
+          for {
+            xmlData <- DuelsInterface.duelsInterface.getPlayer(playerName)
+          } yield xmlData match {
+            case Some(data) => Ok(views.html.player(playerName)(Html(s"$data")))
+            case _ => NotFound
+          }
+        case None =>
+          for {
+            xmlData <- DuelsInterface.duelsInterface.getIndex
+          } yield Ok(views.html.index(Html(s"$xmlData")))
+      }
   }
 
   def showPage(id: String) = Action.async {

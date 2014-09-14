@@ -26,6 +26,9 @@ class DuelsInterface(implicit app: Application) extends Plugin {
       .withRequestTimeout(3000)
   }
 
+  val getPlayerProfileXq = {
+    app.resourceAsStream("/get-player-profile.xq").get.asInput.string
+  }
   val getDuelXq = {
     app.resourceAsStream("/get-duel.xq").get.asInput.string
   }
@@ -59,6 +62,22 @@ class DuelsInterface(implicit app: Application) extends Plugin {
       index <- holder.post(
         <query xmlns='http://basex.org/rest'><text>{getIndexDuelXq}</text>
       <variable name="web-id" value={duelId}/>
+      </query>)
+      xmlDataO = if ( index.body.isEmpty) None else Option(try {
+        index.xml
+      } catch {
+        case NonFatal(e) =>
+          throw new RuntimeException(s"Failed to parse due to:\n$e\n${index.body.take(300)}", e)
+      })
+    } yield xmlDataO
+
+  }
+  def getPlayer(playerName: String): Future[Option[Elem]] = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    for {
+      index <- holder.post(
+        <query xmlns='http://basex.org/rest'><text>{getPlayerProfileXq}</text>
+      <variable name="player-name" value={playerName}/>
       </query>)
       xmlDataO = if ( index.body.isEmpty) None else Option(try {
         index.xml
