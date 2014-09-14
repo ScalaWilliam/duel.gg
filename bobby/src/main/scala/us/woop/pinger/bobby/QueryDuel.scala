@@ -23,13 +23,14 @@ object QueryDuel {
     <text><![CDATA[
 declare variable $duel-id as xs:string external;
 for $duel in subsequence(db:open("db-stage")/duel[@web-id=$duel-id], 1, 1)
-let $mapmode := (data($duel/@map), " @ ", data($duel/@mode))
+let $mapmode := (data($duel/@mode), " @ ", data($duel/@map))
 let $a := ($duel/players/player)[1]
 let $b := ($duel/players/player)[2]
-let $names := (data($a/@name), " vs ", data($b/@name))
-let $scores := (data($a/@frags), ":", data($b/@frags))
+let $a-text := (data($a/@name), " (", data($a/@frags),")")
+let $b-text := (data($b/@name), " (", data($b/@frags),")")
+let $players := ($a-text, " — ", $b-text)
 let $web-url := ("http://duel.gg/", data($duel/@web-id))
-return string-join(($names, " - ", $mapmode, " - ", $scores , " - ", $web-url), "")
+return string-join(($players, " · ", $mapmode, " · ", $web-url), "")
 ]]></text>
     <parameter name="method" value="text"/>
     <variable name="duel-id" value={duelId}/>
