@@ -52,4 +52,4 @@ let $duels-items :=
             return local:index-duel($duel)
         }</ol></li>
 return <ol class="duels-days-list">
-    {fn:subsequence($duels-items, 1, 4)}</ol>
+    {fn:subsequence($duels-items, 1, 5)}</ol>
