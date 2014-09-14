@@ -17,7 +17,7 @@ object Duelgg extends Controller {
           for {
             xmlData <- DuelsInterface.duelsInterface.getPlayer(playerName)
           } yield xmlData match {
-            case Some(data) => Ok(views.html.player(playerName)(Html(s"$data")))
+            case Some(data) if data.nonEmpty => Ok(views.html.player(playerName)(Html(s"$data")))
             case _ => NotFound
           }
         case None =>
