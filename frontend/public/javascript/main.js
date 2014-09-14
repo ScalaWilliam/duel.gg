@@ -9,7 +9,16 @@ function DuelGG() {
             var liHtml = $.parseJSON(m.data)["new index item"];
             var addLi = $($.parseHTML(liHtml));
             addLi.find("a").addClass("new");
+
+            if ( $(".player-profile-name").length > 0 ) {
+                var playerName = $(".player-profile-name").text();
+                if ( liHtml.indexOf(playerName) == -1 ) {
+                    return;
+                }
+            }
+
             var justNowContainer = $(".duels-day").filter(function(x) { return $(this).find("h3").first().text() == "Just now"; });
+
             if ( justNowContainer.length == 0 ) {
                 var text = "<li class=\"duels-day\">"+
                     "<h3>Just now</h3>" +

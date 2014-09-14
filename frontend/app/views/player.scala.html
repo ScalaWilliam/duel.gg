@@ -1,0 +1,10 @@
+@(playerName: String)(duelsItems: Html)
+@template("player-profile index-view")(s"$playerName - duel.gg") {
+    <h2 class="player-profile-name">@playerName</h2>
+    <article class="duels">
+    @duelsItems
+    </article>
+    <script type="text/javascript">
+    DuelGG();
+    </script>
+}
