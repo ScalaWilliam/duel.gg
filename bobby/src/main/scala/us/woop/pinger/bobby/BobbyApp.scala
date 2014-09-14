@@ -36,6 +36,7 @@ object BobbyApp extends App {
     .setServerHostname("Burstfire.UK.EU.GameSurge.net")
     .addAutoJoinChannel("#wat")
     .setLogin("WoopClan")
+    .setIdentServerEnabled(true)
     .setVersion("DuelGG IRC bot :: http://duel.gg/")
     .setRealName("DuelGG IRC bot :: http://duel.gg/")
     .addListener(new ListenerAdapter[PircBotX] {
