@@ -1,3 +1,5 @@
+package us.woop.pinger.bobby
+
 import akka.actor.ActorSystem
 import com.hazelcast.client.HazelcastClient
 import com.hazelcast.core.{Message, MessageListener}
@@ -5,12 +7,11 @@ import org.pircbotx.hooks.events.{InviteEvent, ConnectEvent}
 import org.pircbotx.hooks.ListenerAdapter
 import org.pircbotx.{Configuration, PircBotX}
 import spray.http.{HttpRequest, HttpResponse}
-import us.woop.pinger.bobby.QueryDuel
 import spray.client.pipelining._
 import scala.concurrent.Future
 
 object BobbyApp extends App {
-
+  System.setProperty("hazelcast.logging.type","slf4j")
   implicit val as = ActorSystem("Goodies")
   import as.dispatcher
 

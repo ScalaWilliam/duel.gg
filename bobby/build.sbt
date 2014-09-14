@@ -1,33 +1,14 @@
-//import com.typesafe.sbt.SbtNativePackager._
+import com.typesafe.sbt.SbtNativePackager._
 import com.typesafe.sbt.packager.Keys._
 import com.typesafe.sbt.packager.SettingsHelper._
 
 scalaVersion := "2.11.2"
 
-name := "bobby"
-
-libraryDependencies += "org.pircbotx" % "pircbotx" % "2.0.1"
-
-libraryDependencies += "com.hazelcast" % "hazelcast-client" % "3.2.5"
-
-libraryDependencies ++= {
-  val akkaV = "2.3.5"
-  val sprayV = "1.3.1"
-  Seq(
-    "io.spray"            %%  "spray-client"     % sprayV,
-    "io.spray"            %%  "spray-testkit" % sprayV  % "test",
-    "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
-    "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test"
-  )
-}
-
-libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2"
-
-libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.0.13"
-
 packageArchetype.java_application
 
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
+
+name := "bobby"
 
 version in ThisBuild := "0.9-" + versionKey.value
 
@@ -40,6 +21,29 @@ publishArtifact in (Compile, packageBin) := false
 publishArtifact in (Universal, packageZipTarball) := true
 
 makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
+
+libraryDependencies += "org.pircbotx" % "pircbotx" % "2.0.1"
+
+libraryDependencies += "com.hazelcast" % "hazelcast-client" % "3.2.5"
+
+// packager only accepts one App inside the project. Multiple 'Apps' mess things up.
+
+libraryDependencies ++= {
+  val akkaV = "2.3.5"
+  val sprayV = "1.3.1"
+  Seq(
+    "io.spray"            %%  "spray-client"     % sprayV,
+    "io.spray"            %%  "spray-testkit" % sprayV  % "test",
+    "com.typesafe.akka"   %%  "akka-actor"    % akkaV,
+    "com.typesafe.akka"   %%  "akka-testkit"  % akkaV   % "test"
+  )
+}
+
+mainClass := Some("us.woop.pinger.bobby.BobbyApp")
+
+libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2"
+
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.0.13"
 
 lazy val versionKey = settingKey[String]("Version key")
 
