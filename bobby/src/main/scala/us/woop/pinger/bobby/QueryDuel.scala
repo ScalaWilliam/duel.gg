@@ -28,7 +28,7 @@ let $a := ($duel/players/player)[1]
 let $b := ($duel/players/player)[2]
 let $a-text := (data($a/@name), " (", data($a/@frags),")")
 let $b-text := (data($b/@name), " (", data($b/@frags),")")
-let $players := ($a-text, " — ", $b-text)
+let $players := ($a-text, " vs ", $b-text)
 let $web-url := ("http://duel.gg/", data($duel/@web-id))
 return string-join(($players, " · ", $mapmode, " · ", $web-url), "")
 ]]></text>
