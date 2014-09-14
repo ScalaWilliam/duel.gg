@@ -161,7 +161,7 @@ object DuelMaker {
             playerId,
             player.copy(
               accuracyLog = player.accuracyLog.updated(time, info.accuracy),
-              fragsLog = player.fragsLog.updated(time, info.frags),
+              fragsLog = player.fragsLog.updated(time, info.frags - info.teamkills),
               weaponsLog = player.weaponsLog.updated(time, info.gun)
             )
           )
@@ -291,7 +291,7 @@ object DuelMaker {
       <played-at>{playedAt.mkString(" ")}</played-at>
       <players>
         {for {(name, stats) <- players} yield
-        <player name={name} ip={stats.name} frags={s"${stats.frags}"} accuracy={s"${stats.accuracy}"}
+        <player name={name} ip={stats.ip} frags={s"${stats.frags}"} accuracy={s"${stats.accuracy}"}
                 weapon={stats.weapon}>
           {for {(at, frags) <- stats.fragLog}
         yield
