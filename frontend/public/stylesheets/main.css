@@ -180,3 +180,19 @@ article.duel header * {
 .player-profile-name {
     font-size:2.4em;
 }
+
+.league-view table {
+    margin-left:auto;
+    margin-right:auto;
+    font-size:1.6em;
+}
+.league-view th {
+    text-align: left;
+}
+.league-view a {
+    color:#fcfbe3;
+}
+.league-view a:hover {
+    color:#c7325f;
+    -webkit-transition: color 0.4s;
+}

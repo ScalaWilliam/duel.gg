@@ -4,7 +4,7 @@ import play.api.Play
 import play.api.libs.json.{JsValue, JsObject}
 import play.api.mvc._
 import play.twirl.api.Html
-import plugins.{DuelsStream, DuelsInterface}
+import plugins.{LeagueInterface, DuelsStream, DuelsInterface}
 
 object Duelgg extends Controller {
 
@@ -46,6 +46,16 @@ object Duelgg extends Controller {
     WebSocket.acceptWithActor[JsValue, JsValue] { request => out =>
       DuelsStream.duelsStream.createListenerActor(out)
     }
+  }
+
+  def showLeague = Action.async {
+    request =>
+      import concurrent.duration._
+      import scala.concurrent.ExecutionContext.Implicits.global
+      for {
+        rep <- LeagueInterface.leagueInterface.requestData(1.second)
+        xml = rep.value
+      } yield Ok(views.html.league(Html(s"$xml")))
   }
 
 }

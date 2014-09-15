@@ -1,4 +1,5 @@
-GET                  /                                   controllers.Duelgg.index
-GET /stream controllers.Duelgg.streamSocket
-GET                  /:id                               controllers.Duelgg.showPage(id: String)
-GET  /assets/*file               controllers.Assets.at(path="/public", file)
+GET        /                    controllers.Duelgg.index
+GET        /stream              controllers.Duelgg.streamSocket
+GET        /league              controllers.Duelgg.showLeague
+GET        /:id                 controllers.Duelgg.showPage(id: String)
+GET        /assets/*file        controllers.Assets.at(path="/public", file)
