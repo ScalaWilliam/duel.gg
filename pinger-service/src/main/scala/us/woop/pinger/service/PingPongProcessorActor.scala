@@ -3,7 +3,7 @@ package us.woop.pinger.service
 import java.net.InetSocketAddress
 import java.security.MessageDigest
 import akka.actor.ActorDSL._
-import akka.actor.{ActorLogging, ActorRef}
+import akka.actor.{Props, ActorLogging, ActorRef}
 import akka.io
 import akka.io.Udp
 import akka.util.ByteString
@@ -47,11 +47,15 @@ object PingPongProcessor {
     val all = Vector(askForPlayerStats, askForTeamStats, askForServerInfo)
   }
 
+
 }
 
 import scala.concurrent.duration._
 
-class PingPongProcessorActor extends Act with ActorLogging {
+object PingPongProcessorActor {
+  def props(disableHashing: Boolean) = Props(classOf[PingPongProcessorActor], disableHashing)
+}
+class PingPongProcessorActor(disableHashing: Boolean) extends Act with ActorLogging {
 
   val outboundMessages = for { message <- OutboundMessages.all } yield ByteString(message.map{_.toByte}.toArray)
 
@@ -94,7 +98,7 @@ class PingPongProcessorActor extends Act with ActorLogging {
       val (head, tail) = receivedBytes.splitAt(3)
       val (theirHash, message) = tail.splitAt(10)
       val recombined = head ++ message
-      if (theirHash == expectedHash) {
+      if (disableHashing || theirHash == expectedHash) {
         context.parent ! ReceivedBytes(hostPair, nextTime, recombined)
       } else {
         context.parent ! BadHash(hostPair, nextTime, receivedBytes, expectedHash, theirHash)

@@ -31,7 +31,7 @@ class PingPongProcessorActorSpec(sys: ActorSystem) extends TestKit(sys) with Fun
     parentedProbe(BadHashSauerbratenPongServer.props(serverBad.getInfoInetSocketAddress))
     expectMsgClass(classOf[SimpleUdpServer.Ready])
 
-    val pingProcessor = parentedProbe(Props(classOf[PingPongProcessorActor]))
+    val pingProcessor = parentedProbe(PingPongProcessorActor.props(disableHashing = false))
     expectMsgClass(classOf[PingPongProcessor.Ready])
     pingProcessor ! Ping(serverBad)
     receiveWhile(messages = 5 + 2 + 1) {
@@ -45,7 +45,7 @@ class PingPongProcessorActorSpec(sys: ActorSystem) extends TestKit(sys) with Fun
   test("That PPPA sends a ReceivedMessage when a good message is given by the server") {
     parentedProbe(GoodHashSauerbratenPongServer.props(server.getInfoInetSocketAddress))
     expectMsgClass(classOf[SimpleUdpServer.Ready])
-    val pingProcessor = parentedProbe(Props(classOf[PingPongProcessorActor]))
+    val pingProcessor = parentedProbe(PingPongProcessorActor.props(disableHashing = false))
     expectMsgClass(classOf[PingPongProcessor.Ready])
     pingProcessor ! Ping(server)
     receiveWhile(messages = 5 + 2 + 1) {

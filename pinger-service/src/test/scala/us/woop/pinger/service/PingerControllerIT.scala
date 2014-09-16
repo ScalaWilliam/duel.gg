@@ -28,7 +28,7 @@ class PingerControllerIT(sys: ActorSystem) extends TestKit(sys) with FlatSpecLik
   "Pinger service" should "integrate properly with a monitor message + stub" in {
     import concurrent.duration._
 
-    val pingerService = parentedProbe(PingerController.props)
+    val pingerService = parentedProbe(PingerController.props(disableHashing = false))
     expectMsg(PingerController.Ready)
     pingerService ! Monitor(server)
     // expect a state change
@@ -46,7 +46,7 @@ class PingerControllerIT(sys: ActorSystem) extends TestKit(sys) with FlatSpecLik
 
   "Pinger service" should "send a message for an active server every three seconds" in {
 
-    val pingerService = parentedProbe(PingerController.props)
+    val pingerService = parentedProbe(PingerController.props(disableHashing = false))
     expectMsg(PingerController.Ready)
     pingerService ! Monitor(server)
     import concurrent.duration._

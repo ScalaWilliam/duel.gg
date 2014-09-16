@@ -26,11 +26,11 @@ object PingerController {
   case object ListServers
   case class ServersList(servers: Set[Server])
 
-  def props = Props(classOf[PingerController], None)
-  def props(parent: ActorRef) = Props(classOf[PingerController], Option(parent))
+  def props(disableHashing: Boolean) = Props(classOf[PingerController], disableHashing, None)
+  def props(disableHashing: Boolean, parent: ActorRef) = Props(classOf[PingerController], disableHashing, Option(parent))
 
 }
-class PingerController(parentO: Option[ActorRef]) extends Act with ActWithStash {
+class PingerController(disableHashing:Boolean, parentO: Option[ActorRef]) extends Act with ActWithStash {
 
   val parent = parentO.getOrElse(context.parent)
 
@@ -40,7 +40,7 @@ class PingerController(parentO: Option[ActorRef]) extends Act with ActWithStash 
 
   whenStarting {
     self ! Dependencies(
-      pinger = context.actorOf(Props[PingPongProcessorActor], "pinger"),
+      pinger = context.actorOf(PingPongProcessorActor.props(disableHashing = disableHashing), "pinger"),
       parser = context.actorOf(Props[RawToExtracted], "parser")
     )
   }
