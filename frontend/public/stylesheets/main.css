@@ -23,7 +23,7 @@ body {
 }
 .index-view ol.duels-days-list {
     list-style-type: none;
-    width:47em;
+    width:50em;
     margin:0 auto;
 }
 .index-view ol.duels-days-list li.duels-day {
@@ -114,7 +114,7 @@ body {
     overflow-y:scroll;
 }
 section.duel {
-    width:40em;
+    width:46em;
     margin:0 auto;
 }
 article.duel header {
