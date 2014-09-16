@@ -76,7 +76,7 @@ class SystemIT (sys: ActorSystem) extends TestKit(sys) with WordSpecLike with Ma
       )
     })
 
-    yay = parentedProbe(Woot.props(tempHazelcastInstance, persister, jg))
+    yay = parentedProbe(Woot.props(tempHazelcastInstance, persister, jg, disableHashing = false))
 
 
     tempHazelcastClient.getTopic[String]("meta").addMessageListener(new MessageListener[String] {

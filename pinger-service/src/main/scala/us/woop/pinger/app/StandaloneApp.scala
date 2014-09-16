@@ -28,7 +28,7 @@ object StandaloneApp extends App {
         case _: DeathPactException  => Stop
         case _: ActorKilledException => SupervisorStrategy.Restart
         case _: Exception => SupervisorStrategy.Resume
-      }).props(PingerController.props(context.self)),
+      }).props(PingerController.props(disableHashing = true, context.self)),
         "pingerController")
 
     var currentMetaData: IterationMetaData = _

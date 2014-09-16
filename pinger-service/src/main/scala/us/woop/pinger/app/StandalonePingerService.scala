@@ -70,7 +70,7 @@ class AppActor extends Act {
       case _: DeathPactException  => Stop
       case _: ActorKilledException => SupervisorStrategy.Restart
       case _: Exception => SupervisorStrategy.Resume
-    }).props(PingerController.props(context.self)),
+    }).props(PingerController.props(disableHashing = true, context.self)),
       "pingerController")
 
   become {

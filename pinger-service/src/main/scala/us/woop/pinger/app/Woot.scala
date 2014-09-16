@@ -1,7 +1,6 @@
 package us.woop.pinger.app
 
 import java.io.{FileOutputStream, File}
-
 import akka.actor.ActorDSL._
 import akka.actor._
 import akka.routing.RoundRobinPool
@@ -16,12 +15,10 @@ import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 import us.woop.pinger.service.PingerController
 import us.woop.pinger.service.PingerController.{Unmonitor, Monitor}
 import us.woop.pinger.service.analytics.JournalBytes
-import us.woop.pinger.service.delivery.JournalSauerBytes
-import us.woop.pinger.service.delivery.JournalSauerBytes.WritingStopped
 
 import scala.concurrent.Future
 
-class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journalGenerator: JournalGenerator) extends Act {
+class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journalGenerator: JournalGenerator, disableHashing: Boolean) extends Act {
   val serversSet = hazelcast.getSet[String]("servers")
   whenStarting {
     import collection.JavaConverters._
@@ -42,7 +39,7 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
       case _: DeathPactException  => Stop
       case _: ActorKilledException => SupervisorStrategy.Restart
       case _: Exception => SupervisorStrategy.Resume
-    }).props(PingerController.props(context.self)),
+    }).props(PingerController.props(disableHashing = disableHashing, context.self)),
       "pingerController")
 
   val metaContext =
@@ -156,8 +153,8 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
 }
 object Woot {
   def props(hazelcast: HazelcastInstance,
-             persister: WSAsyncDuelPersister, journalGenerator: JournalGenerator) = {
-    Props(classOf[Woot], hazelcast, persister, journalGenerator)
+             persister: WSAsyncDuelPersister, journalGenerator: JournalGenerator, disableHashing: Boolean) = {
+    Props(classOf[Woot], hazelcast, persister, journalGenerator, disableHashing)
   }
 
   case class MetaCompletedDuel(metaId: IterationMetaData, completedDuel: CompletedDuel)

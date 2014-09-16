@@ -12,7 +12,7 @@ object WootApp extends App {
   val persister = new WSAsyncDuelPersister(new StandaloneWSAPI, "http://127.0.0.1:8984", "db-stage", "ngnsads")
   implicit val as = ActorSystem("cooool")
   val tempHazelcastInstance = Hazelcast.newHazelcastInstance()
-  val yay = Woot.props(tempHazelcastInstance, persister, JournalGenerator.standard)
+  val yay = Woot.props(tempHazelcastInstance, persister, JournalGenerator.standard, true)
   import akka.actor.ActorDSL._
   val container = actor(new Act{
     val main = as.actorOf(yay, "mainStuffs")
