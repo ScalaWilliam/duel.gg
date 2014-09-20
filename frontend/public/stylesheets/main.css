@@ -156,8 +156,9 @@ article.duel header * {
 #top h2 {
     position:absolute;
     top:2.5em;
-    left:67%;
+    left:50%;
     z-index:2;
+    margin-left:5em;
     width:1em;
     color:#fcfbe3;
 }
