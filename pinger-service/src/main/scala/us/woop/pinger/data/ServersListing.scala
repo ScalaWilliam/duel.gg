@@ -25,8 +25,12 @@ object ServersListing {
                   |sauer.woop.us
                   |vaq-clan.de
                   |butchers.su
+                  |192.99.168.91
+                  |192.99.168.91 10000
+                  |192.99.168.91 20000
+                  |sp4nk.it.cx 28899
                   |noviteam.de
-                  |darkkeepers.dk:28786
+                  |darkkeepers.dk 28786
                   |""".stripMargin.split("\r?\n").filterNot(_.isEmpty).toVector.flatMap(h => Try(Server.fromAddress(h)).toOption.toVector)
 
 }

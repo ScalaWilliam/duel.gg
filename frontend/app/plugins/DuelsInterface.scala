@@ -23,7 +23,7 @@ class DuelsInterface(implicit app: Application) extends Plugin {
     }
     WS.url(url)
       .withHeaders("Accept" -> "application/xml")
-      .withRequestTimeout(3000)
+      .withRequestTimeout(9000)
   }
 
   val getPlayerProfileXq = {
