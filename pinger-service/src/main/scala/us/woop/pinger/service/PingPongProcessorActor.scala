@@ -44,7 +44,7 @@ object PingPongProcessor {
     val askForPlayerStats = Vector(0, 1, -1)
     val askForTeamStats = Vector(0, 2, -1)
     //    val all = List(askForServerInfo, askForPlayerStats, askForTeamStats, askForServerUptime)
-    val all = Vector(askForPlayerStats, askForTeamStats, askForServerInfo)
+    val all = Vector(askForServerInfo, askForPlayerStats, askForTeamStats)
   }
 
 

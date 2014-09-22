@@ -184,7 +184,7 @@ object DuelMaker {
         val secondlyPlayerStatistics = PlayerStatistics(
           frags = player.fragsLog.maxBy(_._1)._2,
           accuracy = player.accuracyLog.maxBy(_._1)._2,
-          fragsLog = player.fragsLog.map{case (a, b) => (a - gameHeader.startTime).toInt-> b},
+          fragsLog = player.fragsLog.map{case (a, b) => (a - gameHeader.startTime).toInt -> b},
           weapon = {
             val weaponId = player.weaponsLog.groupBy(_._2).mapValues(_.size).maxBy(_._2)._1
             ModesList.guns.getOrElse(weaponId, "unknown")
@@ -192,7 +192,11 @@ object DuelMaker {
         )
         val thirdly = secondlyPlayerStatistics.copy(
           fragsLog = {
-            val `minute to list of milli to score` = secondlyPlayerStatistics.fragsLog.groupBy(_._1 / 60000)
+            val `minute to list of milli to score` = secondlyPlayerStatistics.fragsLog.groupBy(_._1 / 60000).transform(
+              (time, subTimes) =>
+                if ( time > 10 ) subTimes.filterNot(_._2 == 0)
+                else subTimes
+            )
             val `minute to list of score` = `minute to list of milli to score`.mapValues(_.maxBy(_._1)._2)
             Map(SortedMap(`minute to list of score`.toVector :_*).map{case(t, v) => (t + 1) -> v}.toVector :_*)
           }
