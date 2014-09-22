@@ -3,7 +3,7 @@ import com.typesafe.sbt.packager.SettingsHelper._
 
 name := "duelgg-frontend"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+enablePlugins(PlayScala)
 
 scalaVersion := "2.11.2"
 
