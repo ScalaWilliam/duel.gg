@@ -19,12 +19,15 @@ class LeagueInterface(implicit app: Application) extends Plugin {
 
   import akka.actor.ActorDSL._
   implicit def sys = play.libs.Akka.system
+  def refresh(): Unit = {
+    mainActor ! Refresh
+  }
   lazy val mainActor = actor(new Act {
     var currentListing: scala.xml.Elem = _
     whenStarting {
       import concurrent.duration._
       import scala.concurrent.ExecutionContext.Implicits.global
-      context.system.scheduler.schedule(0.seconds, 30.seconds, self, Refresh)
+      context.system.scheduler.schedule(0.2.seconds, 30.seconds, self, Refresh)
     }
     become {
       case GiveMe =>
@@ -38,8 +41,6 @@ class LeagueInterface(implicit app: Application) extends Plugin {
           <text>
             {getLeagueRecordXq}
           </text>
-          <!--<variable name="servers-list" value="85.214.66.181"/>-->
-          <variable name="servers-list" value="95.85.28.218"/>
         </query>).map(r => {
           NewStatsListing(r.xml)
         }) pipeTo self

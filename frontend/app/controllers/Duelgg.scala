@@ -54,8 +54,12 @@ object Duelgg extends Controller {
       import scala.concurrent.ExecutionContext.Implicits.global
       for {
         rep <- LeagueInterface.leagueInterface.requestData(1.second)
-        xml = rep.value
-      } yield Ok(views.html.league(Html(s"$xml")))
+        xmlO = Option(rep.value).map(s => Html(s"$s"))
+      } yield Ok(views.html.league(xmlO))
+  }
+  def showQuestions = Action {
+    request =>
+      Ok(views.html.questions())
   }
 
 }

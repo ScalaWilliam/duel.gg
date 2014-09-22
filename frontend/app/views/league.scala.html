@@ -1,6 +1,12 @@
-@(items: Html)
+@(items: Option[Html])
 @template("league-view")(s"league - duel.gg") {
     <article class="duels">
-    @items
+        <p class="notice">The scoring system is still in beta. It may change.</p>
+        @{
+            items match {
+                case Some(stuff) => stuff
+                case None => <p>Scores are not available right now.</p>
+            }
+        }
     </article>
 }

@@ -151,7 +151,9 @@ article.duel header * {
 .index-view .duels ol li a header h3 {
     font-weight: normal;
 }
-
+.servers-list {
+    font-family: Consolas, monospace;
+}
 
 #top h2 {
     position:absolute;
@@ -196,4 +198,17 @@ article.duel header * {
 .league-view a:hover {
     color:#c7325f;
     -webkit-transition: color 0.4s;
+}
+
+a {
+    color:#fcfbe3;
+}
+
+.questions-view article.questions {
+    width:40em;
+    margin-left: auto;
+    margin-right: auto;
+}
+ul.servers-list {
+    list-style-type: none;
 }
