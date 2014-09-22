@@ -194,7 +194,7 @@ object DuelMaker {
           fragsLog = {
             val `minute to list of milli to score` = secondlyPlayerStatistics.fragsLog.groupBy(_._1 / 60000).transform(
               (time, subTimes) =>
-                if ( time > 10 ) subTimes.filterNot(_._2 == 0)
+                if ( time >= 10 ) subTimes.filterNot(_._2 == 0)
                 else subTimes
             )
             val `minute to list of score` = `minute to list of milli to score`.mapValues(_.maxBy(_._1)._2)
