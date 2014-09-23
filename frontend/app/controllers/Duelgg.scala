@@ -7,7 +7,8 @@ import play.twirl.api.Html
 import plugins.{LeagueInterface, DuelsStream, DuelsInterface}
 
 object Duelgg extends Controller {
-
+  case class Server(connect: String, alias: Option[String])
+  case class ServersListing(servers: List[Server])
 
   def index = Action.async {
     request =>
@@ -57,9 +58,19 @@ object Duelgg extends Controller {
         xmlO = Option(rep.value).map(s => Html(s"$s"))
       } yield Ok(views.html.league(xmlO))
   }
-  def showQuestions = Action {
+
+  def showQuestions = Action.async{
     request =>
-      Ok(views.html.questions())
+      import scala.concurrent.ExecutionContext.Implicits.global
+      for { servers <- DuelsInterface.duelsInterface.holder.post(<query xmlns="http://basex.org/rest">
+        <text><![CDATA[<servers>{/server[@connect and not(@inactive)]}</servers>]]></text>
+      </query>)
+        serversListing = for {
+          server <- servers.xml \ "server"
+          connect <- server \ "@connect" map (_.text)
+          alias = (server \ "@alias" map (_.text)).headOption
+        } yield Server(connect, alias)
+      } yield Ok(views.html.questions(ServersListing(serversListing.toList)))
   }
 
 }
