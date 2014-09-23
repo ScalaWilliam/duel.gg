@@ -1,9 +1,12 @@
 package us
 import us.BaseXPersister.{MetaId, PublicDuelId}
 import play.api.libs.ws.WSAPI
+import us.ServerRetriever.ServersList
 import us.woop.pinger.analytics.DuelMaker.SimpleCompletedDuel
+import us.woop.pinger.data.Server
 import us.woop.pinger.data.journal.IterationMetaData
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 import scala.util.control.NonFatal
 import scala.xml.{PCData, Elem}
 
@@ -26,6 +29,92 @@ trait MetaPersister {
   def pushMeta(metaXml: IterationMetaData)(implicit ec: ExecutionContext): Future[Unit]
   def getMeta(metaId: MetaId)(implicit ec: ExecutionContext): Future[Option[scala.xml.Elem]]
   def listMetas(implicit ec: ExecutionContext): Future[List[scala.xml.Elem]]
+}
+object ServerRetriever {
+  case class ServerListing(connect: String, server: Server, alias: String, active: Boolean)
+  case class ServersList(active: List[ServerListing], inactive: List[ServerListing])
+}
+trait ServerRetriever {
+  self: BaseXClient =>
+
+  def deactivateServer(connect: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    postIntoDatabase(
+      <query xmlns="http://basex.org/rest">
+        <text><![CDATA[
+      declare variable $connect as xs:string external;
+for $server in /server[@connect = $connect and not(@inactive)]
+return insert node (attribute {"inactive"} {"true"}) into $server
+]]></text>
+        <variable name="connect" value={connect}/>
+      </query>).map(_ => ())
+  }
+
+  def activateServer(connect: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    postIntoDatabase(
+      <query xmlns="http://basex.org/rest">
+        <text><![CDATA[
+      declare variable $connect as xs:string external;
+for $server in /server[@connect = $connect]
+return delete node $server/@inactive
+]]></text>
+        <variable name="connect" value={connect}/>
+      </query>).map(_ => ())
+  }
+
+  def changeServerAlias(connect: String, newAlias: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    postIntoDatabase(
+      <query xmlns="http://basex.org/rest">
+        <text><![CDATA[
+      declare variable $connect as xs:string external;
+      declare variable $newAlias as xs:string external;
+for $server in /server[@connect = $connect]
+return replace value of node $server/@alias with $newAlias
+]]></text>
+        <variable name="connect" value={connect}/>
+        <variable name="newAlias" value={newAlias}/>
+      </query>).map(_ => ())
+  }
+
+  def addServer(connect: String, alias: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    postIntoDatabase(
+      <query xmlns="http://basex.org/rest">
+        <text><![CDATA[
+
+
+      declare variable $connect as xs:string external;
+      declare variable $alias as xs:string external;
+if ( empty(/server[@connect = $connect]) ) then (
+db:add("]]>{dbName}<![CDATA[", <server connect="{$connect}" alias="{$alias}"/>, "bxp-servers")
+) else ()
+]]></text>
+        <variable name="connect" value={connect}/>
+        <variable name="alias" value={alias}/>
+      </query>).map(_ => ())
+  }
+
+  def retrieveServers(implicit ec: ExecutionContext): Future[ServerRetriever.ServersList] = {
+    postIntoDatabase(
+      <query xmlns="http://basex.org/rest">
+        <text><![CDATA[
+<servers>{
+/server[@connect]
+}</servers>
+]]></text>
+      </query>
+    ).map(doc => {
+      val listOfServers = for {
+        // parallel because we'll be getting DNS
+        serverXml <- (doc.xml \ "server").par
+        connect <- serverXml \ "@connect" map (_.text)
+        alias <- serverXml \ "@alias" map (_.text)
+        isActive = !(serverXml \ "@inactive").exists(_.text == "true")
+        sauerServer <- Try(Server.fromAddress(connect)).toOption.toList
+      } yield ServerRetriever.ServerListing(connect, sauerServer, alias, isActive)
+      val (active, inactive) = listOfServers.toList.partition(_.active)
+      ServersList(active.toList, inactive.toList)
+    }
+    )
+  }
 }
 
 trait BaseXClient {
@@ -74,9 +163,12 @@ trait BaseXClient {
 
 }
 
-class WSAsyncDuelPersister(val client: WSAPI, val basexContextPath: String, val dbName: String, val chars: String) extends AsyncDuelPersister with BaseXClient
-
-with MetaPersister {
+class WSAsyncDuelPersister(val client: WSAPI, val basexContextPath: String, val dbName: String, val chars: String)
+  extends AsyncDuelPersister
+  with BaseXClient
+  with ServerRetriever
+  with MetaPersister
+{
 
   lazy val functions = {
     import scalax.io.JavaConverters._

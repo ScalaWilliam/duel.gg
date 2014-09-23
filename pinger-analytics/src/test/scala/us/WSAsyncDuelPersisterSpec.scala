@@ -2,17 +2,20 @@ package us
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Second, Millis, Span}
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.{Inside, Inspectors, Matchers, WordSpec}
 import us.BaseXPersister.MetaId
 import us.woop.pinger.analytics.DuelMaker.CompletedDuel
+import us.woop.pinger.data.Server
 import us.woop.pinger.data.journal.IterationMetaData
 
-class WSAsyncDuelPersisterSpec extends WordSpec with Matchers with ScalaFutures{
+class WSAsyncDuelPersisterSpec extends WordSpec with Matchers with ScalaFutures with Inspectors
+with Inside {
 
 implicit val patience = PatienceConfig(timeout = scaled(Span(1, Second)), interval = scaled(Span(15, Millis)))
   val asyncDuelPersister = new WSAsyncDuelPersister(new StandaloneWSAPI, "http://localhost:8984", "duelsza", "yesz")
   val persister: AsyncDuelPersister = asyncDuelPersister
   val metaPersister: MetaPersister = asyncDuelPersister
+  val serverLister: ServerRetriever = asyncDuelPersister
   import scala.concurrent.ExecutionContext.Implicits.global
   val sampleDuel = CompletedDuel.test.toSimpleCompletedDuel.copy(metaId=Option(IterationMetaData.build.id)).copy(duration = 15)
 

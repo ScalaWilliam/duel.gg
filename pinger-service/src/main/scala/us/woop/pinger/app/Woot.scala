@@ -5,6 +5,7 @@ import akka.actor.ActorDSL._
 import akka.actor._
 import akka.routing.RoundRobinPool
 import com.hazelcast.core.{ItemEvent, ItemListener, HazelcastInstance}
+import us.ServerRetriever.ServersList
 import us.WSAsyncDuelPersister
 import us.woop.pinger.analytics.DuelMaker.CompletedDuel
 import us.woop.pinger.analytics.MultiplexedDuelReader.{SInitial, SFoundGame, SIteratorState}
@@ -12,7 +13,7 @@ import us.woop.pinger.app.Woot.{NewlyAddedDuel, MetaCompletedDuel, JournalGenera
 import us.woop.pinger.data.Server
 import us.woop.pinger.data.journal.{SauerBytesWriter, IterationMetaData}
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
-import us.woop.pinger.service.PingerController
+import us.woop.pinger.service.{BaseXServers, PingerController}
 import us.woop.pinger.service.PingerController.{Unmonitor, Monitor}
 import us.woop.pinger.service.analytics.JournalBytes
 
@@ -20,6 +21,8 @@ import scala.concurrent.Future
 
 class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journalGenerator: JournalGenerator, disableHashing: Boolean) extends Act {
   val serversSet = hazelcast.getSet[String]("servers")
+
+
   whenStarting {
     import collection.JavaConverters._
     serversSet.asScala.foreach(s => self ! Monitor(Server(s)))
@@ -32,6 +35,8 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
       }
     }, true)
   }
+
+  val basexServers = context.actorOf(BaseXServers.props(persister))
 
   val pingerController =
     context.actorOf(RoundRobinPool(1, supervisorStrategy = OneForOneStrategy(){
@@ -152,6 +157,7 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
 
 }
 object Woot {
+
   def props(hazelcast: HazelcastInstance,
              persister: WSAsyncDuelPersister, journalGenerator: JournalGenerator, disableHashing: Boolean) = {
     Props(classOf[Woot], hazelcast, persister, journalGenerator, disableHashing)
