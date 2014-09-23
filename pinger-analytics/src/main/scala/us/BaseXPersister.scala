@@ -178,19 +178,21 @@ class WSAsyncDuelPersister(val client: WSAPI, val basexContextPath: String, val 
   override def pushDuel(duelXml: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[Unit] = {
     val xml = duelXml.toXml
     postIntoDatabase(
-      <query xmlns="http://basex.org/rest">
-        <text>{PCData(functions +
+      <rest:query xmlns:rest="http://basex.org/rest">
+        <rest:text>{PCData(functions +
           s"""
-            |
-            |if ( empty(((db:open("$dbName")/duel)[local:duels-are-similar(., $xml)])) )
+            |let $$ctx := /completed-duel
+            |return
+            |if ( empty(((db:open("$dbName")/duel)[local:duels-are-similar(., $$ctx)])) )
             |then (
             | let $$new-duel-id := local:get-new-duel-id(db:open("$dbName")/duel, "$chars")
-            | return local:add-new-duel($$new-duel-id, "$dbName", $xml)
+            | return local:add-new-duel($$new-duel-id, "$dbName", $$ctx)
             |)
             |else ()
             |""".stripMargin
-        )}</text>
-      </query>
+        )}</rest:text>
+        <rest:context>{xml}</rest:context>
+      </rest:query>
     ).map(x => ())
   }
 
@@ -215,9 +217,12 @@ class WSAsyncDuelPersister(val client: WSAPI, val basexContextPath: String, val 
   }
 
   override def getSimilarDuel(duelDefinition: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
-    postIntoDatabase(<query xmlns="http://basex.org/rest">
-    <text>{PCData(functions + s"""(db:open("$dbName")/duel)[local:duels-are-similar(., ${duelDefinition.toXml})]""")}</text>
-    </query>).map(x => if ( x.body.nonEmpty) Some(x.xml) else None)
+    postIntoDatabase(<rest:query xmlns:rest="http://basex.org/rest">
+    <rest:text>{PCData(functions +
+      s"""let $$ctx := /completed-duel
+         |return (db:open("$dbName")/duel)[local:duels-are-similar(., $$ctx)]""".stripMargin)}</rest:text>
+      <rest:context>{duelDefinition.toXml}</rest:context>
+    </rest:query>).map(x => if ( x.body.nonEmpty) Some(x.xml) else None)
   }
 
   override def pushMeta(metaXml: IterationMetaData)(implicit ec: ExecutionContext): Future[Unit] = {
