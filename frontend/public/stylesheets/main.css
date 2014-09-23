@@ -212,3 +212,7 @@ a {
 ul.servers-list {
     list-style-type: none;
 }
+.server-detail {
+    padding-top:2em;
+    font-size:1.6em;
+}
