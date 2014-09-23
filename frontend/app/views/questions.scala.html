@@ -1,4 +1,4 @@
-@()
+@(servers: controllers.Duelgg.ServersListing)
 @template("questions-view")(s"questions - duel.gg") {
     <article class="questions">
 
@@ -27,32 +27,17 @@
 
         <h2>Which servers does duel.gg record from?</h2>
         <ul class="servers-list">
-            <li>rb0.butchers.su</li>
-            <li>rb1.butchers.su</li>
-            <li>rb1.butchers.su 20000</li>
-            <li>rb2.butchers.su</li>
-            <li>rb3.butchers.su</li>
-            <li>vaq-clan.de</li>
-            <li>effic.me 10000</li>
-            <li>effic.me 20000</li>
-            <li>effic.me 30000</li>
-            <li>effic.me 40000</li>
-            <li>effic.me 50000</li>
-            <li>effic.me 60000</li>
-            <li>psl.sauerleague.org 20000</li>
-            <li>psl.sauerleague.org 30000</li>
-            <li>psl.sauerleague.org 40000</li>
-            <li>psl.sauerleague.org 50000</li>
-            <li>psl.sauerleague.org 60000</li>
-            <li>sauer.woop.us</li>
-            <li>vaq-clan.de</li>
-            <li>butchers.su</li>
-            <li>192.99.168.91</li>
-            <li>192.99.168.91 10000</li>
-            <li>192.99.168.91 20000</li>
-            <li>sp4nk.it.cx 28899</li>
-            <li>noviteam.de</li>
-            <li>darkkeepers.dk 28786</li>
+            @{
+                for {
+                    controllers.Duelgg.Server(connect, alias) <- servers.servers
+                text = alias match {
+                    case Some(a) => s"$a ($connect)"
+                    case None => s"$connect"
+                }
+                } yield {
+                        <li>{text}</li>
+                }
+            }
         </ul>
 
 
