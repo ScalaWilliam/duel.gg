@@ -1,6 +1,8 @@
 name := "admins"
 
-lazy val root = project.in(file(".")) aggregate(scaladinAddon) dependsOn(scaladinAddon)
+//lazy val root = ThisProject aggregate(scaladinAddon) dependsOn(scaladinAddon)
+
+lazy val root = (project in file(".")) aggregate(scaladinAddon) dependsOn(scaladinAddon)
 
 lazy val scaladinAddon = ProjectRef(uri("git://github.com/henrikerola/scaladin.git"), "addon")
 
