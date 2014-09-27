@@ -38,10 +38,5 @@ return <duel>
                 <p class="score">{data($b/@frags)}</p>
                 <p class="name"><a href="{$b-url}">{data($b/@name)}</a></p>
             </section>
-            <p class="server-detail">Server:
-                {
-                    data(subsequence((/server[@server = $duel/@server]/@alias, $duel/@server), 1, 1))
-                }
-            </p>
         </section>
     </article></duel>
