@@ -14,7 +14,7 @@ lazy val analytics = project in file("pinger-analytics") dependsOn data
 
 lazy val bobby = project in file("bobby")
 
-lazy val admins = project in file("admins") dependsOn (scaladinAddon)
+//lazy val admins = project in file("admins") dependsOn (scaladinAddon)
 
 lazy val service = project in file("pinger-service") dependsOn analytics
 
