@@ -14,13 +14,13 @@ lazy val analytics = project in file("pinger-analytics") dependsOn data
 
 lazy val bobby = project in file("bobby")
 
-//lazy val admins = project in file("admins") dependsOn (scaladinAddon)
+lazy val admins = project in file("admins") dependsOn (scaladinAddon)
 
 lazy val service = project in file("pinger-service") dependsOn analytics
 
 lazy val data = project in file("pinger-data")
 
-//lazy val scaladinAddon = ProjectRef(uri("git://github.com/henrikerola/scaladin.git"), "addon")
+lazy val scaladinAddon = ProjectRef(uri("git://github.com/henrikerola/scaladin.git"), "addon")
 
 lazy val frontend = (project in file("frontend") enablePlugins PlayScala)
 
