@@ -1,13 +1,13 @@
-package us.woop.pinger.analytics
+package us.woop.pinger.analytics.worse
 
 import org.joda.time.format.ISODateTimeFormat
+import org.scalactic.Accumulation._
+import org.scalactic._
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import us.woop.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
 import us.woop.pinger.data.{ModesList, Server}
 
 import scala.collection.immutable.SortedMap
-import org.scalactic._
-import org.scalactic.Accumulation._
 object DuelMaker {
 
   case class PlayerLog(fragsLog: Map[Long, Int], weaponsLog: Map[Long, Int], accuracyLog: Map[Long, Int])
@@ -41,12 +41,11 @@ object DuelMaker {
          |Next message: $nextMessage
        """.stripMargin
 
-
     def toSimpleCompletedDuel = {
       SimpleCompletedDuel(
         simpleId= s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
         duration = duration,
-        playedAt = playedAt,
+        playedAt = playedAt.toSet.toList.sorted,
         startTimeText = gameHeader.startTimeText,
         startTime = gameHeader.startTime,
         map = gameHeader.map,
@@ -60,7 +59,7 @@ object DuelMaker {
             accuracy = playerStats.accuracy,
             frags = playerStats.frags,
             weapon = playerStats.weapon,
-            fragLog = playerStats.fragsLog.map { case (x, y) => s"$x" -> y}
+            fragLog = playerStats.fragsLog.toList
           ),
         winner = winner.map(_._1.name),
         metaId = metaId
@@ -197,7 +196,7 @@ object DuelMaker {
                 if ( time >= 10 ) subTimes.filterNot(_._2 == 0)
                 else subTimes
             )
-            val `minute to list of score` = `minute to list of milli to score`.mapValues(_.maxBy(_._1)._2)
+            val `minute to list of score` = `minute to list of milli to score`.filterNot(_._2.isEmpty).mapValues(_.maxBy(_._1)._2)
             Map(SortedMap(`minute to list of score`.toVector :_*).map{case(t, v) => (t + 1) -> v}.toVector :_*)
           }
         )
@@ -256,16 +255,16 @@ object DuelMaker {
   (
     name: String,
     ip: String,
-    accuracy: Int,
     frags: Int,
     weapon: String,
-    fragLog: Map[String, Int])
+    accuracy: Int,
+    fragLog: List[(Int, Int)])
 
   case class SimpleCompletedDuel
   (
-  simpleId: String,
+    simpleId: String,
     duration: Int,
-    playedAt: Set[Int],
+    playedAt: List[Int],
     startTimeText: String,
     startTime: Long,
     map: String,
@@ -303,7 +302,7 @@ object DuelMaker {
                 weapon={stats.weapon}>
           {for {(at, frags) <- stats.fragLog}
         yield
-          <frags at={at}>{frags}</frags>}
+          <frags at={at.toString}>{frags}</frags>}
         </player>
         }
       </players>

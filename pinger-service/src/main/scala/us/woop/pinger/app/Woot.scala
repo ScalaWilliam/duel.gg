@@ -7,8 +7,9 @@ import akka.routing.RoundRobinPool
 import com.hazelcast.core.{ItemEvent, ItemListener, HazelcastInstance}
 import us.ServerRetriever.ServersList
 import us.WSAsyncDuelPersister
-import us.woop.pinger.analytics.DuelMaker.CompletedDuel
-import us.woop.pinger.analytics.MultiplexedDuelReader.{SInitial, SFoundGame, SIteratorState}
+import us.woop.pinger.analytics.worse.{MultiplexedDuelReader, DuelMaker}
+import DuelMaker.CompletedDuel
+import MultiplexedDuelReader.{SInitial, SFoundGame, SIteratorState}
 import us.woop.pinger.app.Woot.{NewlyAddedDuel, MetaCompletedDuel, JournalGenerator, RotateMeta}
 import us.woop.pinger.data.Server
 import us.woop.pinger.data.journal.{SauerBytesWriter, IterationMetaData}

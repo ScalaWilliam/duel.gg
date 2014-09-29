@@ -1,6 +1,7 @@
 package us.woop.pinger.service.analytics
 import akka.actor.ActorDSL._
-import us.woop.pinger.analytics.MultiplexedDuelReader.{SInitial, SFoundGame, SIteratorState}
+import us.woop.pinger.analytics.worse.MultiplexedDuelReader
+import MultiplexedDuelReader.{SInitial, SFoundGame, SIteratorState}
 import us.woop.pinger.data.journal.IterationMetaData
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 

@@ -2,7 +2,8 @@ package us
 import us.BaseXPersister.{MetaId, PublicDuelId}
 import play.api.libs.ws.WSAPI
 import us.ServerRetriever.ServersList
-import us.woop.pinger.analytics.DuelMaker.SimpleCompletedDuel
+import us.woop.pinger.analytics.worse.DuelMaker
+import DuelMaker.SimpleCompletedDuel
 import us.woop.pinger.data.Server
 import us.woop.pinger.data.journal.IterationMetaData
 import scala.concurrent.{ExecutionContext, Future}

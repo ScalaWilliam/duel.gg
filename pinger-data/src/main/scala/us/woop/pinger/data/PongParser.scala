@@ -2,7 +2,7 @@ package us.woop.pinger.data
 
 import akka.util.ByteString
 import com.typesafe.scalalogging.slf4j.StrictLogging
-import us.woop.pinger.data.ParsedPongs.{HopmodUptime, OlderClient, PlayerCns, PlayerExtInfo, ServerInfoReply, TeamScore, TeamScores, ThomasD, ThomasExt, ThomasR, Uptime}
+import us.woop.pinger.data.ParsedPongs._
 
 /** 01/02/14 */
 object PongParser extends StrictLogging {
@@ -156,62 +156,25 @@ object PongParser extends StrictLogging {
   }
   val >~: = GetIp
   object GetThomasModExtInfo {
-    def unapply(list: ByteString): Option[ThomasExt] = list match {
+    def unapply(list: ByteString): Option[PartialPlayerExtInfo] = list match {
       case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: (rest @ (-3 >>: _)) =>
-        rest match {
-          case GetThomasExt(thomasR) =>
-            Option(thomasR)
-          case x =>
+        val ititi = Iterator.iterate(Option(rest)) {
+          case Some(-3 >>: _ >>: _ >>: _ >>: _ >>: _ >>: _ >>: _ >>: other) =>
+            Some(other)
+          case _ => None
+        }.takeWhile(_.nonEmpty).toList.flatten.lastOption
+        ititi.flatMap {
+          case name >>##:: team >>##:: frags >>: flags >>: deaths >>:
+            teamkills >>: accuracy >>: health >>: armour >>: gun >>: privilege >>: state
+            >>: ip >~: ByteString.empty =>
+            Option(PartialPlayerExtInfo(PlayerExtInfo(version, -1, -1, name, team, frags, deaths, teamkills, accuracy, health, armour, gun, privilege, state, ip)))
+//          case name >>##:: team >>##:: frags >>: other =>
+//            Option(PartialPlayerExtInfo(PlayerExtInfo(version, -1, -1, name, team, frags, -1, -1, -1, -1, -1, -1, -1, -1, ".")))
+          case c =>
+//            println(s"Failed here ==> $c");
             None
         }
       case x =>
-        None
-    }
-  }
-
-  object GetThomasExt {
-
-    def getDs(bytes: ByteString): List[(ThomasD, ByteString)] = {
-      bytes match {
-        case GetD(value, rest) => (value, rest) :: getDs(rest)
-        case _ => Nil
-      }
-    }
-    def unapply(list: ByteString): Option[ThomasExt] = list match {
-      case stuff =>
-        val gd = getDs(stuff)
-        val allDs = gd.map(_._1)
-        val leftOver = gd.last._2
-        for {
-          (thomasR, lefties) <- GetR.unapply(leftOver)
-        } yield ThomasExt(allDs, thomasR)
-    }
-  }
-  object GetD {
-    def unapply(list: ByteString): Option[(ThomasD, ByteString)] = list match {
-      case -3 >>: rest =>
-        val ints = GetInts.ints(rest).take(7)
-        val listOfInts = ints.map(_._1)
-        val leftOver = ints.last._2
-        Option(ThomasD(listOfInts), leftOver)
-      case _ => None
-    }
-  }
-
-  object GetR {
-    def unapply(list: ByteString): Option[(ThomasR, ByteString)] = list match {
-      case s1 >>##:: s2 >>##:: rest if rest.size > 12 =>
-        val ints = GetInts.ints(rest).take(13)
-        val listOfInts = ints.map(_._1)
-        val leftOver = ints.last._2
-        Option(ThomasR(Option(s1), s2, listOfInts), leftOver)
-      case s >>##:: rest if rest.size > 12 =>
-        val ints = GetInts.ints(rest).take(13)
-        val listOfInts = ints.map(_._1)
-        val leftOver = ints.last._2
-        Option(ThomasR(None, s, listOfInts), leftOver)
-      case x =>
-        // unknown protocol
         None
     }
   }

@@ -4,7 +4,8 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Second, Millis, Span}
 import org.scalatest.{Inside, Inspectors, Matchers, WordSpec}
 import us.BaseXPersister.MetaId
-import us.woop.pinger.analytics.DuelMaker.CompletedDuel
+import us.woop.pinger.analytics.worse.DuelMaker
+import DuelMaker.CompletedDuel
 import us.woop.pinger.data.Server
 import us.woop.pinger.data.journal.IterationMetaData
 

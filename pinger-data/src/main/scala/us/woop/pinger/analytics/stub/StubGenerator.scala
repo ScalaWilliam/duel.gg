@@ -1,8 +1,8 @@
 package us.woop.pinger.analytics.stub
 
-import us.woop.pinger.analytics.MultiplexedDuelReader.MIteratorState
-import us.woop.pinger.analytics.{MultiplexedDuelReader, StreamedDuelMaker}
-import us.woop.pinger.analytics.StreamedDuelMaker.{ZFoundGame, ZIteratorState}
+import us.woop.pinger.analytics.worse.{StreamedDuelMaker, MultiplexedDuelReader}
+import MultiplexedDuelReader.MIteratorState
+import StreamedDuelMaker.{ZFoundGame, ZIteratorState}
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import us.woop.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
 import us.woop.pinger.data.Server

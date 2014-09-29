@@ -1,8 +1,8 @@
-package us.woop.pinger.analytics
+package us.woop.pinger.analytics.worse
 
-import us.woop.pinger.analytics.DuelMaker.{DuelState, CompletedDuel}
-import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import org.scalactic._
+import us.woop.pinger.analytics.worse.DuelMaker.{CompletedDuel, DuelState}
+import us.woop.pinger.data.ParsedPongs.ParsedMessage
 
 object StreamedDuelMaker {
   type Processor = ParsedMessage => ZIteratorState

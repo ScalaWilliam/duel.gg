@@ -15,7 +15,7 @@ object Extractor {
       case GetHopmodUptime(x) => Seq(x) ++ Seq(ConvertHopmodUptime.convert(x))
       case GetTeamScores(x) => Seq(x) ++ ConvertTeamScore.convert(x)
       case GetUptime(x) => Seq(x)
-      case GetThomasModExtInfo(x) => Seq(x) ++ ConvertThomasExt.convert(x)
+      case GetThomasModExtInfo(x) => Seq(x)
       case CheckOlderClient(x) => Seq(x)
     }
   }
