@@ -29,7 +29,7 @@ object BetterMultiplexedReader {
         serverStates.get(server) match {
           case Some(state) =>
             state.next.apply(parsedMessage) match {
-              case nextState @ ZFoundGame(completedDuel) =>
+              case nextState @ ZFoundGame(_, completedDuel) =>
                 MFoundGame(serverStates.updated(server, nextState), completedDuel)
               case nextState =>
                 MProcessing(serverStates.updated(server, nextState))

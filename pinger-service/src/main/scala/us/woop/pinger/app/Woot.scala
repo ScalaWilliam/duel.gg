@@ -5,11 +5,9 @@ import akka.actor.ActorDSL._
 import akka.actor._
 import akka.routing.RoundRobinPool
 import com.hazelcast.core.{ItemEvent, ItemListener, HazelcastInstance}
-import us.ServerRetriever.ServersList
 import us.WSAsyncDuelPersister
-import us.woop.pinger.analytics.worse.{MultiplexedDuelReader, DuelMaker}
-import DuelMaker.CompletedDuel
-import MultiplexedDuelReader.{SInitial, SFoundGame, SIteratorState}
+import us.woop.pinger.analytics.better.BetterMultiplexedReader.{SInitial, SFoundGame, SIteratorState}
+import us.woop.pinger.analytics.worse.DuelMaker.SimpleCompletedDuel
 import us.woop.pinger.app.Woot.{NewlyAddedDuel, MetaCompletedDuel, JournalGenerator, RotateMeta}
 import us.woop.pinger.data.Server
 import us.woop.pinger.data.journal.{SauerBytesWriter, IterationMetaData}
@@ -111,9 +109,8 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
           context.parent ! nd
         }
       case d: MetaCompletedDuel =>
-        val dd = d.completedDuel.copy(metaId = Option(d.metaId.id))
+        val sd = d.completedDuel.copy(metaId = Option(d.metaId.id))
 
-        val sd = dd.toSimpleCompletedDuel
         import scala.concurrent.ExecutionContext.Implicits.global
         // left => existing ID
         // right => new ID
@@ -164,7 +161,7 @@ object Woot {
     Props(classOf[Woot], hazelcast, persister, journalGenerator, disableHashing)
   }
 
-  case class MetaCompletedDuel(metaId: IterationMetaData, completedDuel: CompletedDuel)
+  case class MetaCompletedDuel(metaId: IterationMetaData, completedDuel: SimpleCompletedDuel)
 
   case object RotateMeta
 

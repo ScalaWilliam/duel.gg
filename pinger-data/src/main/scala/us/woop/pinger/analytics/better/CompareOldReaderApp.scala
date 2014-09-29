@@ -27,21 +27,32 @@ object CompareOldReaderApp extends App {
 //  kiki take 20 foreach println
 //  gs.flatMap(MultiplexedDuelReader.sauerBytesToParsedMessages) take 50 foreach println
 
-  val A = BetterMultiplexedReader.multiplexSecond(getSauerBytes) map (_.toXml)
+//  val gsb = getSauerBytes.filter(_.server.ip.ip == "85.214.66.181").filter(_.server.port==40000) //.drop(40000)
+//  val gsb = getSauerBytes.filter(_.server.ip.ip == "85.214.66.181").filter(_.server.port==40000) //.drop(40000)
+
+//  val states = gsb.scanLeft(SInitial: SIteratorState)(_.next(_))
+
+//  val rands = states dropWhile (i => !(i.toString contains "Randall"))
+
+//  rands drop 1350 take 50 foreach println
+//
+//  val A = BetterMultiplexedReader.multiplexSecond(getSauerBytes) map (_.toXml)
 
   val B = MultiplexedDuelReader.multiplexSecond(getSauerBytes) map (_.toSimpleCompletedDuel.toXml)
-
-  case class RecordedGame(id: String, players: Set[String], frags: Set[String])
-
-  A take 50 foreach println
-
 //
-//  val aRecorded = for {
-//    g <- A
-//    id = g \@ "simple-id"
-//    players = (g \\ "player").map(_ \@ "name").toSet
-//    frags = (g \\ "player").map(_ \@ "frags").toSet
-//  } yield RecordedGame(id, players, frags)
+  case class RecordedGame(id: String, players: Set[String], frags: Set[String])
+//
+////  A take 50 foreach println
+//
+//
+  val aRecorded = for {
+    g <- B
+    id = g \@ "simple-id"
+    players = (g \\ "player").map(_ \@ "name").toSet
+    frags = (g \\ "player").map(_ \@ "frags").toSet
+  } yield RecordedGame(id, players, frags)
+
+  aRecorded foreach println
 //
 //  val bRecorded = for {
 //    g <- B
@@ -49,21 +60,29 @@ object CompareOldReaderApp extends App {
 //    players = (g \\ "player").map(_ \@ "name").toSet
 //    frags = (g \\ "player").map(_ \@ "frags").toSet
 //  } yield RecordedGame(id, players, frags)
+////
+////  val aSet = aRecorded.dropWhile(_.id startsWith "2014-09-01").takeWhile(_.id startsWith "2014-09-02").toList.map(i => i.id -> i).toMap
+////
+////  val bSet = bRecorded.dropWhile(_.id startsWith "2014-09-01").takeWhile(_.id startsWith "2014-09-02").toList.map(i => i.id -> i).toMap
+////
 //
-//  val aSet = aRecorded.dropWhile(_.id startsWith "2014-09-01").takeWhile(_.id startsWith "2014-09-02").toList.map(i => i.id -> i).toMap
+////  val aSet = aRecorded.toList.map(i => i.id -> i).toMap
+////  val aSet = aRecorded.toList.map(i => i.id -> i).toMap
+////  val bSet = bRecorded.toList.map(i => i.id -> i).toMap
+////  val bSet = bRecorded.take(0).toList.map(i => i.id -> i).toMap
+////  val ids = (aSet.keySet ++ bSet.keySet).toList.sorted
+////
+////
+////  for {
+////    id <- ids
+////    a = aSet.get(id)
+////    b = bSet.get(id)
+////    if a.isEmpty != b.isEmpty
+////  }
+////  {
+////    println(id, a, b)
+////  }
 //
-//  val bSet = bRecorded.dropWhile(_.id startsWith "2014-09-01").takeWhile(_.id startsWith "2014-09-02").toList.map(i => i.id -> i).toMap
-//
-//  val ids = (aSet.keySet ++ bSet.keySet).toList.sorted
-//
-//  for {
-//    id <- ids
-//    a = aSet.get(id)
-//    b = bSet.get(id)
-//    if a != b
-//  }
-//  {
-//    println(id, a, b)
-//  }
+//  aRecorded foreach println
 
 }

@@ -159,7 +159,7 @@ class SystemIT (sys: ActorSystem) extends TestKit(sys) with WordSpecLike with Ma
 
     "Publish CompletedDuels into a database" in {
       val meta = IterationMetaData.build
-      yay ! MetaCompletedDuel(metaId = meta, CompletedDuel.test.copy(metaId = Option(meta.id)))
+      yay ! MetaCompletedDuel(metaId = meta, CompletedDuel.test.copy(metaId = Option(meta.id)).toSimpleCompletedDuel)
       import scala.concurrent.duration._
       val m = receiveWhile(max = 2.second, idle = 2.seconds) {
         case o => o
