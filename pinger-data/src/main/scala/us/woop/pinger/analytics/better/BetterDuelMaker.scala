@@ -106,7 +106,19 @@ object BetterDuelMaker {
             Good(this)
         }
       case ParsedMessage(_, time, info: ConvertedServerInfoReply) if info.remain == 0 && timeRemaining == 0 =>
-        completeDuel(this)(Option(info)).map(BetterDuelFound(gameHeader, _))
+        completeDuel(this)(Option(info)).map(BetterDuelFound(gameHeader, _))  match {
+          case result @ Bad(reasons) =>
+            // psl override - in case they don't send enough data, we'll wait one more tick
+            // they send thomas extinfo sometimes instead of the usual extinfo
+            // and some packets go haywre as well. you guys fucked up.
+            if ( reasons.toList.exists(_ contains "log item to say that both players finished the game")
+              && (gameHeader.startMessage.description contains "PSL") ) {
+              Good(this)
+            } else {
+              result
+            }
+          case other => other
+        }
       case ParsedMessage(_, time, info: ConvertedServerInfoReply) if info.remain == 0 =>
         Good(copy(isRunning = true, timeRemaining = 0))
       case ParsedMessage(_, time, info: ConvertedServerInfoReply) if isSwitch(gameHeader.startMessage, info) =>
@@ -167,6 +179,28 @@ object BetterDuelMaker {
             }
           )
         } yield name -> simplePlayerStatistics
+      }
+      isValidEfficGame <- {
+        if ( gameHeader.mode == "efficiency" && players.forall(_._2.frags >= 10) )
+          Good(Unit)
+        else if ( gameHeader.mode == "efficiency" )
+          Bad(One(s"in efficiency both frags to be >=10, got ${players.map(_._2.frags)}"))
+        else Good(Unit)
+      }
+      isValidInstagibGame <- {
+        if ( gameHeader.mode == "instagib" && players.forall(_._2.frags >= 20) )
+          Good(Unit)
+        else if ( gameHeader.mode == "instagib" )
+          Bad(One(s"In instagib expect both frags to be >= 20, got ${players.map(_._2.frags)}"))
+        else Good(Unit)
+      }
+      isValidFFAGame <- {
+        val sum = players.map(_._2.frags).sum
+        if ( gameHeader.mode == "ffa" && sum >= 15 )
+          Good(Unit)
+        else if ( gameHeader.mode == "ffa" )
+          Bad(One(s"In ffa expect sum of frags to be >= 15, got , got $sum"))
+        else Good(Unit)
       }
       winner = if ( players.map(_._2.frags).toSet.size == 1 ) None else {
         Option(players.maxBy(_._2.frags)._1)
