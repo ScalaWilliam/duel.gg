@@ -1,6 +1,7 @@
 package us
 
-import us.woop.pinger.analytics.DuelMaker.{CompletedDuel, SimpleCompletedDuel}
+import us.woop.pinger.analytics.worse.DuelMaker
+import DuelMaker.{CompletedDuel, SimpleCompletedDuel}
 import us.woop.pinger.data.journal.IterationMetaData
 
 import scala.concurrent.{Await, Future}

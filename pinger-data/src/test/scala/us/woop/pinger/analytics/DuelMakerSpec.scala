@@ -1,7 +1,8 @@
 package us.woop.pinger.analytics
 
 import org.scalatest.{Matchers, WordSpec}
-import us.woop.pinger.analytics.StreamedDuelMaker.{ZFoundGame, ZRejectedDuelState}
+import us.woop.pinger.analytics.worse.StreamedDuelMaker
+import StreamedDuelMaker.{ZFoundGame, ZRejectedDuelState}
 import us.woop.pinger.analytics.stub.StubGenerator
 
 class DuelMakerSpec extends WordSpec with Matchers {
@@ -163,7 +164,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
       drakas.frags shouldBe 4
       drakas.accuracy shouldBe 25
       drakas.name shouldBe "w00p|Drakas"
-      drakas.fragLog should contain only ("2" -> 2, "9" -> 4)
+      drakas.fragLog should contain only (2 -> 2, 9 -> 4)
       drakas.weapon shouldBe "shotgun"
 
       val art = simpleDuel.players("w00p|Art")
@@ -171,7 +172,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
       art.accuracy shouldBe 25
       art.name shouldBe "w00p|Art"
       art.ip shouldBe "123"
-      art.fragLog should contain only ("2" -> 2, "9" -> 3)
+      art.fragLog should contain only (2 -> 2, 9 -> 3)
       art.weapon shouldBe "shotgun"
     }
   }

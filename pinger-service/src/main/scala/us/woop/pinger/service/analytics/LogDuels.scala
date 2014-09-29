@@ -1,7 +1,8 @@
 package us.woop.pinger.service.analytics
 
 import akka.actor.ActorDSL._
-import us.woop.pinger.analytics.DuelMaker.CompletedDuel
+import us.woop.pinger.analytics.worse.DuelMaker
+import DuelMaker.CompletedDuel
 import us.woop.pinger.data.journal.IterationMetaData
 
 class LogDuels extends Act {

@@ -4,13 +4,15 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit}
+import us.woop.pinger.analytics.worse.DuelMaker
+
 //import com.hazelcast.client.HazelcastClient
 //import com.hazelcast.client.config.ClientConfig
 import com.hazelcast.config.Config
 import com.hazelcast.core.{HazelcastInstance, Message, MessageListener, Hazelcast}
 import org.scalatest._
 import play.api.libs.ws.WSAPI
-import us.woop.pinger.analytics.DuelMaker.CompletedDuel
+import DuelMaker.CompletedDuel
 import us.woop.pinger.app.SystemIT.{HaveNewDuelId, HaveMeta}
 import us.woop.pinger.data.journal.{IterationMetaData, SauerBytesWriter}
 import us.woop.pinger.service.analytics.JournalBytes

@@ -13,10 +13,14 @@ object ParsedPongs {
   case class PlayerCns(version: Int, cns: List[Int])
   case class PlayerExtInfo(version: Int, cn: Int, ping: Int, name: String, team: String, frags: Int,
                            deaths: Int, teamkills: Int, accuracy: Int, health: Int, armour: Int, gun: Int, privilege: Int, state: Int, ip: String) {
-    override def toString = s"[$ip] $name: $frags - ${super.toString}"
+    override def toString = s"[$ip] name: $name, version: $version, cn: $cn, ping: $ping" +
+      s", name: $name, team: $team, frags: $frags, deaths: $deaths, teamkills: $teamkills, accuracy: $accuracy,"+
+      s"health: $health, armour: $armour, gun: $gun, privilege: $privilege, state: $state, ip: $ip"
   }
   case class ThomasExt(ds: List[ThomasD], r: ThomasR)
   case class ThomasD(data: List[Int])
+
+  case class PartialPlayerExtInfo(playerExtInfo: PlayerExtInfo)
   case class ThomasR(s1: Option[String], s2: String, data: List[Int])
   case class OlderClient()
   case class TeamScores(version: Int, gamemode: Int, remain: Int, scores: List[TeamScore])

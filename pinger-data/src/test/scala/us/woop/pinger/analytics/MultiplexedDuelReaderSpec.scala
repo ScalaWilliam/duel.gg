@@ -1,7 +1,8 @@
 package us.woop.pinger.analytics
 
 import org.scalatest.{Inspectors, Matchers, WordSpec}
-import us.woop.pinger.analytics.MultiplexedDuelReader.MFoundGame
+import us.woop.pinger.analytics.worse.MultiplexedDuelReader
+import MultiplexedDuelReader.MFoundGame
 import us.woop.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
 import us.woop.pinger.data.Server
 

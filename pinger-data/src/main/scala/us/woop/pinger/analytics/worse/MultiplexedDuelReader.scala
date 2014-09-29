@@ -1,8 +1,8 @@
-package us.woop.pinger.analytics
+package us.woop.pinger.analytics.worse
 
 import akka.util.ByteString
-import us.woop.pinger.analytics.DuelMaker.CompletedDuel
-import us.woop.pinger.analytics.StreamedDuelMaker.{ZIteratorState, ZOutOfDuelState, ZFoundGame}
+import StreamedDuelMaker.{ZFoundGame, ZIteratorState, ZOutOfDuelState}
+import us.woop.pinger.analytics.worse.DuelMaker.CompletedDuel
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
 import us.woop.pinger.data.journal.SauerBytes
 import us.woop.pinger.data.{Extractor, Server}

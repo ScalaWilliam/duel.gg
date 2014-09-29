@@ -1,8 +1,7 @@
 package us
 
 import java.io.{FileInputStream, File}
-
-import us.woop.pinger.analytics.MultiplexedDuelReader
+import us.woop.pinger.analytics.worse.MultiplexedDuelReader
 import us.woop.pinger.data.journal.{SauerBytesWriter, SauerBytesBinary}
 
 import scala.concurrent.Await
