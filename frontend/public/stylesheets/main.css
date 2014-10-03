@@ -208,6 +208,7 @@ a {
     width:40em;
     margin-left: auto;
     margin-right: auto;
+    margin-bottom:3em;
 }
 ul.servers-list {
     list-style-type: none;
