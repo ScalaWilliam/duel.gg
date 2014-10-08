@@ -1,3 +1,5 @@
-701:plugins.DuelsInterface
-701:plugins.DuelsStream
+701:plugins.HazelcastPlugin
+702:plugins.DuelsInterface
+702:plugins.DuelsStream
+703:plugins.UserManagement
 71102:plugins.LeagueInterface

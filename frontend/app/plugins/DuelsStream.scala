@@ -9,10 +9,7 @@ import plugins.DuelsStream.NewDuelContent
 class DuelsStream(implicit app: Application) extends Plugin {
 
   override def enabled = true
-  lazy val hazelcast = {
-    Hazelcast.newHazelcastInstance()
-  }
-  lazy val newDuelsTopic = hazelcast.getTopic[String]("new-duels")
+  lazy val newDuelsTopic = HazelcastPlugin.hazelcastPlugin.hazelcast.getTopic[String]("new-duels")
   lazy val messageListener = new MessageListener[String] {
     override def onMessage(p1: Message[String]): Unit = {
       import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,7 +40,6 @@ class DuelsStream(implicit app: Application) extends Plugin {
     if ( listenerId != null ) {
       newDuelsTopic.removeMessageListener(listenerId)
     }
-    hazelcast.shutdown()
   }
 
   def createListenerActor(out: ActorRef) = {

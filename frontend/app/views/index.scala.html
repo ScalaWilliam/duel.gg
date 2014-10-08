@@ -1,5 +1,5 @@
-@(duelsItems: Html)
-@template("index-view")("duel.gg") {
+@(duelsItems: Html)(implicit sessionState: plugins.UserManagement.SessionState)
+@second.template("index-view")("duel.gg") {
 <article class="duels">
     @duelsItems
 </article>

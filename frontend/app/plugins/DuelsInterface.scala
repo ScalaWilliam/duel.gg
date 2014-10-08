@@ -12,15 +12,27 @@ class DuelsInterface(implicit app: Application) extends Plugin {
 
   override def enabled = true
 
-  def holder = {
+  lazy val url: String = {
     val path = "plugins.DuelsInterface.restPath"
-    val url = app.configuration.getString(path) match {
+    app.configuration.getString(path) match {
       case None =>
         throw app.configuration.reportError(path, s"Required a value at $path")
       case Some(uri) if Try(new URL(uri)).isFailure =>
         throw app.configuration.reportError(path, s"Required value at $path is not a valid URL: $uri")
       case Some(validUri) => validUri
     }
+  }
+
+  val dbName: String = {
+    val dbNamePath = "plugins.DuelsInterface.dbPath"
+    app.configuration.getString(dbNamePath).getOrElse{
+      throw app.configuration.reportError(dbNamePath, s"Required value at $dbNamePath is not set.")
+    }
+  }
+
+
+  
+  def holder = {
     WS.url(url)
       .withHeaders("Accept" -> "application/xml")
       .withRequestTimeout(9000)

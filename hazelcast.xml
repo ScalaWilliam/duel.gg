@@ -186,6 +186,18 @@
         <value-collection-type>SET</value-collection-type>
     </multimap>
 
+    <map name="session-tokens">
+        <time-to-live-seconds>259200</time-to-live-seconds>
+        <eviction-policy>LFU</eviction-policy>
+        <max-size policy="PER_NODE">5000</max-size>
+    </map>
+
+    <map name="session-emails">
+        <time-to-live-seconds>259200</time-to-live-seconds>
+        <eviction-policy>LFU</eviction-policy>
+        <max-size policy="PER_NODE">5000</max-size>
+    </map>
+
     <multimap name="default">
         <backup-count>1</backup-count>
         <value-collection-type>SET</value-collection-type>

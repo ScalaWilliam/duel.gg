@@ -1,5 +1,9 @@
 GET        /                    controllers.Duelgg.index
+GET        /login               controllers.Duelgg.login
+GET        /logout              controllers.Duelgg.logout
 GET        /stream              controllers.Duelgg.streamSocket
+GET        /oauth2callback      controllers.Duelgg.oauth2callback
+GET        /loggy               controllers.Duelgg.loggy
 GET        /league              controllers.Duelgg.showLeague
 GET        /questions           controllers.Duelgg.showQuestions
 GET        /:id                 controllers.Duelgg.showPage(id: String)
