@@ -15,6 +15,8 @@ libraryDependencies += "com.google.api-client" % "google-api-client" % "1.19.0"
 
 libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.1"
 
+javacOptions in Compile ++= Seq("-source", "1.7", "-target", "1.7", "-Xlint:unchecked", "-Xlint:deprecation")
+
 libraryDependencies += "com.google.apis" % "google-api-services-plus" % "v1-rev174-1.19.0"
 
 libraryDependencies += "com.google.apis" % "google-api-services-oauth2" % "v2-rev78-1.19.0"
