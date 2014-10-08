@@ -11,6 +11,14 @@ libraryDependencies += "com.github.scala-incubator.io" % "scala-io-core_2.11" % 
 
 libraryDependencies += "com.github.scala-incubator.io" % "scala-io-file_2.11" % "0.4.3-1"
 
+libraryDependencies += "com.google.api-client" % "google-api-client" % "1.19.0"
+
+libraryDependencies += "org.scalactic" %% "scalactic" % "2.2.1"
+
+libraryDependencies += "com.google.apis" % "google-api-services-plus" % "v1-rev174-1.19.0"
+
+libraryDependencies += "com.google.apis" % "google-api-services-oauth2" % "v2-rev78-1.19.0"
+
 libraryDependencies += "com.hazelcast" % "hazelcast" % "3.2.5"
 
 libraryDependencies += ws
