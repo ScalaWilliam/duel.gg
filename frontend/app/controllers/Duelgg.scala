@@ -7,6 +7,7 @@ import play.api.libs.json.{JsArray, Json, JsString, JsValue}
 import play.api.libs.ws.WS
 import play.api.mvc._
 import play.twirl.api.Html
+import plugins.UserManagement.SessionState
 import plugins._
 import scala.concurrent.Future
 import scala.xml.PCData
@@ -20,23 +21,27 @@ object Duelgg extends Controller {
   import scala.concurrent.ExecutionContext.Implicits.global
 
 
-  def index = Action.async {
-    request =>
-      UserManagement.userManagement.getSessionState(request).flatMap { implicit suzzy =>
-        request.queryString.get("player").toList.flatten.headOption match {
-          case Some(playerName) =>
-            for {
-              xmlData <- DuelsInterface.duelsInterface.getPlayer(playerName)
-            } yield xmlData match {
-              case Some(data) if data.nonEmpty => Ok(views.html.player(playerName)(Html(s"$data")))
-              case _ => NotFound
-            }
-          case None =>
-            for {
-              xmlData <- DuelsInterface.duelsInterface.getIndex
-            } yield Ok(views.html.index(Html(s"$xmlData")))
-        }
+  def stated[V](f: Request[AnyContent] => SessionState => Future[Result]): Action[AnyContent] = Action.async {
+    implicit request =>
+      UserManagement.userManagement.getSessionState.flatMap { implicit suzzy =>
+        f(request)(suzzy)
       }
+  }
+
+  def index = stated { implicit request => implicit suzzy =>
+    request.queryString.get("player").toList.flatten.headOption match {
+      case Some(playerName) =>
+        for {
+          xmlData <- DuelsInterface.duelsInterface.getPlayer(playerName)
+        } yield xmlData match {
+          case Some(data) if data.nonEmpty => Ok(views.html.player(playerName)(Html(s"$data")))
+          case _ => NotFound
+        }
+      case None =>
+        for {
+          xmlData <- DuelsInterface.duelsInterface.getIndex
+        } yield Ok(views.html.index(Html(s"$xmlData")))
+    }
   }
 
   def showPage(id: String) = Action.async {

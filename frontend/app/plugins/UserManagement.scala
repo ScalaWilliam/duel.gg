@@ -75,7 +75,7 @@ class UserManagement(implicit app: Application) extends Plugin {
     }
   }
 
-  def getSessionState[T](request: Request[T])(implicit ec: ExecutionContext): Future[SessionState] = {
+  def getSessionState[T](implicit request: Request[T], ec: ExecutionContext): Future[SessionState] = {
     val sessionIdO = request.cookies.get(controllers.Duelgg.SESSION_ID).map(_.value)
     val sessionStateO =
       for {

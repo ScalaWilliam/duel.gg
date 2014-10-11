@@ -42,18 +42,15 @@ object Users extends Controller {
       Future { TemporaryRedirect(UserManagement.userManagement.authUrl(newTokenValue)).withCookies(sessionCookie) }
   }
 
-  def createProfile = Action.async {
-    implicit request =>
-      UserManagement.userManagement.getSessionState(request).flatMap { implicit suzzy =>
-        suzzy.profile match {
-          case Some(_) => Future {
-            Ok("You already have a profile, naughty!")
-          }
-          case _ => Future {
-            Ok(views.html.second.createProfile(profileForm))
-          }
-        }
+  def createProfile = stated { implicit request => implicit suzzy =>
+    suzzy.profile match {
+      case Some(_) => Future {
+        Ok("You already have a profile, naughty!")
       }
+      case _ => Future {
+        Ok(views.html.second.createProfile(profileForm))
+      }
+    }
   }
 
   def logout = Action {
