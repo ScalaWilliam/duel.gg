@@ -89,7 +89,7 @@ class UserManagement(implicit app: Application) extends Plugin {
   }
 
   def mainUrl(implicit request : play.api.mvc.RequestHeader) =
-    routes.Duelgg.oauth2callback().absoluteURL()
+    routes.Users.oauth2callback().absoluteURL()
 
   lazy val dbName = DuelsInterface.duelsInterface.dbName
 
