@@ -31,6 +31,16 @@ crossPaths := false
 
 version in ThisBuild := "0.9-" + versionKey.value
 
+lazy val prepareBower = settingKey[Unit]("Prepare bower")
+
+prepareBower in compile := {
+  Process(Seq("bower", "install"), file("app/assets/frontend-up")).!
+}
+
+//prepareBower in run := {
+//  Process(Seq("bower", "install"), file("app/assets/frontend-up")).!
+//}
+
 lazy val versionKey = settingKey[String]("Version key")
 
 versionKey := {
