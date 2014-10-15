@@ -3,10 +3,9 @@
     <head>
         <title>@title</title>
         <link href='http://fonts.googleapis.com/css?family=Permanent+Marker|Signika:400,700' rel='stylesheet' type='text/css'>
-        <link href='/assets/font-awesome-4.2.0/css/font-awesome.min.css' rel='stylesheet' type='text/css'>
-        <link rel="stylesheet" href="/assets/stylesheets/main.css" type="text/css"/>
-        <script src="/assets/javascript/jquery.js" type="text/javascript"></script>
-        <script src="/assets/javascript/main.js" type="text/javascript"></script>
+        <link href='@routes.Assets.versioned("font-awesome-4.2.0/css/font-awesome.min.css")' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/main.css")" type="text/css"/>
+        <script src="@routes.Assets.versioned("javascripts/jquery.js")" type="text/javascript"></script>
     </head>
     <body>
 
@@ -24,8 +23,8 @@
             sessionState match {
                 case plugins.UserManagement.SessionState(_, _, Some(profile)) =>
 <aside id="login">                    <p>Welcome, <a href={profile.userId}>{profile.shortName}</a>!</p></aside>
-                case plugins.UserManagement.SessionState(_, Some(plugins.UserManagement.GoogleUser(_, firstName)), _) =>
-                    <aside id="login"><p>Create a profile, {firstName}!</p></aside>
+                case plugins.UserManagement.SessionState(_, Some(plugins.UserManagement.GoogleUser(email, firstName)), _) =>
+                    <aside id="login"><p>Create a profile, {email}!</p></aside>
                 case _ => ""
 //                case _ => <p><a href="/login">Sign in with Google</a></p>
             }

@@ -8,4 +8,4 @@ GET        /createProfile       controllers.Users.createProfile
 GET        /league              controllers.Duelgg.showLeague
 GET        /questions           controllers.Duelgg.showQuestions
 GET        /:id                 controllers.Duelgg.showPage(id: String)
-GET        /assets/*file        controllers.Assets.at(path="/public", file)
+GET        /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)

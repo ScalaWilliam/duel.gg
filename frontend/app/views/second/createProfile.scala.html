@@ -1,5 +1,6 @@
 @(userForm: Form[controllers.Users.ProfileForm])(implicit sessionState: plugins.UserManagement.SessionState)
 @views.html.second.template("create-profile")("Create a profile!") {
+
     @helper.form(action = routes.Users.createProfile()) {
         @helper.inputText(userForm("sauerbratenNickname"))
         @helper.inputText(userForm("permanentNickname"))

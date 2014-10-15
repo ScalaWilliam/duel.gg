@@ -1,0 +1,41 @@
+<polymer-element name="duel-card" attributes="time mode map playeraname playerascore playerbname playerbscore">
+    <template>
+        <style>
+            :host {
+                display:block;
+                border:thick solid indigo;
+            }
+        </style>
+        <div>
+            <h2>{{playeraname}} vs {{playerbname}}</h2>
+            <h3>{{playerascore}} - {{playerbscore}}</h3>
+            <h4>{{mode}} @ {{map}}</h4>
+            <h5><time is="time-ago" datetime="{{time}}">{{time}}</time></h5>
+        </div>
+    </template>
+    <script>Polymer({})</script>
+</polymer-element>
+
+<polymer-element name="duel-large-card" attributes="time mode map playeraname playerascore playerbname playerbscore">
+    <template>
+        <style>
+            :host {
+                display:block;
+                border:thick solid indigo;
+            }
+        </style>
+        <div>
+            <h4>{{mode}} @ {{map}}</h4>
+            <h5><time is="time-ago" datetime="{{time}}">{{time}}</time></h5>
+            <div class="left-player">
+                <h3>{{playerascore}}</h3>
+                <h2>{{playeraname}}</h2>
+            </div>
+            <div class="right-player">
+                <h3>{{playerbscore}}</h3>
+                <h2>{{playerbname}}</h2>
+            </div>
+        </div>
+    </template>
+    <script>Polymer({})</script>
+</polymer-element>

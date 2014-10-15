@@ -19,6 +19,7 @@ object Users extends Controller {
 
   import play.api.data._
   import play.api.data.Forms._
+
   val profileFormMapping = mapping(
     "sauerbratenNickname" -> text,
     "permanentNickname" -> text,
@@ -30,7 +31,6 @@ object Users extends Controller {
     Form(profileFormMapping)
 
   import scala.concurrent.ExecutionContext.Implicits.global
-
 
   // Only assign a session ID at this point. And give it a session token as well
   def login = Action.async {
