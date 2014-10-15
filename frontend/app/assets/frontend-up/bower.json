@@ -1,0 +1,21 @@
+{
+  "name": "frontend-up",
+  "version": "0.0.0",
+  "authors": [
+    "William Narmontas <william@vynar.com>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "paper-elements": "Polymer/paper-elements#~0.4.2",
+    "polymer": "Polymer/polymer#~0.4.2",
+    "time-elements": "~0.4.0"
+  }
+}
