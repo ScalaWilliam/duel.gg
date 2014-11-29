@@ -27,13 +27,25 @@ let $server-aliases := subsequence((/server[@server = $duel/@server]/@alias, $du
 let $mapmode := (data($duel/@mode), " @ ", data($duel/@map))
 let $a := ($duel/players/player)[1]
 let $b := ($duel/players/player)[2]
-let $a-text := (data($a/@name), " (", data($a/@frags),")")
-let $b-text := (data($b/@name), " (", data($b/@frags),")")
-let $players := ($a-text, " vs ", $b-text)
+let $a-text := data($a/@name) || " (" || data($a/@frags) || ")"
+let $b-text := data($b/@name) || " (" || data($b/@frags) ||")"
+
+let $bold := bin:hex("02")
+let $normal := bin:hex("0F")
+let $players := bin:join((
+  $bold,
+  bin:encode-string($a-text, "UTF-8"),
+  $normal,
+  bin:encode-string(" vs ", "UTF-8"),
+  $bold,
+  bin:encode-string($b-text, "UTF-8"),
+  $normal
+))
 let $web-url := ("http://duel.gg/", data($duel/@web-id))
-return string-join(($players, " · ", $mapmode, " · ", $server-aliases, " · ", $web-url), "")
+let $rest := string-join((" · ", $mapmode, " · ", $server-aliases, " · ", $web-url), "")
+return bin:join(($players, bin:encode-string($rest, "UTF-8")))
 ]]></text>
-    <parameter name="method" value="text"/>
+    <parameter name="method" value="raw"/>
     <variable name="duel-id" value={duelId}/>
   </query>
 
