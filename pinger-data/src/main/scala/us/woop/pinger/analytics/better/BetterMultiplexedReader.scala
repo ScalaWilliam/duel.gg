@@ -10,11 +10,11 @@ import us.woop.pinger.data.journal.SauerBytes
 object BetterMultiplexedReader {
 
   def multiplex(serverBytes: Iterator[SauerBytes]): Iterator[SimpleCompletedDuel] = {
-    MultiplexedDuelReader.sauerBytesIToParsedMessagesI(serverBytes).scanLeft(MInitial: MIteratorState)(_.next(_)).collect{ case MFoundGame(_, completedDuel) => completedDuel }
+    MultiplexedDuelReader.sauerBytesIToParsedMessagesI(serverBytes).scanLeft(MInitial: MIteratorState)(_.next(_)).collect{ case MFoundGame(_, completedDuel, _) => completedDuel }
   }
 
   def multiplexParsedMessages(parsedMessages: Iterator[ParsedMessage]): Iterator[SimpleCompletedDuel] = {
-    multiplexParsedMessagesStates(parsedMessages).collect{ case MFoundGame(_, completedDuel) => completedDuel }
+    multiplexParsedMessagesStates(parsedMessages).collect{ case MFoundGame(_, completedDuel, _) => completedDuel }
   }
 
   def multiplexParsedMessagesStates(parsedMessages: Iterator[ParsedMessage]): Iterator[MIteratorState] = {
@@ -30,21 +30,23 @@ object BetterMultiplexedReader {
           case Some(state) =>
             state.next.apply(parsedMessage) match {
               case nextState @ ZFoundGame(_, completedDuel) =>
-                MFoundGame(serverStates.updated(server, nextState), completedDuel)
+                MFoundGame(serverStates.updated(server, nextState), completedDuel, Option(server, nextState))
               case nextState =>
-                MProcessing(serverStates.updated(server, nextState))
+                MProcessing(serverStates.updated(server, nextState), Option(server, nextState))
             }
           case None =>
-            MProcessing(serverStates.updated(server, ZOutOfDuelState)).next.apply(parsedMessage)
+            MProcessing(serverStates.updated(server, ZOutOfDuelState), Option(server, ZOutOfDuelState)).next.apply(parsedMessage)
         }
     }
     def serverStates: Map[Server, ZIteratorState]
+    def lastUpdatedState: Option[(Server, ZIteratorState)]
   }
-  case class MProcessing(serverStates: Map[Server, ZIteratorState]) extends MIteratorState
+  case class MProcessing(serverStates: Map[Server, ZIteratorState], lastUpdatedState: Option[(Server, ZIteratorState)]) extends MIteratorState
   case object MInitial extends MIteratorState {
     override val serverStates = Map.empty[Server, ZIteratorState]
+    override val lastUpdatedState = None
   }
-  case class MFoundGame(serverStates: Map[Server, ZIteratorState], completedDuel: SimpleCompletedDuel) extends MIteratorState
+  case class MFoundGame(serverStates: Map[Server, ZIteratorState], completedDuel: SimpleCompletedDuel, lastUpdatedState: Option[(Server, ZIteratorState)]) extends MIteratorState
 
   /** SauerBytes ==> SFoundGame(_, Seq(CompletedDuel)) **/
   type SProcessor = SauerBytes => SIteratorState
@@ -54,7 +56,7 @@ object BetterMultiplexedReader {
         /** Note: Multiple parsedMessages from a single SauerBytes CANNOT lead to a CompletedDuel. Impossibru. **/
         /** We're short-circuiting here! **/
         MultiplexedDuelReader.sauerBytesToParsedMessages(sauerBytes).scanLeft(mIteratorState)(_.next(_)).lastOption match {
-          case Some(state @ MFoundGame(_, game)) => SFoundGame(state, game)
+          case Some(state @ MFoundGame(_, game, _)) => SFoundGame(state, game)
           case Some(state) => SProcessing(state)
           case None => SProcessing(mIteratorState)
         }

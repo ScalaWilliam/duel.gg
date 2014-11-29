@@ -2,9 +2,13 @@ package us.woop.pinger.data.journal
 
 import java.nio.{ByteBuffer, ByteOrder}
 import akka.util.{ByteString, ByteStringBuilder}
+import org.joda.time.format.ISODateTimeFormat
 import us.woop.pinger.data.Server
 
-case class SauerBytes(server: Server, time: Long, message: Vector[Byte])
+case class SauerBytes(server: Server, time: Long, message: Vector[Byte]) {
+  def stringTime = ISODateTimeFormat.dateTimeNoMillis().print(time)
+  override def toString = s"SauerBytes($server, $stringTime, $message)"
+}
 
 object SauerBytesOld {
   def toBytes(sauerBytes: SauerBytes): Array[Byte] = {

@@ -96,7 +96,7 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
   })
 
   val completedDuelPublish =
-  actor(context)(new Act {
+  actor(context)(new Act with ActorLogging {
     whenStarting {
       import scala.concurrent.ExecutionContext.Implicits.global
       persister.createDatabase
@@ -118,13 +118,22 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
           existingDuel <- persister.getSimilarDuel(sd)
           result <- existingDuel match {
             case Some(existingId) => Future(Left(existingId))
-            case None => for {
-              _ <- persister.pushDuel(sd)
-              haveIt <- persister.getSimilarDuel(sd)
-            } yield Right(haveIt)
+            case None =>
+              // try to push three times
+              val tryToPush = persister.pushDuel(sd) recoverWith {
+                case e => persister.pushDuel(sd)
+              } recoverWith {
+                case e => persister.pushDuel(sd)
+              }
+              for {
+                _ <- tryToPush
+                haveIt <- persister.getSimilarDuel(sd)
+              } yield Right(haveIt)
           }
         } yield result
-
+        pushDuelResult onFailure {
+          case f => log.error(f, "Failed to publish duel result")
+        }
         for {
           Right(Some(newDuel)) <- pushDuelResult
         } {
