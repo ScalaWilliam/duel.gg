@@ -183,8 +183,12 @@ class WSAsyncDuelPersister(val client: WSAPI, val basexContextPath: String, val 
         <rest:text>{PCData(functions +
           s"""
             |let $$ctx := /completed-duel
+            |let $$server := data($$ctx/@server)
+            |let $$map := data($$ctx/@map)
+            |let $$mode := data($$ctx/@mode)
+            |let $$exist-no-matches := empty(((db:open("$dbName")/duel)[@server = $$server][@mode = $$mode][@map = $$map][local:duels-are-similar(., $$ctx)]))
             |return
-            |if ( empty(((db:open("$dbName")/duel)[local:duels-are-similar(., $$ctx)])) )
+            |if ( $$exist-no-matches )
             |then (
             | let $$new-duel-id := local:get-new-duel-id(db:open("$dbName")/duel, "$chars")
             | return local:add-new-duel($$new-duel-id, "$dbName", $$ctx)
@@ -221,7 +225,10 @@ class WSAsyncDuelPersister(val client: WSAPI, val basexContextPath: String, val 
     postIntoDatabase(<rest:query xmlns:rest="http://basex.org/rest">
     <rest:text>{PCData(functions +
       s"""let $$ctx := /completed-duel
-         |return (db:open("$dbName")/duel)[local:duels-are-similar(., $$ctx)]""".stripMargin)}</rest:text>
+         |let $$server := data($$ctx/@server)
+         |let $$mode := data($$ctx/@mode)
+         |let $$map := data($$ctx/@map)
+         |return db:open("$dbName")/duel[@server = $$server][@map = $$map][@mode = $$mode][local:duels-are-similar(., $$ctx)]""".stripMargin)}</rest:text>
       <rest:context>{duelDefinition.toXml}</rest:context>
     </rest:query>).map(x => if ( x.body.nonEmpty) Some(x.xml) else None)
   }

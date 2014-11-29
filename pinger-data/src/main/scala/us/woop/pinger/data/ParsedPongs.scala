@@ -1,10 +1,14 @@
 package us.woop.pinger.data
 
+import org.joda.time.format.ISODateTimeFormat
 import us.woop.pinger.data.ParsedPongs.ConvertedMessages.{ConvertedHopmodUptime, ConvertedServerInfoReply, ConvertedTeamScore, ConvertedThomasExt}
 
 object ParsedPongs {
 
-  case class ParsedMessage(server: Server, time: Long, message: Any)
+  case class ParsedMessage(server: Server, time: Long, message: Any) {
+    def stringTime = ISODateTimeFormat.dateTimeNoMillis().print(time)
+    override def toString = s"ParsedMessage($server, $stringTime, $message)"
+  }
 
   case class ServerInfoReply(clients: Int, protocol: Int, gamemode: Int, remain: Int, maxclients: Int,
                              gamepaused: Option[Int], gamespeed: Option[Int], mapname: String, description: String)

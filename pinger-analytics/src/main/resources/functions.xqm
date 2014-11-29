@@ -1,3 +1,5 @@
+declare option db:updindex 'true';
+
 declare function local:within($first as xs:dateTime, $second as xs:dateTime, $maxInterval as xs:dayTimeDuration) {
     let $zero := xs:dayTimeDuration("PT0S")
     let $smf := $second - $first
