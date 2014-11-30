@@ -14,14 +14,14 @@ object BobbyApp extends App {
   System.setProperty("hazelcast.logging.type","slf4j")
   implicit val as = ActorSystem("Goodies")
   import as.dispatcher
-
+  val restUrl = System.getProperty("pinger.basex.context", "http://127.0.0.1:8984/rest/db-stage")
   val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
 
   HazelcastClient.newHazelcastClient().getTopic[String]("new-duels").addMessageListener(new MessageListener[String] {
     override def onMessage(message: Message[String]): Unit = {
       val duelId = message.getMessageObject
       for {
-        response <- QueryDuel.apply(pipeline)("""http://prod-b.duel.gg:8984/rest/db-stage""")(duelId)
+        response <- QueryDuel.apply(pipeline)(restUrl)(duelId)
       } for {
         line <- response
       } {
