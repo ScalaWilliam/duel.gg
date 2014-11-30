@@ -13,7 +13,7 @@ class DuelsStream(implicit app: Application) extends Plugin {
   lazy val messageListener = new MessageListener[String] {
     override def onMessage(p1: Message[String]): Unit = {
       import scala.concurrent.ExecutionContext.Implicits.global
-      LeagueInterface.leagueInterface.refresh()
+//      LeagueInterface.leagueInterface.refresh()
       val newId = p1.getMessageObject
       for {
         xmlO <- DuelsInterface.duelsInterface.getIndexDuel(newId)

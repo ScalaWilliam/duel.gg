@@ -73,14 +73,14 @@ object Duelgg extends Controller {
                  |refresh_token: "***REMOVED***"
                  |}""".stripMargin
 */
-  def showLeague = Action.async {
-    request =>
-      import concurrent.duration._
-      for {
-        rep <- LeagueInterface.leagueInterface.requestData(1.second)
-        xmlO = Option(rep.value).map(s => Html(s"$s"))
-      } yield Ok(views.html.league(xmlO))
-  }
+//  def showLeague = Action.async {
+//    request =>
+//      import concurrent.duration._
+//      for {
+//        rep <- LeagueInterface.leagueInterface.requestData(1.second)
+//        xmlO = Option(rep.value).map(s => Html(s"$s"))
+//      } yield Ok(views.html.league(xmlO))
+//  }
 
 
   def showQuestions = Action.async {
