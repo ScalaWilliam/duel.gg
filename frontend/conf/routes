@@ -5,7 +5,7 @@ GET        /stream              controllers.Duelgg.streamSocket
 GET        /oauth2callback      controllers.Users.oauth2callback
 GET        /loggy               controllers.Users.loggy
 GET        /createProfile       controllers.Users.createProfile
-GET        /league              controllers.Duelgg.showLeague
+#GET        /league              controllers.Duelgg.showLeague
 GET        /questions           controllers.Duelgg.showQuestions
 GET        /:id                 controllers.Duelgg.showPage(id: String)
 GET        /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)
