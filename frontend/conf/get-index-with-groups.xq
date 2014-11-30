@@ -37,9 +37,9 @@ declare function local:display-time-2($dateTime as xs:dateTime) {
         else ($formatted)
     return $display
 };
-(:let $until := xs:dateTime(fn:current-dateTime() - xs:dayTimeDuration("P10D")):)
+let $until := xs:dateTime(fn:current-dateTime() - xs:dayTimeDuration("P6D"))
 let $duels-items :=
-    for $duel in /duel[@web-id]
+    for $duel in /duel[@start-time > $until][@web-id]
     let $dateTime := xs:dateTime($duel/@start-time)
     (:where $dateTime ge $until:)
     order by $dateTime descending
