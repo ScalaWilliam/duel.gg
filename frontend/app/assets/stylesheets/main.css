@@ -217,3 +217,10 @@ ul.servers-list {
     padding-top:2em;
     font-size:1.6em;
 }
+.duel svg {
+    transform:scale(2);
+    margin-top:6em;
+}
+.score-right a {
+    color:#f0d8d9 !important;
+}

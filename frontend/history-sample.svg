@@ -1,51 +1,8 @@
-(:
-    http://docs.marklogic.com/fn:format-dateTime
-:)
-declare function local:display-time-2($dateTime as xs:dateTime) {
-    let $now := fn:current-dateTime()
-    let $formatted := fn:format-dateTime($dateTime, "[Y01]/[M01]/[D01]")
-    let $day-name := fn:format-dateTime($dateTime, "[FNn], [D] [MNn]")
-    let $hour-ago :=fn:current-dateTime() - xs:dayTimeDuration("PT1H")
-    let $week-ago := fn:current-dateTime() - xs:dayTimeDuration("P7D")
-    let $display :=
-        if ( ($dateTime le $now) and ($dateTime ge $hour-ago) )
-        then ("Just now")
-        else if ( ($dateTime le $now) and ($dateTime ge $week-ago) )
-        then ($day-name)
-        else ($formatted)
-    return $display
-};
-declare variable $web-id as xs:string external;
-for $duel in /duel[@web-id=$web-id]
-let $dateTime := xs:dateTime($duel/@start-time)
-let $a := $duel/players/player[1]
-let $a-url := concat("/?player=", data($a/@name))
-let $b := $duel/players/player[2]
-let $b-url := concat("/?player=", data($b/@name))
-let $duel-chart :=
-let $max := max(for $frag in data($duel//frags) return xs:int($frag))
-let $step-size := ceiling($max div 6.0)
-let $texts := for $i in (0 to 6) return $i * $step-size
-let $max-chart-score := $step-size * 6
-let $by := 127.36218
-let $ty := 10.36218
-let $rx := 287
-let $lx := 84
-let $duration := data($duel/@duration)
-let $player-gs :=
-  for $player in $duel/players/player
-  let $is-first := $player is ($duel/players/player)[1]
-  let $items :=
-    for $frag in $player/frags
-    order by xs:integer(data($frag/@at)) ascending
-    let $t := data($frag/@at)
-    let $x := $lx + (($rx - $lx) div $duration * $t)
-    let $score := data($frag)
-    let $y := $by + (($score div $max-chart-score) * ($ty - $by))
-    return "L " || $x ||"," || $y
-  return "M " || $lx || "," || $by || " " || string-join($items, " ")
-return
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -58,6 +15,50 @@ return
    sodipodi:docname="history-sample.svg">
   <defs
      id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#303048"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="1"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1"
+     inkscape:cx="220.6866"
+     inkscape:cy="102.26471"
+     inkscape:document-units="px"
+     inkscape:current-layer="lines"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="1918"
+     inkscape:window-height="1030"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid2985"
+       empspacing="5"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true"
+       originx="3px"
+       originy="-915px" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
@@ -84,12 +85,12 @@ return
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
          id="path3757"
-         d="{$player-gs[1]}"
+         d="m 84,127.36218 35,-32 96,0 72.44194,-86.0052038"
          style="fill:none;stroke:#d8f0f0;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
       <path
          sodipodi:nodetypes="cccc"
          style="fill:none;stroke:#f0d8d9;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
-         d="{$player-gs[2]}"
+         d="M 84,127.36218 119.93355,125.23803 215.89379,67.5655 287,10.36218"
          id="path3759"
          inkscape:connector-curvature="0" />
     </g>
@@ -141,39 +142,37 @@ return
            y="14.362183"
            x="17.171875"
            id="tspan3777"
-           sodipodi:role="line">{$texts[7]}</tspan><tspan
+           sodipodi:role="line">60</tspan><tspan
            style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:end;line-height:160.00000238%;text-anchor:end;fill:#fcfbe3;fill-opacity:1;font-family:Open Sans;-inkscape-font-specification:Open Sans"
            id="tspan3789"
            y="33.562183"
            x="17.171875"
-           sodipodi:role="line">{$texts[6]}</tspan><tspan
+           sodipodi:role="line">50</tspan><tspan
            style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:end;line-height:160.00000238%;text-anchor:end;fill:#fcfbe3;fill-opacity:1;font-family:Open Sans;-inkscape-font-specification:Open Sans"
            id="tspan3787"
            y="52.762184"
            x="17.171875"
-           sodipodi:role="line">{$texts[5]}</tspan><tspan
+           sodipodi:role="line">40</tspan><tspan
            style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:end;line-height:160.00000238%;text-anchor:end;fill:#fcfbe3;fill-opacity:1;font-family:Open Sans;-inkscape-font-specification:Open Sans"
            id="tspan3785"
            y="71.962181"
            x="17.171875"
-           sodipodi:role="line">{$texts[4]}</tspan><tspan
+           sodipodi:role="line">30</tspan><tspan
            style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:end;line-height:160.00000238%;text-anchor:end;fill:#fcfbe3;fill-opacity:1;font-family:Open Sans;-inkscape-font-specification:Open Sans"
            id="tspan3783"
            y="91.162186"
            x="17.171875"
-           sodipodi:role="line">{$texts[3]}</tspan><tspan
+           sodipodi:role="line">20</tspan><tspan
            style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:end;line-height:160.00000238%;text-anchor:end;fill:#fcfbe3;fill-opacity:1;font-family:Open Sans;-inkscape-font-specification:Open Sans"
            id="tspan3781"
            y="110.36218"
            x="17.171875"
-           sodipodi:role="line">{$texts[2]}</tspan>
-                      <tspan xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" sodipodi:role="line" x="17.171875" y="129.56218" id="tspan3779" style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:end;line-height:160.00000238%;text-anchor:end;fill:#fcfbe3;fill-opacity:1;font-family:Open Sans;-inkscape-font-specification:Open Sans">0</tspan>
-<tspan
+           sodipodi:role="line">10</tspan><tspan
            style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:end;line-height:160.00000238%;text-anchor:end;fill:#fcfbe3;fill-opacity:1;font-family:Open Sans;-inkscape-font-specification:Open Sans"
            id="tspan3779"
            y="129.56218"
            x="17.171875"
-           sodipodi:role="line">-</tspan></text>
+           sodipodi:role="line">0</tspan></text>
     </g>
     <text
        xml:space="preserve"
@@ -188,22 +187,3 @@ return
          y="216.36218" /></text>
   </g>
 </svg>
-return <duel>
-    <title>{data($a/@name)} vs {data($b/@name)}</title>,
-    <article class="duel single-duel-view">
-        <header>
-            <h3 class="mode-map">{data($duel/@mode)} @ {data($duel/@map)}</h3>
-            <h2 class="date-time">{local:display-time-2($dateTime)}</h2>
-        </header>
-        <section class="duel">
-            <section class="score score-left">
-                <p class="score">{data($a/@frags)}</p>
-                <p class="name"><a href="{$a-url}">{data($a/@name)}</a></p>
-            </section>
-            <section class="score score-right">
-                <p class="score">{data($b/@frags)}</p>
-                <p class="name"><a href="{$b-url}">{data($b/@name)}</a></p>
-            </section>
-            {$duel-chart}
-        </section>
-    </article></duel>
