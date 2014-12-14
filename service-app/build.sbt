@@ -10,7 +10,7 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 
 name := "service-app"
 
-version in ThisBuild := "0.9-" + versionKey.value
+version in ThisBuild := "1.1-" + versionKey.value
 
 mapGenericFilesToLinux
 
