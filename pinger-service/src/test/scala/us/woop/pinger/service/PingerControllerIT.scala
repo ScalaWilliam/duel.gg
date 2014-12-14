@@ -1,7 +1,5 @@
 package us.woop.pinger.service
 
-import java.net.InetSocketAddress
-
 import akka.actor.{ActorSystem, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import org.scalatest.{Inspectors, BeforeAndAfterAll, FlatSpecLike, Matchers}
@@ -15,9 +13,7 @@ import us.woop.pinger.service.PingerController.Monitor
 import us.woop.pinger.service.RawToExtracted.ExtractedMessage
 import us.woop.pinger.service.individual.ServerMonitor.ServerStateChanged
 class PingerControllerIT(sys: ActorSystem) extends TestKit(sys) with FlatSpecLike with Matchers with ImplicitSender with BeforeAndAfterAll with ParentedProbe with Inspectors {
-
   def this() = this(ActorSystem())
-
   val server = Server("127.0.0.1", 5010)
 
   override def beforeAll() {
@@ -27,7 +23,6 @@ class PingerControllerIT(sys: ActorSystem) extends TestKit(sys) with FlatSpecLik
 
   "Pinger service" should "integrate properly with a monitor message + stub" in {
     import concurrent.duration._
-
     val pingerService = parentedProbe(PingerController.props(disableHashing = false))
     expectMsg(PingerController.Ready)
     pingerService ! Monitor(server)

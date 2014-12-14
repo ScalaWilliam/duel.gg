@@ -9,7 +9,7 @@ import scala.concurrent.Await
 object DifferentLoader extends App {
 
   val ai = new StandaloneWSAPI
-  val persister = new WSAsyncDuelPersister(ai, "http://127.0.0.1:2984", "db-stage", "antuipoq")
+  val persister = new WSAsyncGamePersister(ai, "http://127.0.0.1:2984", "db-stage", "antuipoq")
 
   val yes = new File("data/newest").listFiles()
 

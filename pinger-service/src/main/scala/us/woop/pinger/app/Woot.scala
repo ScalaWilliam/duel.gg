@@ -5,10 +5,11 @@ import akka.actor.ActorDSL._
 import akka.actor._
 import akka.routing.RoundRobinPool
 import com.hazelcast.core.{ItemEvent, ItemListener, HazelcastInstance}
-import us.WSAsyncDuelPersister
-import us.woop.pinger.analytics.better.BetterMultiplexedReader.{SInitial, SFoundGame, SIteratorState}
+import us.{WSAsyncGamePersister}
+import us.woop.pinger.analytics.CTFGameMaker.SimpleCompletedCTF
+import us.woop.pinger.analytics.better.BetterMultiplexedReader.{CompletedGame, SInitial, SFoundGame, SIteratorState}
 import us.woop.pinger.analytics.worse.DuelMaker.SimpleCompletedDuel
-import us.woop.pinger.app.Woot.{NewlyAddedDuel, MetaCompletedDuel, JournalGenerator, RotateMeta}
+import us.woop.pinger.app.Woot._
 import us.woop.pinger.data.Server
 import us.woop.pinger.data.journal.{SauerBytesWriter, IterationMetaData}
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
@@ -18,9 +19,8 @@ import us.woop.pinger.service.analytics.JournalBytes
 
 import scala.concurrent.Future
 
-class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journalGenerator: JournalGenerator, disableHashing: Boolean) extends Act {
+class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journalGenerator: JournalGenerator, disableHashing: Boolean) extends Act {
   val serversSet = hazelcast.getSet[String]("servers")
-
 
   whenStarting {
     import collection.JavaConverters._
@@ -78,12 +78,16 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
         journalBytes ! m.toSauerBytes
         val nextState = state.next(m.toSauerBytes)
         nextState match {
-          case SFoundGame(_, game) =>
-            self ! MetaCompletedDuel(meta, game.copy(metaId = Option(meta.id)))
+          case SFoundGame(_, CompletedGame(Left(duel), _)) =>
+            self ! MetaCompletedDuel(meta, duel.copy(metaId = Option(meta.id)))
+          case SFoundGame(_, CompletedGame(Right(ctf), _)) =>
+            self ! MetaCompletedCtf(meta, ctf.copy(metaId = Option(meta.id)))
           case _ =>
         }
         become(metad(meta, nextState))
       case g: MetaCompletedDuel if sender() == self =>
+        context.parent ! g
+      case g: MetaCompletedCtf if sender() == self =>
         context.parent ! g
       case g: JournalBytes.WritingStopped =>
         context.parent ! g
@@ -107,6 +111,11 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
         for { att <- nd.duel \ "@web-id" } {
           hazelcast.getTopic[String]("new-duels").publish(att.text)
           context.parent ! nd
+        }
+      case nc: NewlyAddedCtf =>
+        for { att <- nc.ctf \ "@web-id" } {
+          hazelcast.getTopic[String]("new-ctfs").publish(att.text)
+          context.parent ! nc
         }
       case d: MetaCompletedDuel =>
         val sd = d.completedDuel.copy(metaId = Option(d.metaId.id))
@@ -139,6 +148,37 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
         } {
           self ! NewlyAddedDuel(newDuel)
         }
+      case d: MetaCompletedCtf =>
+        val sd = d.completedCtf.copy(metaId = Option(d.metaId.id))
+
+        import scala.concurrent.ExecutionContext.Implicits.global
+        // left => existing ID
+        // right => new ID
+        val pushCtfResult: Future[Either[scala.xml.Elem, Option[scala.xml.Elem]]] = for {
+          existingDuel <- persister.getSimilarCtf(sd)
+          result <- existingDuel match {
+            case Some(existingId) => Future(Left(existingId))
+            case None =>
+              // try to push three times
+              val tryToPush = persister.pushCtf(sd) recoverWith {
+                case e => persister.pushCtf(sd)
+              } recoverWith {
+                case e => persister.pushCtf(sd)
+              }
+              for {
+                _ <- tryToPush
+                haveIt <- persister.getSimilarCtf(sd)
+              } yield Right(haveIt)
+          }
+        } yield result
+        pushCtfResult onFailure {
+          case f => log.error(f, "Failed to publish ctf result")
+        }
+        for {
+          Right(Some(newCtf)) <- pushCtfResult
+        } {
+          self ! NewlyAddedCtf(newCtf)
+        }
     }
   })
 
@@ -166,11 +206,12 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncDuelPersister, journa
 object Woot {
 
   def props(hazelcast: HazelcastInstance,
-             persister: WSAsyncDuelPersister, journalGenerator: JournalGenerator, disableHashing: Boolean) = {
+             persister: WSAsyncGamePersister, journalGenerator: JournalGenerator, disableHashing: Boolean) = {
     Props(classOf[Woot], hazelcast, persister, journalGenerator, disableHashing)
   }
 
   case class MetaCompletedDuel(metaId: IterationMetaData, completedDuel: SimpleCompletedDuel)
+  case class MetaCompletedCtf(metaId: IterationMetaData, completedCtf: SimpleCompletedCTF)
 
   case object RotateMeta
 
@@ -179,6 +220,7 @@ object Woot {
   generate: IterationMetaData => JournalBytes.Writer
     )
 case class NewlyAddedDuel(duel: scala.xml.Elem)
+case class NewlyAddedCtf(ctf: scala.xml.Elem)
   object JournalGenerator {
     def standard = JournalGenerator(
       imd => {

@@ -84,7 +84,7 @@ val source = """{"total_rows":63,"offset":0,"rows":[
   val ws = new StandaloneWSAPI
 
   import scala.concurrent.ExecutionContext.Implicits.global
-  val persisterA = new WSAsyncDuelPersister(ws, "http://localhost:8984", "duelsza", "yesz")
+  val persisterA = new WSAsyncGamePersister(ws, "http://localhost:8984", "duelsza", "yesz")
   import concurrent.duration._
   try {
     println(Await.result(persisterA.dropDatabase, 10.seconds))
@@ -93,7 +93,7 @@ val source = """{"total_rows":63,"offset":0,"rows":[
     case e: Throwable => println(e)
   }
   println("Created DB")
-  val persisterB = new WSAsyncDuelPersister(ws, "http://localhost:8984", "yesz", "antpquio")
+  val persisterB = new WSAsyncGamePersister(ws, "http://localhost:8984", "yesz", "antpquio")
 
 //  val out = yes.rows.map(x =>
 //    println(Await.result(persisterB.pushDuel(x.value, IterationMetaData.build.copy(id = "test")), 10.seconds))

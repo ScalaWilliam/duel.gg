@@ -4,9 +4,9 @@ import us.woop.pinger.analytics.better.BetterMultiplexedReader.{SInitial, SFound
 import us.woop.pinger.data.journal.IterationMetaData
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 
-object ProcessDuels {
+object ProcessGames {
 }
-class ProcessDuels extends Act with ActWithStash {
+class ProcessGames extends Act with ActWithStash {
   def stated(state: SIteratorState, metaData: IterationMetaData): Receive = {
     case newMetaData: IterationMetaData =>
       become(stated(state, newMetaData))
@@ -14,8 +14,14 @@ class ProcessDuels extends Act with ActWithStash {
     case r: ReceivedBytes =>
       val nextState = state.next(r.toSauerBytes)
       nextState match {
-        case SFoundGame(_, completedDuel) =>
-          context.parent ! completedDuel.copy(metaId = Option(metaData.id))
+        case SFoundGame(_, completedGame) =>
+          val updatedGame = completedGame.copy(
+            metaId = Option(metaData.id),
+            game=completedGame.game.left.map(_.copy(metaId = Option(metaData.id))).right.map(_.copy(metaId = Option(metaData.id)))
+          )
+          context.parent ! updatedGame
+          updatedGame.game.left.foreach(context.parent ! _)
+          updatedGame.game.right.foreach(context.parent ! _)
         case _ =>
       }
       become(stated(nextState, metaData))
