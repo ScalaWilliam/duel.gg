@@ -193,11 +193,16 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
     case g: MetaCompletedDuel =>
       completedDuelPublish ! g
       context.parent ! g
+    case g: MetaCompletedCtf =>
+      completedDuelPublish ! g
+      context.parent ! g
     case m: IterationMetaData =>
       context.parent ! m
     case RotateMeta =>
       metaContext ! RotateMeta
     case nd: NewlyAddedDuel =>
+      context.parent ! nd
+    case nd: NewlyAddedCtf =>
       context.parent ! nd
     case 1 => println("yay")
   }
@@ -207,7 +212,7 @@ object Woot {
 
   def props(hazelcast: HazelcastInstance,
              persister: WSAsyncGamePersister, journalGenerator: JournalGenerator, disableHashing: Boolean) = {
-    Props(classOf[Woot], hazelcast, persister, journalGenerator, disableHashing)
+    Props(new Woot(hazelcast, persister, journalGenerator, disableHashing))
   }
 
   case class MetaCompletedDuel(metaId: IterationMetaData, completedDuel: SimpleCompletedDuel)

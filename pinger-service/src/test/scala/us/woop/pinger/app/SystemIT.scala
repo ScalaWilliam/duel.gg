@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit}
+import us.woop.pinger.analytics.CTFGameMaker.SimpleCompletedCTF
 import us.woop.pinger.analytics.worse.DuelMaker
 
 //import com.hazelcast.client.HazelcastClient
@@ -13,12 +14,12 @@ import com.hazelcast.core.{HazelcastInstance, Message, MessageListener, Hazelcas
 import org.scalatest._
 import play.api.libs.ws.WSAPI
 import DuelMaker.CompletedDuel
-import us.woop.pinger.app.SystemIT.{HaveNewDuelId, HaveMeta}
+import us.woop.pinger.app.SystemIT.{HaveNewCtfId, HaveNewDuelId, HaveMeta}
 import us.woop.pinger.data.journal.{IterationMetaData, SauerBytesWriter}
 import us.woop.pinger.service.analytics.JournalBytes
 import us.{WSAsyncGamePersister, StandaloneWSAPI}
 import us.woop.pinger.ParentedProbe
-import us.woop.pinger.app.Woot.{MetaCompletedDuel, NewlyAddedDuel, JournalGenerator, RotateMeta}
+import us.woop.pinger.app.Woot._
 import us.woop.pinger.data.Server
 import us.woop.pinger.referencedata.SimpleUdpServer
 import us.woop.pinger.referencedata.SimpleUdpServer.GoodHashSauerbratenPongServer
@@ -91,6 +92,12 @@ class SystemIT (sys: ActorSystem) extends TestKit(sys) with WordSpecLike with Ma
     tempHazelcastClient.getTopic[String]("new-duels").addMessageListener(new MessageListener[String] {
       override def onMessage(message: Message[String]): Unit = {
         testActor ! HaveNewDuelId(message.getMessageObject)
+      }
+    })
+
+    tempHazelcastClient.getTopic[String]("new-ctfs").addMessageListener(new MessageListener[String] {
+      override def onMessage(message: Message[String]): Unit = {
+        testActor ! HaveNewCtfId(message.getMessageObject)
       }
     })
 
@@ -176,7 +183,29 @@ class SystemIT (sys: ActorSystem) extends TestKit(sys) with WordSpecLike with Ma
        */
     }
 
+    "Publish CompletedCtfs into a database" in {
+      val meta = IterationMetaData.build
+      yay ! MetaCompletedCtf(metaId = meta, SimpleCompletedCTF.test.copy(metaId = Option(meta.id)))
+      import scala.concurrent.duration._
+      val m = receiveWhile(max = 2.second, idle = 2.seconds) {
+        case o => o
+      }
+      forExactly(1, m) {
+        _ shouldBe a[NewlyAddedCtf]
+      }
+      forExactly(1, m) {
+        _ shouldBe a[HaveNewCtfId]
+      }
+
+      /**
+       * Yes
+       */
+    }
+
     "Notify when a new CompletedDuel is added" ignore {
+      fail()
+    }
+    "Notify when a new SimpleCompletedCTF is added" ignore {
       fail()
     }
 
@@ -186,4 +215,5 @@ object SystemIT {
 
   case class HaveMeta(value: String)
   case class HaveNewDuelId(value: String)
+  case class HaveNewCtfId(value: String)
 }

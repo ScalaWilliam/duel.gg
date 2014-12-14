@@ -25,12 +25,13 @@ object CTFGameMaker {
   case class SimpleTeamScore(name: String, flags: Int, flagLog: List[(Int, Int)], players: List[SimplePlayer])
 
   case class SimpleCompletedCTF
-  (simpleId: String, duration: Int, playedAt: List[Int],
+  (simpleId: String, teamsize:Int, duration: Int, playedAt: List[Int],
    startTimeText: String, startTime: Long, map: String, mode: String,
    server: String, teams: Map[String, SimpleTeamScore],
    winner: Option[String], metaId: Option[String]) {
     def toXml =
       <completed-ctf
+        team-size={teamsize.toString}
         simple-id={simpleId}
         duration={duration.toString}
         start-time-raw={startTime.toString}
@@ -41,7 +42,7 @@ object CTFGameMaker {
     {
     for { (team, scores) <- teams }
     yield <team name={team} flags={scores.flags.toString}>
-    <flag-log>{for { (time, flags) <- scores.flagLog } yield <flags at={time.toString} team={team} flags={flags.toString}/>}</flag-log>
+    <flag-log>{for { (time, flags) <- scores.flagLog } yield <flags at={time.toString}>{flags}</flags>}</flag-log>
       {
         for { player <- scores.players} yield
           <player name={player.name} ip={player.ip} weapon={player.weapon}/>
@@ -54,6 +55,7 @@ object CTFGameMaker {
     def test = {
       val t =System.currentTimeMillis
       SimpleCompletedCTF(
+        teamsize=2,
         simpleId = "yay",
         duration = 5,
         playedAt = List(1, 2, 3, 4, 5),
@@ -110,6 +112,8 @@ object CTFGameMaker {
     }
 
     def beginCtfCSIR(server: Server, startTime: Long, message: ConvertedServerInfoReply): CtfState Or Every[ErrorMessage] = {
+
+      // todo wut, no mastermode? wtf!
 
       val clients =
         if (message.clients >= 4) Good(message.clients)
@@ -189,10 +193,11 @@ object CTFGameMaker {
         }
       }
       teams = transitionalCtf.ctfAccumulation.teams.map(_.teamId).toSet
-      maxRemaining = transitionalCtf.ctfAccumulation.players.map(_.remaining.seconds).max
+      maxRemainingPlayers = transitionalCtf.ctfAccumulation.players.map(_.remaining.seconds).max
+      maxRemainingTeams = transitionalCtf.ctfAccumulation.teams.map(_.remaining.seconds).max
       bothTeamsStarted = teams.forall(team =>
         transitionalCtf.ctfAccumulation.teams.exists { logItem =>
-          logItem.teamId == team && logItem.remaining.seconds == maxRemaining
+          logItem.teamId == team && logItem.remaining.seconds == maxRemainingTeams
         })
       lastTime = transitionalCtf.ctfAccumulation.teams.map(_.remaining.seconds).min
       _ <- if (lastTime <= 4) Good(Unit) else Bad(One(s"Last remaining time found was $lastTime, expected below 4."))
@@ -201,14 +206,30 @@ object CTFGameMaker {
           logItem.remaining.seconds == lastTime && logItem.teamId == team
         }
       )
+      atMostTwoPlayersLeftAtTheEnd <- {
+        val playersRemaining = transitionalCtf.ctfAccumulation.players.count{ logItem =>
+          logItem.remaining.seconds == maxRemainingPlayers
+        }
+        if ( playersRemaining > startedAppropriateNumberOfPlayers ) {
+          Bad(One(s"Game ended with more players ($playersRemaining) than started ($startedAppropriateNumberOfPlayers)"))
+        } else if ( startedAppropriateNumberOfPlayers - playersRemaining > 2 ) {
+          Bad(One(s"Started with $startedAppropriateNumberOfPlayers, ended up with $playersRemaining, too many people left at the end."))
+        } else {
+          Good(Unit)
+        }
+      }
       _ <- if (bothTeamsStarted) Good(Unit) else Bad(One("Could not find a team log item to say that both teams started the game"))
       _ <- if (bothTeamsFinished) Good(Unit) else Bad(One(s"Could not find a team log item to stay that both teams finished the game ($nextMessage)"))
-      durationSeconds = maxRemaining
+    playedAt <- {
+      val plays = transitionalCtf.ctfAccumulation.teams.map(_.remaining.seconds).map(t => (t / 60) + 1).toSet.toList.sorted
+      if ( plays.size < 8 ) Bad(One(s"Game active at $plays, expected more")) else Good(plays)
+    }
+      durationSeconds = maxRemainingTeams
       durationMinutes = Math.ceil(durationSeconds / 60.0).toInt
       teamResults = {
         for {
           team <- teams
-          teamStats = transitionalCtf.ctfAccumulation.teams.find(_.teamId == team)
+          teamStats = transitionalCtf.ctfAccumulation.teams.filter(_.teamId.name == team.name)
           flagLog = {
             val first = teamStats.groupBy(stat => Math.ceil((durationSeconds - stat.remaining.seconds) / 60.0)).mapValues(_.minBy(_.remaining.seconds)).toList.sortBy(_._1)
             first.map(eh => eh._1.toInt -> eh._2.flags.flags).filterNot(_._1 == 0)
@@ -226,9 +247,10 @@ object CTFGameMaker {
         Option(teamResults.maxBy(_._2.flags)._1)
       }
     } yield SimpleCompletedCTF(
+    teamsize = startedAppropriateNumberOfPlayers/2,
       simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
       duration = durationMinutes,
-      playedAt = transitionalCtf.ctfAccumulation.teams.map(_.remaining.seconds).map(t => (t / 60) + 1).toSet.toList.sorted,
+      playedAt = playedAt,
       startTimeText = gameHeader.startTimeText,
       startTime = gameHeader.startTime,
       map = gameHeader.map,

@@ -4,6 +4,10 @@ import com.typesafe.sbt.packager.SettingsHelper._
 
 organization := Common.groupId
 
+ideaExcludeFolders += ".idea"
+
+ideaExcludeFolders += ".idea_modules"
+
 scalaVersion := "2.11.2"
 
 lazy val root = project.in( file(".") )
