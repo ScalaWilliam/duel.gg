@@ -23,7 +23,26 @@ declare function local:get-new-duel-id($duels as node()*, $chars as xs:string) {
         then ($new-id)
         else (local:get-new-duel-id($duels, $chars))
 };
+declare function local:get-new-ctf-id($ctfs as node()*, $chars as xs:string) {
+    let $new-id := local:get-random-id($chars)
+    return
+        if (empty($ctfs[@web-id = $new-id]))
+        then ($new-id)
+        else (local:get-new-ctf-id($ctfs, $chars))
+};
 declare function local:duels-are-similar($a as node(), $b as node()) {
+    (
+        $a/@server eq $b/@server
+    ) and (
+        local:within(
+                xs:dateTime($a/@start-time),
+                xs:dateTime($b/@start-time),
+                xs:dayTimeDuration("PT5M")
+        )
+    )
+};
+
+declare function local:ctfs-are-similar($a as node(), $b as node()) {
     (
         $a/@server eq $b/@server
     ) and (
@@ -45,4 +64,16 @@ declare %updating function local:add-new-duel($new-duel-id as xs:string, $db-nam
         return $updated-duel
     let $meta-data-id := data($updated-duel/@meta-id)
     return (db:add($db-name, $updated-duel, $meta-data-id))
+};
+
+declare %updating function local:add-new-ctf($new-ctf-id as xs:string, $db-name as xs:string, $new-ctf as node()) {
+    let $updated-ctf :=
+        copy $updated-ctf := $new-ctf
+        modify (
+            rename node $updated-ctf as 'ctf',
+            insert node (attribute {'web-id'} { $new-ctf-id }) into $updated-ctf
+        )
+        return $updated-ctf
+    let $meta-data-id := data($updated-ctf/@meta-id)
+    return (db:add($db-name, $updated-ctf, $meta-data-id))
 };

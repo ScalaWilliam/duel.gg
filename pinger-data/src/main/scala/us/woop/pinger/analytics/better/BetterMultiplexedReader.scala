@@ -1,6 +1,7 @@
 package us.woop.pinger.analytics.better
 
-import us.woop.pinger.analytics.better.StreamedSimpleDuelMaker.{ZIteratorState, ZOutOfDuelState, ZFoundGame}
+import us.woop.pinger.analytics.CTFGameMaker.SimpleCompletedCTF
+import us.woop.pinger.analytics.better.StreamedSimpleDuelMaker.{ZFoundCtf, ZIteratorState, ZOutOfGameState, ZFoundDuel}
 import us.woop.pinger.analytics.worse.{MultiplexedDuelReader, DuelMaker}
 import DuelMaker.SimpleCompletedDuel
 import us.woop.pinger.data.ParsedPongs.ParsedMessage
@@ -9,17 +10,17 @@ import us.woop.pinger.data.journal.SauerBytes
 
 object BetterMultiplexedReader {
 
-  def multiplex(serverBytes: Iterator[SauerBytes]): Iterator[SimpleCompletedDuel] = {
-    MultiplexedDuelReader.sauerBytesIToParsedMessagesI(serverBytes).scanLeft(MInitial: MIteratorState)(_.next(_)).collect{ case MFoundGame(_, completedDuel, _) => completedDuel }
-  }
+//  def multiplex(serverBytes: Iterator[SauerBytes]): Iterator[SimpleCompletedDuel] = {
+//    MultiplexedDuelReader.sauerBytesIToParsedMessagesI(serverBytes).scanLeft(MInitial: MIteratorState)(_.next(_)).collect{ case MFoundGame(_, completedDuel, _) => completedDuel }
+//  }
 
-  def multiplexParsedMessages(parsedMessages: Iterator[ParsedMessage]): Iterator[SimpleCompletedDuel] = {
-    multiplexParsedMessagesStates(parsedMessages).collect{ case MFoundGame(_, completedDuel, _) => completedDuel }
-  }
+//  def multiplexParsedMessages(parsedMessages: Iterator[ParsedMessage]): Iterator[SimpleCompletedDuel] = {
+//    multiplexParsedMessagesStates(parsedMessages).collect{ case MFoundGame(_, completedDuel, _) => completedDuel }
+//  }
 
-  def multiplexParsedMessagesStates(parsedMessages: Iterator[ParsedMessage]): Iterator[MIteratorState] = {
-    parsedMessages.scanLeft(MInitial: MIteratorState)(_.next(_))
-  }
+//  def multiplexParsedMessagesStates(parsedMessages: Iterator[ParsedMessage]): Iterator[MIteratorState] = {
+//    parsedMessages.scanLeft(MInitial: MIteratorState)(_.next(_))
+//  }
 
   /** ParsedMessage ==> MFoundGame(_, CompletedDuel) **/
   type MProcessor = ParsedMessage => MIteratorState
@@ -29,13 +30,15 @@ object BetterMultiplexedReader {
         serverStates.get(server) match {
           case Some(state) =>
             state.next.apply(parsedMessage) match {
-              case nextState @ ZFoundGame(_, completedDuel) =>
-                MFoundGame(serverStates.updated(server, nextState), completedDuel, Option(server, nextState))
+              case nextState @ ZFoundDuel(_, completedDuel) =>
+                MFoundGame(serverStates.updated(server, nextState), CompletedGame(Left(completedDuel)), Option(server, nextState))
+              case nextState @ ZFoundCtf(_, completedCtf) =>
+                MFoundGame(serverStates.updated(server, nextState), CompletedGame(Right(completedCtf)), Option(server, nextState))
               case nextState =>
                 MProcessing(serverStates.updated(server, nextState), Option(server, nextState))
             }
           case None =>
-            MProcessing(serverStates.updated(server, ZOutOfDuelState), Option(server, ZOutOfDuelState)).next.apply(parsedMessage)
+            MProcessing(serverStates.updated(server, ZOutOfGameState), Option(server, ZOutOfGameState)).next.apply(parsedMessage)
         }
     }
     def serverStates: Map[Server, ZIteratorState]
@@ -46,7 +49,8 @@ object BetterMultiplexedReader {
     override val serverStates = Map.empty[Server, ZIteratorState]
     override val lastUpdatedState = None
   }
-  case class MFoundGame(serverStates: Map[Server, ZIteratorState], completedDuel: SimpleCompletedDuel, lastUpdatedState: Option[(Server, ZIteratorState)]) extends MIteratorState
+
+  case class MFoundGame(serverStates: Map[Server, ZIteratorState], completedGame: CompletedGame, lastUpdatedState: Option[(Server, ZIteratorState)]) extends MIteratorState
 
   /** SauerBytes ==> SFoundGame(_, Seq(CompletedDuel)) **/
   type SProcessor = SauerBytes => SIteratorState
@@ -66,11 +70,12 @@ object BetterMultiplexedReader {
   case object SInitial extends SIteratorState {
     override val mIteratorState = MInitial
   }
-  case class SFoundGame(mIteratorState: MIteratorState, completedDuel: SimpleCompletedDuel) extends SIteratorState
+  case class CompletedGame(game: Either[SimpleCompletedDuel, SimpleCompletedCTF], metaId: Option[String] = None)
+  case class SFoundGame(mIteratorState: MIteratorState, completedGame: CompletedGame) extends SIteratorState
   case class SProcessing(mIteratorState: MIteratorState) extends SIteratorState
-  def multiplexSecond(inputs: Iterator[SauerBytes]): Iterator[SimpleCompletedDuel] = {
+  def multiplexSecond(inputs: Iterator[SauerBytes]): Iterator[CompletedGame] = {
     inputs.scanLeft(SInitial: SIteratorState)(_.next(_)).collect {
-      case SFoundGame(_, completedDuel) => completedDuel
+      case SFoundGame(_, completedGame) => completedGame
     }
   }
 }

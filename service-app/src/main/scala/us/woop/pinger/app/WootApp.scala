@@ -2,15 +2,12 @@ package us.woop.pinger.app
 
 import akka.actor.ActorSystem
 import com.hazelcast.core.Hazelcast
-import us.ServerRetriever.ServersList
 import us.woop.pinger.app.Woot.JournalGenerator
-import us.woop.pinger.data.ServersListing
-import us.woop.pinger.service.PingerController.{Unmonitor, Monitor}
-import us.{StandaloneWSAPI, WSAsyncDuelPersister}
+import us.{StandaloneWSAPI, WSAsyncGamePersister}
 
 object WootApp extends App {
 
-  val persister = new WSAsyncDuelPersister(
+  val persister = new WSAsyncGamePersister(
     client = new StandaloneWSAPI,
     basexContextPath = System.getProperty("pinger.basex.context", "http://127.0.0.1:8984"),
     dbName = System.getProperty("pinger.basex.name", "db-stage"),

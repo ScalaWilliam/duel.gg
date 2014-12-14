@@ -16,7 +16,7 @@ import DuelMaker.CompletedDuel
 import us.woop.pinger.app.SystemIT.{HaveNewDuelId, HaveMeta}
 import us.woop.pinger.data.journal.{IterationMetaData, SauerBytesWriter}
 import us.woop.pinger.service.analytics.JournalBytes
-import us.{WSAsyncDuelPersister, StandaloneWSAPI}
+import us.{WSAsyncGamePersister, StandaloneWSAPI}
 import us.woop.pinger.ParentedProbe
 import us.woop.pinger.app.Woot.{MetaCompletedDuel, NewlyAddedDuel, JournalGenerator, RotateMeta}
 import us.woop.pinger.data.Server
@@ -65,7 +65,7 @@ class SystemIT (sys: ActorSystem) extends TestKit(sys) with WordSpecLike with Ma
     val randomDb = randomAlnum()
     val dbName = s"test-$randomDb"
     info(s"Using random db $dbName")
-    val persister = new WSAsyncDuelPersister(new StandaloneWSAPI, "http://127.0.0.1:8984", dbName, "ngnsads")
+    val persister = new WSAsyncGamePersister(new StandaloneWSAPI, "http://127.0.0.1:8984", dbName, "ngnsads")
 
     val jg = new JournalGenerator(imd => {
       println("Creating a writer..")

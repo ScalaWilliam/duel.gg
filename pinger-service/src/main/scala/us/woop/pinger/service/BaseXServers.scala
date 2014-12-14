@@ -2,15 +2,15 @@ package us.woop.pinger.service
 import akka.actor.ActorDSL._
 import akka.actor.Props
 import us.ServerRetriever.ServersList
-import us.WSAsyncDuelPersister
+import us.WSAsyncGamePersister
 import us.woop.pinger.service.BaseXServers.RefreshServers
 import us.woop.pinger.service.PingerController.{Unmonitor, Monitor}
 
 object BaseXServers {
   case object RefreshServers
-  def props(persister: WSAsyncDuelPersister) = Props(classOf[BaseXServers], persister)
+  def props(persister: WSAsyncGamePersister) = Props(classOf[BaseXServers], persister)
 }
-class BaseXServers(persister: WSAsyncDuelPersister) extends Act {
+class BaseXServers(persister: WSAsyncGamePersister) extends Act {
 
   import scala.concurrent.ExecutionContext.Implicits.global
   whenStarting {

@@ -4,7 +4,7 @@ import akka.actor._
 import akka.routing.RoundRobinPool
 import us.woop.pinger.data.{ServersListing, Server}
 import us.woop.pinger.data.journal.IterationMetaData
-import us.woop.pinger.service.analytics.ProcessDuels
+import us.woop.pinger.service.analytics.ProcessGames
 import us.woop.pinger.service.PingPongProcessor.ReceivedBytes
 import us.woop.pinger.service.PingerController
 import us.woop.pinger.service.PingerController.{Monitor, Unmonitor}
@@ -20,7 +20,7 @@ object StandaloneApp extends App {
 
     val filePublisher = actor(context, "filePublisher")(new JournalSauerBytes(IterationMetaData.build))
 
-    val duelProcessor = actor(context, "duelProcessor")(new ProcessDuels)
+    val duelProcessor = actor(context, "duelProcessor")(new ProcessGames)
 
     val pingerController =
       context.actorOf(RoundRobinPool(1, supervisorStrategy = OneForOneStrategy(){

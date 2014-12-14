@@ -5,7 +5,7 @@ import java.io.{File, FileInputStream}
 import us.woop.pinger.analytics.better.BetterMultiplexedReader
 import us.woop.pinger.analytics.worse.MultiplexedDuelReader
 import us.woop.pinger.data.journal.SauerBytesWriter
-import us.{StandaloneWSAPI, WSAsyncDuelPersister}
+import us.{WSAsyncGamePersister, StandaloneWSAPI}
 
 import scala.util.Try
 
@@ -37,7 +37,7 @@ object ReplayOlderStuffApp extends App {
 
   val faf = Iterator.continually(SauerBytesWriter.readSauerBytes(get)).takeWhile(_.isDefined).map(_.get)
 //
-  val persister = new WSAsyncDuelPersister(
+  val persister = new WSAsyncGamePersister(
     client = new StandaloneWSAPI,
     basexContextPath = System.getProperty("pinger.basex.context", "http://prod-b.duel.gg:8984"),
     dbName = System.getProperty("pinger.basex.name", "db-stage"),
@@ -47,7 +47,12 @@ object ReplayOlderStuffApp extends App {
 //  println(duels.next)
   duels.foreach {
     item =>
-      persister.pushDuel(item).onComplete { x => println(x) }
+      item.game.left.foreach(i =>
+      persister.pushDuel(i).onComplete { x => println(x) }
+      )
+      item.game.right.foreach(i =>
+      persister.pushCtf(i).onComplete { x => println(x) }
+      )
   }
 
 //  val first = BetterMultiplexedReader.multiplexSecond(faf).map(_.copy(metaId = Option("manual-redo"))).take(1).toList.headOption.get

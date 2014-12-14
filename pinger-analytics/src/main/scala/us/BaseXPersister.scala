@@ -1,7 +1,8 @@
 package us
-import us.BaseXPersister.{MetaId, PublicDuelId}
+import us.BaseXPersister.{PublicCtfId, MetaId, PublicDuelId}
 import play.api.libs.ws.WSAPI
 import us.ServerRetriever.ServersList
+import us.woop.pinger.analytics.CTFGameMaker.SimpleCompletedCTF
 import us.woop.pinger.analytics.worse.DuelMaker
 import DuelMaker.SimpleCompletedDuel
 import us.woop.pinger.data.Server
@@ -14,8 +15,19 @@ import scala.xml.{PCData, Elem}
 object BaseXPersister {
 
   case class PublicDuelId(value: String)
+  case class PublicCtfId(value: String)
   case class MetaId(value: String)
 
+}
+trait AsyncGamePersister extends AsyncCtfPersister with AsyncDuelPersister
+trait AsyncCtfPersister {
+  def pushCtf(duelXml: SimpleCompletedCTF)(implicit ec: ExecutionContext): Future[Unit]
+
+  def getCtf(duelId: PublicCtfId)(implicit ec: ExecutionContext): Future[Option[scala.xml.Elem]]
+
+  def getSimilarCtf(ctf: SimpleCompletedCTF)(implicit ec: ExecutionContext): Future[Option[scala.xml.Elem]]
+
+  def listCtfs(implicit ec: ExecutionContext): Future[List[scala.xml.Elem]]
 }
 trait AsyncDuelPersister {
   def pushDuel(duelXml: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[Unit]
@@ -164,8 +176,8 @@ trait BaseXClient {
 
 }
 
-class WSAsyncDuelPersister(val client: WSAPI, val basexContextPath: String, val dbName: String, val chars: String)
-  extends AsyncDuelPersister
+class WSAsyncGamePersister(val client: WSAPI, val basexContextPath: String, val dbName: String, val chars: String)
+  extends AsyncGamePersister
   with BaseXClient
   with ServerRetriever
   with MetaPersister
@@ -174,6 +186,64 @@ class WSAsyncDuelPersister(val client: WSAPI, val basexContextPath: String, val 
   lazy val functions = {
     import scalax.io.JavaConverters._
     this.getClass.getResource("/functions.xqm").asInput.string
+  }
+
+
+  override def pushCtf(ctfXml: SimpleCompletedCTF)(implicit ec: ExecutionContext): Future[Unit] = {
+    val xml = ctfXml.toXml
+    postIntoDatabase(
+      <rest:query xmlns:rest="http://basex.org/rest">
+        <rest:text>{PCData(functions +
+          s"""
+            |let $$ctx := /completed-ctf
+            |let $$server := data($$ctx/@server)
+            |let $$map := data($$ctx/@map)
+            |let $$mode := data($$ctx/@mode)
+            |let $$exist-no-matches := empty(((db:open("$dbName")/ctf)[@server = $$server][@mode = $$mode][@map = $$map][local:ctfs-are-similar(., $$ctx)]))
+            |return
+            |if ( $$exist-no-matches )
+            |then (
+            | let $$new-ctf-id := local:get-new-ctf-id(db:open("$dbName")/ctf, "$chars")
+            | return local:add-new-ctf($$new-ctf-id, "$dbName", $$ctx)
+            |)
+            |else ()
+            |""".stripMargin
+        )}</rest:text>
+        <rest:context>{xml}</rest:context>
+      </rest:query>
+    ).map(x => ())
+  }
+
+  override def getCtf(ctfId: PublicCtfId)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
+    postIntoDatabase(
+      <query xmlns="http://basex.org/rest">
+        <text>{PCData(functions + s"""
+      declare variable $$ctf-id as xs:string external;
+      (db:open("$dbName")/ctf)[@web-id=$$ctf-id]]
+      """)}</text>
+        <variable name="ctf-id" value={ctfId.value}/>
+      </query>
+    ).map(x =>
+      if ( x.body.nonEmpty ) Some(x.xml) else None
+      )
+  }
+
+  override def listCtfs(implicit ec: ExecutionContext): Future[List[Elem]] = {
+    postIntoDatabase(<query xmlns="http://basex.org/rest">
+      <text>{PCData(functions + s"""<ctfs>{db:open("$dbName")/ctf}</ctfs>""")}</text>
+    </query>).map(_.xml \ "ctf").map(_.toList.map(_.asInstanceOf[Elem]))
+  }
+
+  override def getSimilarCtf(ctfDefinition: SimpleCompletedCTF)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
+    postIntoDatabase(<rest:query xmlns:rest="http://basex.org/rest">
+      <rest:text>{PCData(functions +
+        s"""let $$ctx := /completed-ctf
+         |let $$server := data($$ctx/@server)
+         |let $$mode := data($$ctx/@mode)
+         |let $$map := data($$ctx/@map)
+         |return db:open("$dbName")/ctf[@server = $$server][@map = $$map][@mode = $$mode][local:ctfs-are-similar(., $$ctx)]""".stripMargin)}</rest:text>
+      <rest:context>{ctfDefinition.toXml}</rest:context>
+    </rest:query>).map(x => if ( x.body.nonEmpty) Some(x.xml) else None)
   }
 
   override def pushDuel(duelXml: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[Unit] = {

@@ -1,5 +1,6 @@
 package us.woop.pinger.analytics.worse
 
+import org.joda.time.DateTimeZone
 import org.joda.time.format.ISODateTimeFormat
 import org.scalactic.Accumulation._
 import org.scalactic._
@@ -89,7 +90,7 @@ object DuelMaker {
   }
 
   case class GameHeader(startTime: Long, startMessage: ConvertedServerInfoReply, server: String, mode: String, map: String) {
-    def startTimeText: String = ISODateTimeFormat.dateTimeNoMillis().print(startTime)
+    def startTimeText: String = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.forID("UTC")).print(startTime)
     override def toString =
       s"""|Server: $server
          |Mode: $mode

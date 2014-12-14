@@ -12,7 +12,7 @@ class WSAsyncServerListerSpec extends WordSpec with Matchers with ScalaFutures w
 with Inside {
 
   implicit val patience = PatienceConfig(timeout = scaled(Span(1, Second)), interval = scaled(Span(15, Millis)))
-  val asyncDuelPersister = new WSAsyncDuelPersister(new StandaloneWSAPI, "http://localhost:8984", "duelsza", "yesz")
+  val asyncDuelPersister = new WSAsyncGamePersister(new StandaloneWSAPI, "http://localhost:8984", "duelsza", "yesz")
   val persister: AsyncDuelPersister = asyncDuelPersister
   val metaPersister: MetaPersister = asyncDuelPersister
   val serverLister: ServerRetriever = asyncDuelPersister
