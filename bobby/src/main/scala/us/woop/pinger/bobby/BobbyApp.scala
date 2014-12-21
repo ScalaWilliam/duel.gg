@@ -13,6 +13,7 @@ import scala.concurrent.Future
 object BobbyApp extends App {
   System.setProperty("hazelcast.logging.type","slf4j")
   implicit val as = ActorSystem("Goodies")
+  val mainChannel = System.getProperty("bobby.channel", "#duel.gg")
   import as.dispatcher
   val restUrl = System.getProperty("pinger.basex.context", "http://127.0.0.1:8984/rest/db-stage")
   val pipeline: HttpRequest => Future[HttpResponse] = sendReceive
@@ -25,16 +26,13 @@ object BobbyApp extends App {
       } for {
         line <- response
       } {
-        bot.sendIRC().message("#wat", line)
-        bot.sendIRC().message("#duel.gg", line)
+        bot.sendIRC().message(mainChannel, line)
       }
     }
   })
-
   val config = new Configuration.Builder()
     .setName("DuelGG")
     .setServerHostname("Burstfire.UK.EU.GameSurge.net")
-    .addAutoJoinChannel("#wat")
     .setLogin("WoopClan")
 //    .setIdentServerEnabled(true)
     .setVersion("DuelGG IRC bot :: http://duel.gg/")
@@ -42,6 +40,10 @@ object BobbyApp extends App {
     .addListener(new ListenerAdapter[PircBotX] {
       override def onConnect(e: ConnectEvent[PircBotX]) = {
         e.getBot.sendIRC().message("AuthServ@Services.GameSurge.net", "auth DuelGG ***REMOVED***")
+        import concurrent.duration._
+        as.scheduler.scheduleOnce(10.seconds){
+          e.getBot.sendIRC().joinChannel(mainChannel)
+        }
       }
       override def onInvite(e: InviteEvent[PircBotX]) = {
         e.getBot.sendIRC().joinChannel(e.getChannel)
