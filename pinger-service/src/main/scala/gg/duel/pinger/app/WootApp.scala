@@ -5,13 +5,16 @@ import com.hazelcast.core.Hazelcast
 import gg.duel.pinger.app.Woot.JournalGenerator
 import gg.duel.pinger.service.{StandaloneWSAPI, WSAsyncGamePersister}
 
+object WootAppConfig {
+
+}
 object WootApp extends App {
 
   val persister = new WSAsyncGamePersister(
     client = new StandaloneWSAPI,
     basexContextPath = System.getProperty("pinger.basex.context", "http://127.0.0.1:8984"),
     dbName = System.getProperty("pinger.basex.name", "db-stage"),
-    chars = System.getProperty("pinger.chars", "bungabunga")
+    chars = System.getProperty("pinger.chars", "fntpykaq")
   )
   implicit val as = ActorSystem("cooool")
   val tempHazelcastInstance = Hazelcast.newHazelcastInstance()
