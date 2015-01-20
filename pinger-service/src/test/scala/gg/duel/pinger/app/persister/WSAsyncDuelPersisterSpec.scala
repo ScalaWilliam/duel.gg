@@ -1,5 +1,7 @@
 package us
 
+import akka.actor.ActorSystem
+import gg.duel.pinger.Pipeline
 import gg.duel.pinger.analytics.duel.CompletedDuel
 import gg.duel.pinger.service._
 import org.basex.BaseXHTTP
@@ -15,7 +17,8 @@ class WSAsyncDuelPersisterSpec extends WordSpec with Matchers with ScalaFutures 
 with Inside {
 
 implicit val patience = PatienceConfig(timeout = scaled(Span(1, Second)), interval = scaled(Span(15, Millis)))
-  val asyncDuelPersister = new WSAsyncGamePersister(new StandaloneWSAPI, "http://localhost:12398", "duelsza", "yesz")
+  implicit val testSystem = ActorSystem("Test")
+  val asyncDuelPersister = new WSAsyncGamePersister(Pipeline.pipeline, "http://localhost:12398", "duelsza", "yesz")
   val persister: AsyncDuelPersister = asyncDuelPersister
   val metaPersister: MetaPersister = asyncDuelPersister
   val serverLister: ServerRetriever = asyncDuelPersister
@@ -24,6 +27,8 @@ implicit val patience = PatienceConfig(timeout = scaled(Span(1, Second)), interv
   val server = new BaseXHTTP("-p12396", "-e12397", "-h12398", "-s12399")
   override def afterAll(): Unit = {
     server.stop()
+    testSystem.shutdown()
+    testSystem.awaitTermination()
   }
   "Basex client" must {
     "Recreate the database" in {

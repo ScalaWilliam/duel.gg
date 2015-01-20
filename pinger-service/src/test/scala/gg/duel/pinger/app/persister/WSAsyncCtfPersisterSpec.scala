@@ -1,5 +1,7 @@
 package us
 
+import akka.actor.ActorSystem
+import gg.duel.pinger.Pipeline
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.service._
 import org.basex.BaseXHTTP
@@ -14,7 +16,8 @@ class WSAsyncCtfPersisterSpec extends WordSpec with Matchers with ScalaFutures w
 with Inside {
 
   implicit val patience = PatienceConfig(timeout = scaled(Span(1, Second)), interval = scaled(Span(15, Millis)))
-  val asyncCtfPersister = new WSAsyncGamePersister(new StandaloneWSAPI, "http://localhost:12398", "ctfsza", "yesz")
+  implicit val testSystem = ActorSystem("Test")
+  val asyncCtfPersister = new WSAsyncGamePersister(Pipeline.pipeline, "http://localhost:12398", "ctfsza", "yesz")
   val persister: AsyncCtfPersister = asyncCtfPersister
   val metaPersister: MetaPersister = asyncCtfPersister
   val serverLister: ServerRetriever = asyncCtfPersister
@@ -24,6 +27,8 @@ with Inside {
   val server = new BaseXHTTP("-p12396", "-e12397", "-h12398", "-s12399")
   override def afterAll(): Unit = {
     server.stop()
+    testSystem.shutdown()
+    testSystem.awaitTermination()
   }
 
   "Basex client for ctf pusher" must {
