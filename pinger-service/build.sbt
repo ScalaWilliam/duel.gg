@@ -52,3 +52,5 @@ bashScriptConfigLocation := Some("${app_home}/../conf/jvmopts")
 ideaExcludeFolders ++= Seq(".idea", ".idea_modules")
 
 unmanagedClasspath in Runtime += baseDirectory.value / "src/universal/conf"
+
+Seq(com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings :_*)
