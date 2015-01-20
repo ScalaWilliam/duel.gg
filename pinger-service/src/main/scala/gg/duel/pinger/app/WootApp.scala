@@ -62,7 +62,7 @@ object WootApp extends App with StrictLogging {
   import akka.actor.ActorDSL._
 
   val container = actor(new Act {
-    val main = as.actorOf(yay, "mainStuffs")
+    val main = context.actorOf(yay, "mainStuffs")
   })
 
   as.awaitTermination()
