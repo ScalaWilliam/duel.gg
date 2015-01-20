@@ -1,2 +1,0 @@
-name := "pinger-app"
-
