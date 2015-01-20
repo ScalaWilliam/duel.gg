@@ -14,21 +14,11 @@ lazy val root = project.in( file(".") )
   .aggregate(serviceApp, analytics, service, frontend, data, bobby)
   .dependsOn(analytics, service, data,frontend,  serviceApp, bobby)
 
-lazy val analytics = project in file("pinger-analytics") dependsOn data
-
 lazy val bobby = project in file("bobby")
 
-//lazy val admins = project in file("admins") dependsOn (scaladinAddon)
-
-lazy val service = project in file("pinger-service") dependsOn analytics
-
-lazy val data = project in file("pinger-data")
-
-lazy val scaladinAddon = ProjectRef(uri("git://github.com/henrikerola/scaladin.git"), "addon")
+lazy val service = project in file("pinger-service")
 
 lazy val frontend = (project in file("frontend") enablePlugins PlayScala)
-
-lazy val serviceApp = ((project in file("service-app")) dependsOn service)
 
 Seq(com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings :_*)
 
@@ -36,7 +26,7 @@ lazy val publishApps = taskKey[Unit]("Publish Frontend and ServiceApp")
 
 publishApps := {
   val s: TaskStreams = streams.value
-  (publish in (serviceApp, Universal)).value
+  (publish in (service, Universal)).value
   (publish in (frontend, Universal)).value
   (publish in (bobby, Universal)).value
   s.log.info("Publishing complete")
