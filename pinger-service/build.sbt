@@ -1,3 +1,5 @@
+enablePlugins(JavaAppPackaging, LinuxPlugin, UniversalPlugin)
+
 organization := "gg.duel"
 
 name := "pinger-service"
@@ -8,19 +10,21 @@ scalaVersion := "2.11.5"
 
 resolvers += "Typesafe Releases" at "https://repo.typesafe.com/typesafe/releases/"
 
+resolvers += "spray repo" at "http://repo.spray.io"
+
 libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.2",
   "com.github.scala-incubator.io" %% "scala-io-core" % "0.4.3",
   "com.github.scala-incubator.io" %% "scala-io-file" % "0.4.3",
   "com.hazelcast" % "hazelcast" % "3.4",
   "com.typesafe.akka" %% "akka-actor" % "2.3.9",
-  "com.typesafe.play" %% "play-ws" % "2.3.7" exclude ("commons-logging", "commons-logging") exclude ("com.typesafe.play","build-link"),
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
-  "com.typesafe.akka" %% "akka-contrib" % "2.3.7",
-  "com.typesafe.akka" %% "akka-slf4j" % "2.3.7" exclude ("commons-logging", "commons-logging"),
-  "com.typesafe.akka" %% "akka-testkit" % "2.3.7" % Test,
-  "com.typesafe.akka" %% "akka-kernel" % "2.3.7",
+  "com.typesafe.akka" %% "akka-contrib" % "2.3.9",
+  "com.typesafe.akka" %% "akka-slf4j" % "2.3.9" exclude ("commons-logging", "commons-logging"),
+  "com.typesafe.akka" %% "akka-testkit" % "2.3.9" % Test,
+  "com.typesafe.akka" %% "akka-kernel" % "2.3.9",
   "commons-validator" % "commons-validator" % "1.4.0" exclude ("commons-logging", "commons-logging"),
+  "io.spray" %% "spray-client" % "1.3.1",
   "joda-time" % "joda-time" % "2.4",
   "org.joda" % "joda-convert" % "1.7",
   "org.json4s" %% "json4s-native" % "3.2.10",

@@ -4,7 +4,7 @@
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <license-key>CBGAEHONFMI12W111700370Q67009Z</license-key>
     <group>
-        <name>db-stage</name>
+        <name>duelgg</name>
         <password>dev-pass</password>
     </group>
     <management-center enabled="true">http://localhost:8091/mancenter-3.4</management-center>

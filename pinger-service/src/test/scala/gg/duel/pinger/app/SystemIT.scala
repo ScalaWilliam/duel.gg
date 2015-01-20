@@ -4,9 +4,10 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{ImplicitSender, TestKit}
+import gg.duel.pinger.Pipeline
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.analytics.duel.CompletedDuel
-import gg.duel.pinger.service.{StandaloneWSAPI, WSAsyncGamePersister}
+import gg.duel.pinger.service.WSAsyncGamePersister
 import org.basex.BaseXHTTP
 import com.hazelcast.config.Config
 import com.hazelcast.core.{HazelcastInstance, Message, MessageListener, Hazelcast}
@@ -62,7 +63,7 @@ with ImplicitSender with  ParentedProbe with Inspectors with BeforeAndAfterAll {
     val randomDb = randomAlnum()
     val dbName = s"test-$randomDb"
     info(s"Using random db $dbName")
-    val persister = new WSAsyncGamePersister(new StandaloneWSAPI, "http://127.0.0.1:12398", dbName, "ngnsads")
+    val persister = new WSAsyncGamePersister(Pipeline.pipeline, "http://127.0.0.1:12398", dbName, "ngnsads")
 
     val jg = new JournalGenerator(imd => {
       println("Creating a writer..")

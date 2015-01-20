@@ -4,13 +4,13 @@ import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
 import gg.duel.pinger.service.BaseXPersister.{PublicCtfId, MetaId, PublicDuelId}
 import gg.duel.pinger.service.ServerRetriever.ServersList
-import play.api.libs.ws.WSAPI
 import gg.duel.pinger.data.Server
 import gg.duel.pinger.data.journal.IterationMetaData
+import spray.http.{HttpRequest, HttpResponse}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
 import scala.util.control.NonFatal
-import scala.xml.{Elem, PCData}
+import scala.xml.{XML, Elem, PCData}
 
 object BaseXPersister {
 
@@ -112,7 +112,7 @@ db:add("]]>{dbName}<![CDATA[", <server connect="{$connect}" alias="{$alias}"/>, 
   }
 
   def retrieveServers(implicit ec: ExecutionContext): Future[ServerRetriever.ServersList] = {
-    postIntoDatabase(
+    postIntoDatabaseGetXmlO(
       <query xmlns="http://basex.org/rest">
         <text><![CDATA[
 <servers>{
@@ -120,10 +120,11 @@ db:add("]]>{dbName}<![CDATA[", <server connect="{$connect}" alias="{$alias}"/>, 
 }</servers>
 ]]></text>
       </query>
-    ).map(doc => {
+    ).map(x => {
       val listOfServers = for {
         // parallel because we'll be getting DNS
-        serverXml <- doc.xml \ "server"
+        doc <- x.toList
+        serverXml <- doc \ "server"
         connect <- serverXml \ "@connect" map (_.text)
         alias <- serverXml \ "@alias" map (_.text)
         isActive = !(serverXml \ "@inactive").exists(_.text == "true")
@@ -137,17 +138,24 @@ db:add("]]>{dbName}<![CDATA[", <server connect="{$connect}" alias="{$alias}"/>, 
 }
 
 trait BaseXClient {
-  import play.api.libs.ws._
-  def client: WSAPI
+  def client: HttpRequest => Future[HttpResponse]
   def dbName: String
   def basexContextPath: String
+
+  def connects(implicit ec: ExecutionContext) = {
+  for { r <- postIntoDatabase(<rest:query xmlns:rest="http://basex.org/rest">
+    <rest:text><![CDATA[db:add("]]>{dbName}<![CDATA[", <test/>, "test")]]></rest:text>
+  </rest:query>)
+  } yield ()
+
+  }
 
   def createDatabase(implicit ec: ExecutionContext) = {
     postIntoRoot(
       <query xmlns="http://basex.org/rest">
         <text>if ( not(db:exists(&quot;{dbName}&quot;)) ) then (db:create(&quot;{dbName}&quot;)) else ()</text>
       </query>
-    ).map(_.body)
+    ).map(_.entity.asString)
   }
 
   def dropDatabase(implicit ec: ExecutionContext) = {
@@ -155,7 +163,7 @@ trait BaseXClient {
       <query xmlns="http://basex.org/rest">
         <text>db:drop(&quot;{dbName}&quot;)</text>
       </query>
-    ).map(_.body)
+    ).map(_.entity.asString)
   }
 
   protected def postIntoRoot(xml: scala.xml.Elem)(implicit ec: ExecutionContext) = {
@@ -165,25 +173,31 @@ trait BaseXClient {
   def postIntoDatabase(xml: scala.xml.Elem)(implicit ec: ExecutionContext) = {
     postXml(s"$basexContextPath/rest/$dbName")(xml)
   }
-
-  protected def postXml(url: String)(xml: scala.xml.Elem)(implicit ec: ExecutionContext) = {
-    client.url(url)
-      .withHeaders("Accept" -> "application/xml")
-      .withRequestTimeout(10000)
-      .withAuth("admin", "admin", WSAuthScheme.BASIC)
-      .post(xml)
-      .map{r =>
-      if ( r.status != 200 ) { throw new RuntimeException(s"Expected 200, got ${r.status}. Body ${r.body}") }
-      r} recover {
-      case NonFatal(e) =>
-        throw new RuntimeException(s"Request to $url with body $xml failed due to $e", e)
-    }
+  def postIntoDatabaseGetXmlO(xml: scala.xml.Elem)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
+    postXml(s"$basexContextPath/rest/$dbName")(xml).map(x =>
+      Try(scala.xml.XML.loadString(x.entity.asString)).toOption
+    )
   }
 
+  protected def postXml(url: String)(xml: scala.xml.Elem)(implicit ec: ExecutionContext) = {
+    import spray.can.Http
+    import spray.http._
+    import spray.client.pipelining._
+    val request = Post(url, xml)
+      .withHeaders(
+        HttpHeaders.Authorization(BasicHttpCredentials("admin", "admin")),
+        HttpHeaders.Accept(MediaRange.apply(MediaTypes.`application/xml`))
+      )
+    client(request).map{r =>
+      if ( r.status.isSuccess ) { r } else {
+        throw new RuntimeException(s"Expected a successful response, got $r")
+      }
+    }.recoverWith{case NonFatal(e) => throw new RuntimeException(s"Request to $url failed due to $e, body $xml due to: $e")}
+  }
 
 }
 
-class WSAsyncGamePersister(val client: WSAPI, val basexContextPath: String, val dbName: String, val chars: String)
+class WSAsyncGamePersister(val client: HttpRequest => Future[HttpResponse], val basexContextPath: String, val dbName: String, val chars: String)
   extends AsyncGamePersister
   with BaseXClient
   with ServerRetriever
@@ -238,14 +252,14 @@ class WSAsyncGamePersister(val client: WSAPI, val basexContextPath: String, val 
         <variable name="ctf-id" value={ctfId.value}/>
       </query>
     ).map(x =>
-      if ( x.body.nonEmpty ) Some(x.xml) else None
+      if ( x.entity.asString.nonEmpty ) Some(scala.xml.XML.loadString(x.entity.asString)) else None
       )
   }
 
   override def listCtfs(implicit ec: ExecutionContext): Future[List[Elem]] = {
-    postIntoDatabase(<query xmlns="http://basex.org/rest">
+    postIntoDatabaseGetXmlO(<query xmlns="http://basex.org/rest">
       <text>{PCData(functions + s"""<ctfs>{db:open("$dbName")/ctf}</ctfs>""")}</text>
-    </query>).map(_.xml \ "ctf").map(_.toList.map(_.asInstanceOf[Elem]))
+    </query>).map(_.toList.flatMap(_\"ctf").map(_.asInstanceOf[Elem]))
   }
 
   override def getSimilarCtf(ctfDefinition: SimpleCompletedCTF)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
@@ -264,7 +278,7 @@ class WSAsyncGamePersister(val client: WSAPI, val basexContextPath: String, val 
          |return $$ctf
          """.stripMargin)}</rest:text>
       <rest:context>{ctfDefinition.toXml}</rest:context>
-    </rest:query>).map(x => if ( x.body.nonEmpty) Some(x.xml) else None)
+    </rest:query>).map(x => if ( x.entity.asString.nonEmpty) Some(XML.loadString(x.entity.asString)) else None)
   }
 
   override def pushDuel(duelXml: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[Unit] = {
@@ -300,7 +314,7 @@ class WSAsyncGamePersister(val client: WSAPI, val basexContextPath: String, val 
   }
 
   override def getDuel(duelId: PublicDuelId)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
-    postIntoDatabase(
+    postIntoDatabaseGetXmlO(
       <query xmlns="http://basex.org/rest">
       <text>{PCData(functions + s"""
       declare variable $$duel-id as xs:string external;
@@ -308,19 +322,17 @@ class WSAsyncGamePersister(val client: WSAPI, val basexContextPath: String, val 
       """)}</text>
         <variable name="duel-id" value={duelId.value}/>
       </query>
-    ).map(x =>
-      if ( x.body.nonEmpty ) Some(x.xml) else None
     )
   }
 
   override def listDuels(implicit ec: ExecutionContext): Future[List[Elem]] = {
-    postIntoDatabase(<query xmlns="http://basex.org/rest">
+    postIntoDatabaseGetXmlO(<query xmlns="http://basex.org/rest">
     <text>{PCData(functions + s"""<duels>{db:open("$dbName")/duel}</duels>""")}</text>
-    </query>).map(_.xml \ "duel").map(_.toList.map(_.asInstanceOf[Elem]))
+    </query>).map(_.toList.flatMap(_ \ "duel").map(_.asInstanceOf[Elem]))
   }
 
   override def getSimilarDuel(duelDefinition: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
-    postIntoDatabase(<rest:query xmlns:rest="http://basex.org/rest">
+    postIntoDatabaseGetXmlO(<rest:query xmlns:rest="http://basex.org/rest">
     <rest:text>{PCData(functions +
       s"""let $$ctx := /completed-duel
          |let $$server := data($$ctx/@server)
@@ -336,7 +348,7 @@ class WSAsyncGamePersister(val client: WSAPI, val basexContextPath: String, val 
          |
          |""".stripMargin)}</rest:text>
       <rest:context>{duelDefinition.toXml}</rest:context>
-    </rest:query>).map(x => if ( x.body.nonEmpty) Some(x.xml) else None)
+    </rest:query>)
   }
 
   override def pushMeta(metaXml: IterationMetaData)(implicit ec: ExecutionContext): Future[Unit] = {
@@ -358,7 +370,7 @@ class WSAsyncGamePersister(val client: WSAPI, val basexContextPath: String, val 
 
   override def getMeta(metaId: MetaId)(implicit ec: ExecutionContext): Future[Option[Elem]] = {
 
-    postIntoDatabase(
+    postIntoDatabaseGetXmlO(
       <query xmlns="http://basex.org/rest">
         <text>{PCData(s"""
       declare variable $$meta-id as xs:string external;
@@ -366,14 +378,12 @@ class WSAsyncGamePersister(val client: WSAPI, val basexContextPath: String, val 
       """)}</text>
         <variable name="meta-id" value={metaId.value}/>
       </query>
-    ).map(x =>
-      if ( x.body.nonEmpty ) Some(x.xml) else None
-      )
+    )
   }
 
   override def listMetas(implicit ec: ExecutionContext): Future[List[Elem]] = {
-    postIntoDatabase(<query xmlns="http://basex.org/rest">
+    postIntoDatabaseGetXmlO(<query xmlns="http://basex.org/rest">
       <text>{PCData(s"""<metas>{db:open("$dbName")/meta}</metas>""")}</text>
-    </query>).map(_.xml \ "meta").map(_.toList.map(_.asInstanceOf[Elem]))
+    </query>).map(_.toList.flatMap(_ \ "meta").map(_.asInstanceOf[Elem]))
   }
 }

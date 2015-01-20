@@ -36,6 +36,13 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
     }, true)
   }
 
+  superviseWith {
+    import concurrent.duration._
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
+      case _: Throwable => Stop
+    }
+  }
+
   val basexServers = context.actorOf(BaseXServers.props(persister))
 
   val pingerController =
