@@ -1,4 +1,3 @@
-701:plugins.HazelcastPlugin
-702:plugins.DuelsInterface
-702:plugins.DuelsStream
-703:plugins.UserManagement
+1701:plugins.HazelcastPlugin
+1702:plugins.BasexProviderPlugin
+1703:plugins.RegisteredUserManager

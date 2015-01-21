@@ -1,0 +1,33 @@
+<link rel="import" href="/assets/javascripts/bower_components/polymer/polymer.html">
+<polymer-element name="new-games" attributes="liveUrl games">
+    <template>
+        <template repeat="{{game in games}}">
+            <duel-card duelId="{{game.duel.id}}"
+                       leftPlayerScore="{{game.duel.players[0].score}}"
+                       leftPlayerName="{{game.duel.players[0].name}}"
+                       leftPlayerId="{{game.duel.players[0].id}}"
+                       rightPlayerScore="{{game.duel.players[1].score}}"
+                       rightPlayerName="{{game.duel.players[1].name}}"
+                       rightPlayerId="{{game.duel.players[1].id}}"
+                    ></duel-card>
+        </template>
+    </template>
+
+    <script>
+        Polymer("live-games", {
+            onMessage: function(msg) {
+                this.games = this.game || [];
+                this.games.unshift(JSON.parse(msg.data));
+            },
+            onClose: function() {
+                setTimeout(this.liveUrlChanged.bind(this), 5000);
+            },
+            liveUrlChanged: function() {
+                this.websocket = new WebSocket(this.liveUrl);
+                this.websocket.onmessage = this.onMessage.bind(this);
+                this.websocket.onclose = this.onClose.bind(this);
+            }
+        });
+    </script>
+
+</polymer-element>

@@ -1,0 +1,22 @@
+<link rel="import" href="/assets/javascripts/bower_components/polymer/polymer.html">
+<polymer-element name="duel-card"
+                 attributes="duelId leftPlayerScore leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson viewingDetail isLive">
+    <template>
+        <div class="duel">
+            <div class="duel-summary">
+                <a href="gaungnngub">
+                    <header>
+                        <h2>{{leftPlayerName}} vs {{rightPlayerName}}</h2>
+                        <h3>{{mode}} @ {{map}}</h3>
+                    </header>
+                    <footer>
+                        <p class="score">{{leftPlayerScore}}-{{rightPlayerScore}}</p>
+                    </footer>
+                </a>
+            </div>
+        </div>
+    </template>
+    <script>
+        Polymer("duel-card", {})
+    </script>
+</polymer-element>
