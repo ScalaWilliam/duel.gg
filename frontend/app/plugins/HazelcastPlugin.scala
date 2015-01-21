@@ -1,11 +1,17 @@
 package plugins
 
 import com.hazelcast.core.Hazelcast
+import com.hazelcast.core.Hazelcast
 import play.api._
 class HazelcastPlugin(implicit app: Application) extends Plugin {
 
   lazy val hazelcast = {
-    Hazelcast.newHazelcastInstance()
+    val instance = Hazelcast.newHazelcastInstance()
+    instance
+  }
+
+  override def onStart(): Unit = {
+    hazelcast
   }
 
   override def onStop(): Unit = {

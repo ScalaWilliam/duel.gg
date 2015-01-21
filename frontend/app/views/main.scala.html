@@ -1,0 +1,51 @@
+@(title: String)(top:Html)(data: Html)(implicit sessionState: plugins.RegisteredUserManager.SessionState)
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <title>@title</title>
+        <link href='http://fonts.googleapis.com/css?family=Permanent+Marker|Signika:400,700' rel='stylesheet' type='text/css'>
+        <link href='/assets/stylesheets/main.css' rel="stylesheet" type="text/css"/>
+        <link href='/assets/fontello-70221a6c/css/fontello.css' rel="stylesheet" type="text/css"/>
+        <meta name="description" content="woop.ac is a match league for the AssaultCube multiplayer first-person shooter">
+        <meta name="keywords" content="online FPS, first person shooter, assaultcube league, assaultcube">
+        <script src="/assets/javascripts/bower_components/webcomponentsjs/webcomponents.min.js"></script>
+        <link rel="import" href="/assets/javascripts/game-card.html">
+        <link rel="import" href="/assets/javascripts/new-games.html">
+        <link rel="import" href="/assets/javascripts/live-games.html">
+        <link rel="import" href="/assets/javascripts/live-events.html">
+        <link rel="import" href="/assets/javascripts/achievement-card.html">
+    </head>
+    <body>
+
+        <div role="main">
+            <header>
+                <h1><a href="/">AssaultCube Match League</a></h1>
+                <h2>by <a href="http://woop.us/" target="_blank">Woop clan</a></h2>
+            </header>
+            <div id="top">
+                <article><a href="/">Home</a> &bull; <a href="/questions/">Questions</a> &bull; <a href="/players/">Players</a> &bull; <a href="/servers/">Servers</a>
+                    @if(sessionState.profile.nonEmpty) {
+                            &bull; <a href="/profile/">View my profile</a>
+                    } else {
+                            &bull; <a href="/login/">Log in with Google</a>
+                    }
+                </article>
+            </div>
+
+            @if(sessionState.profile.isEmpty) {
+                <div id="download-ac-button">
+                    <a href="https://github.com/assaultcube/AC/releases/download/v1.2.0.2/AssaultCube_v1.2.0.2.exe" target="_blank">
+                        <span class="icon-download"></span>
+                        Download the AssaultCube first-person shooter v1.2.0.2 (45MB, Windows exe)
+                    </a>
+                </div>
+            }
+            <div id="content">
+
+
+
+            @data
+            </div></div>
+    </body>
+</html>

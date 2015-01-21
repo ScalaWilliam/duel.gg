@@ -1,0 +1,13 @@
+@(faults: List[String])(implicit sessionState: plugins.RegisteredUserManager.SessionState)
+@main("Create profile")(Html("")){
+    <article id="create-profile">
+        <h2>You cannot register for a profile because:</h2>
+        <ol>
+        @for(f <- faults) {
+            <li>@f</li>
+        }
+        </ol>
+        <p>Please play a match on our servers to get started, this should solve any problems.
+            If you still have problems, please contact us on our TeamSpeak server.</p>
+    </article>
+}

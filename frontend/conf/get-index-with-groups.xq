@@ -27,7 +27,7 @@ declare function local:display-time-2($dateTime as xs:dateTime) {
     let $now := fn:current-dateTime()
     let $formatted := fn:format-dateTime($dateTime, "[Y01]/[M01]/[D01]")
     let $day-name := fn:format-dateTime($dateTime, "[FNn], [D] [MNn]")
-    let $hour-ago :=fn:current-dateTime() - xs:dayTimeDuration("PT1H")
+    let $hour-ago := fn:current-dateTime() - xs:dayTimeDuration("PT1H")
     let $week-ago := fn:current-dateTime() - xs:dayTimeDuration("P7D")
     let $display :=
         if ( ($dateTime le $now) and ($dateTime ge $hour-ago) )
