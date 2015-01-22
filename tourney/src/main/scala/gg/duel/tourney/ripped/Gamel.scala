@@ -1,18 +1,23 @@
-package gg.duel.tourney.scala
+package gg.duel.tourney.ripped
+
+import java.util.concurrent.atomic.AtomicInteger
 
 object Gamel {
-  var gameCount = 0
+  val gameCount = new AtomicInteger(0)
   object Result extends Enumeration {
     val P1_WON = Value
     val P2_WON = Value
     val UNDEF = Value
   }
 }
+
 class Gamel(val myId: Int, val p1prev: Option[Gamel], val p2prev: Option[Gamel], var result: Gamel.Result.Value) {
+  override def equals(other: Any) = myId == other.asInstanceOf[Gamel].myId
+  override def hashCode = myId
   def this(p1prev: Option[Gamel], p2prev: Option[Gamel]) =
-    this({Gamel.gameCount = Gamel.gameCount + 1; Gamel.gameCount}, p1prev, p2prev, Gamel.Result.UNDEF)
+    this(Gamel.gameCount.incrementAndGet(), p1prev, p2prev, Gamel.Result.UNDEF)
   def this(p1prev: Gamel, p2prev: Gamel) =
-    this({Gamel.gameCount = Gamel.gameCount + 1; Gamel.gameCount}, Option(p1prev), Option(p2prev), Gamel.Result.UNDEF)
+    this(Gamel.gameCount.incrementAndGet(), Option(p1prev), Option(p2prev), Gamel.Result.UNDEF)
   def getWinner: Option[String] = {
     p2prev match {
       case None => p1prev.flatMap(_.getWinner)

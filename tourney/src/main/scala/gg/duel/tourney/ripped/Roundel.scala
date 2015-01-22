@@ -1,10 +1,12 @@
-package gg.duel.tourney.scala
+package gg.duel.tourney.ripped
 
-/** Knocked off from package se.aoeu.bracketapplet - BracketApplet.jar
-  * http://www.csc.kth.se/~landreas/tournament/
-  */
+/**
+* Knocked off from package se.aoeu.bracketapplet - BracketApplet.jar
+* http://www.csc.kth.se/~landreas/tournament/
+*/
 
 object Roundel {
+
   def apply(players: List[String]): Roundel =
     Roundel(players.map(n => new LeafGamel(n)), List.empty)
 
