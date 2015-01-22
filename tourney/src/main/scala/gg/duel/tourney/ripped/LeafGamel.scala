@@ -1,4 +1,4 @@
-package gg.duel.tourney.scala
+package gg.duel.tourney.ripped
 
 class LeafGamel(val playerName: Option[String], val winningBracketGame: Option[Gamel], result: Gamel.Result.Value) extends Gamel(None, None) {
   def this(player: String) = this(Option(player), None, Gamel.Result.P1_WON)
