@@ -2,19 +2,21 @@ package gg.duel.tourney.newer
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import scala.collection.mutable
+
 object Basics extends App {
 
   trait Event
   case class StartGame(gameId: Int, startTime: Int, deadline: Int) extends Event
   case class TimeTick(time: Int) extends Event
-  case class SetWinner(gameId: Int, winner: String) extends Event
-  case class FailGame(gameId: Int, reason: String) extends Event
+  case class SetWinner(gameId: Int, atTime: Int, winner: String) extends Event
+  case class FailGame(gameId: Int, atTime: Int, reason: String) extends Event
   object Event {
     def fromXml(xml: scala.xml.Elem): Option[Event] = Option(xml) collectFirst {
       case start if start.label == "start" => StartGame(gameId = (start \@ "game-id").toInt, startTime = (start \@"start-time").toInt, deadline = (start \@ "deadline").toInt)
       case tick if tick.label == "time-tick" => TimeTick(time = (tick \@"time").toInt)
-      case sw if sw.label == "set-winner" => SetWinner(gameId = (sw \@"game-id").toInt, winner = sw \@ "winner")
-      case fg if fg.label == "fail-game" => FailGame(gameId = (fg \@"game-id").toInt, reason = fg \@"reason")
+      case sw if sw.label == "set-winner" => SetWinner(gameId = (sw \@"game-id").toInt, atTime = (sw\@"at-time").toInt, winner = sw \@ "winner")
+      case fg if fg.label == "fail-game" => FailGame(gameId = (fg \@"game-id").toInt, atTime = (fg\@"at-time").toInt, reason = fg \@"reason")
     }
   }
 
@@ -102,7 +104,7 @@ object Basics extends App {
   }
 
   case class Tournament(players: List[String], games: List[Game], slots: List[Slot], events: collection.mutable.Buffer[Event]) {
-    def toXml = <tournament>
+    def toXml = <tournament size={players.size.toString}>
       {players.map(p => <player>{p}</player>)}
       {
       for { game <- games }
@@ -119,18 +121,19 @@ object Basics extends App {
         yield event match {
           case StartGame(gameId, startTime, deadline) => <start game-id={gameId.toString} start-time={startTime.toString} deadline={deadline.toString}/>
           case TimeTick(time) => <time-tick time={time.toString}/>
-          case SetWinner(gameId, winner) => <set-winner game-id={gameId.toString} winner={winner}/>
-          case FailGame(gameId, reason) => <fail-game game-id={gameId.toString} reason={reason}/>
+          case SetWinner(gameId, atTime, winner) => <set-winner game-id={gameId.toString} winner={winner} at-time={atTime.toString}/>
+          case FailGame(gameId, atTime, reason) => <fail-game game-id={gameId.toString} at-time={atTime.toString} reason={reason}/>
         }
       }</events>
     </tournament>
     def game(id: Int) = games.find(_.id == id).head
     def event(event: Event): Unit = {
+      events += event
       event match {
         case StartGame(gameId, startTime, deadline) => game(gameId).start(startTime, deadline)
         case TimeTick(time) => games.foreach(_.tick(time))
-        case SetWinner(gameId, winner) => game(gameId).winner = winner
-        case FailGame(gameId, reason) => game(gameId).fail(reason)
+        case SetWinner(gameId, atTime, winner) => game(gameId).win(winner, atTime)
+        case FailGame(gameId, atTime, reason) => game(gameId).fail(reason)
       }
     }
   }
@@ -170,7 +173,8 @@ object Basics extends App {
       }
       val gamesL = games.toList
       val slots = gamesL.flatMap(_.slots).toList
-      Tournament(players, gamesL, slots)
+      val events = (input \ "events").flatMap(_.child).collect{ case e: scala.xml.Elem => Event.fromXml(e) }.flatten
+      Tournament(players, gamesL, slots, collection.mutable.Buffer(events :_*))
     }
   }
 
@@ -201,7 +205,7 @@ object Basics extends App {
 
     val games = Iterator.iterate(initialGames)(createNewGames).takeWhile(_.nonEmpty).flatten.toList
     val slots = games.flatMap(_.slots).toList
-    Tournament(players, games, slots)
+    Tournament(players, games, slots, mutable.Buffer.empty)
 
   }
 
@@ -225,17 +229,17 @@ object Basics extends App {
 
 
   val t2 = powerfulTournament((1 to 16).map(s => s"U$s").toList)
-  t2.event(SetWinner(2, "U1"))
-  t2.event(FailGame(2, "Blah"))
-  t2.event(StartGame(10, 12))
+  t2.event(SetWinner(1, 2, "U1"))
+  t2.event(FailGame(2, 2, "Blah"))
+  t2.event(StartGame(3, 10, 12))
   t2.event(TimeTick(13))
-  t2.event(SetWinner(4, "U7"))
-  val games = t.games
-  val slots = games.flatMap(g => g.slots).toList
-  games.filter(_.id == 1).foreach(_.win("U1", 2))
-  games.filter(_.id == 2).foreach(_.fail("Blah"))
-  games.filter(_.id == 3).foreach(_.start(10, 12))
-  games foreach (_.tick(13))
-  games.filter(_.id == 4).foreach(_.win("U7", 2))
+  t2.event(SetWinner(4, 2, "U7"))
+
+  val t2Xml = t2.toXml
+  val t2r = Tournament.fromXml(t2Xml)
+  val t2Xxml = t2r.toXml
+  println(t2Xml == t2Xxml)
+  println(t2Xml)
+  println(t2Xxml)
 
 }
