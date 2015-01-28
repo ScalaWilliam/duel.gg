@@ -19,6 +19,7 @@ object BaseXPersister {
   case class MetaId(value: String)
 
 }
+
 trait AsyncGamePersister extends AsyncCtfPersister with AsyncDuelPersister
 trait AsyncCtfPersister {
   def pushCtf(duelXml: SimpleCompletedCTF)(implicit ec: ExecutionContext): Future[Unit]
@@ -46,6 +47,121 @@ trait MetaPersister {
 object ServerRetriever {
   case class ServerListing(connect: String, server: Server, alias: String, active: Boolean)
   case class ServersList(active: List[ServerListing], inactive: List[ServerListing])
+}
+trait DemoChecker {
+  self: BaseXClient =>
+  def getDemoLink(gameId: String)(implicit ec: ExecutionContext): Future[Option[String]] = {
+    val xml =
+      <rest:query xmlns:rest="http://basex.org/rest">
+        <rest:text><![CDATA[
+        declare variable $game-id as xs:string external;
+         data(/available-demo[@simple-id = $game-id]/@link)
+         ]]></rest:text>
+        <rest:variable name="game-id" value={gameId}/>
+      </rest:query>
+    postIntoDatabase(xml).map { resp =>
+      Option(resp.entity.asString).filter(_.nonEmpty)
+    }
+  }
+  def downloadedDemo(gameId: String, fromUri: String, toFile: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    val xml =
+      <rest:query xmlns:rest="http://basex.org/rest">
+        <rest:text><![CDATA[
+        declare variable $game-id as xs:string external;
+        declare variable $from-uri as xs:string external;
+        declare variable $to-file as xs:string external;
+        let $exists-already := exists(/downloaded-demo[@game-id=$game-id])
+        let $new-node := <downloaded-demo game-id="{$game-id}" from-uri="{$from-uri}" to-file="{$to-file}"/>
+        return if ( $exists-already ) then () else (
+         db:add("]]>{dbName}<![CDATA[", $new-node, "downloaded-demos")
+       )
+         ]]></rest:text>
+        <rest:variable name="game-id" value={gameId}/>
+        <rest:variable name="from-uri" value={fromUri}/>
+        <rest:variable name="to-file" value={toFile}/>
+      </rest:query>
+    postIntoDatabase(xml).map(_ => ())
+  }
+  def checkDemo(gameId: String)(implicit ec: ExecutionContext): Future[Unit] = {
+    val xml= <rest:query xmlns:rest="http://basex.org/rest">
+      <rest:text><![CDATA[
+declare variable $game-id as xs:string external;
+let $servers := ('PSL.sauerleague.org 1', 'PSL.sauerleague.org 2', 'PSL.sauerleague.org 3', 'PSL.sauerleague.org 4')
+let $servers := <servers>
+<server ogros-name='PSL.sauerleague.org 1' duelgg-id='85.214.66.181:10000'/>
+<server ogros-name='PSL.sauerleague.org 2' duelgg-id='85.214.66.181:20000'/>
+<server ogros-name='PSL.sauerleague.org 3' duelgg-id='85.214.66.181:30000'/>
+<server ogros-name='PSL.sauerleague.org 4' duelgg-id='85.214.66.181:40000'/>
+<server effic-name='s1' duelgg-id='188.226.136.111:10000'/>
+<server effic-name='s2' duelgg-id='188.226.136.111:20000'/>
+<server effic-name='s3' duelgg-id='188.226.136.111:30000'/>
+<server effic-name='s4' duelgg-id='188.226.136.111:40000'/>
+<server effic-name='s5' duelgg-id='188.226.136.111:50000'/>
+<server effic-name='s5' duelgg-id='188.226.136.111:60000'/>
+</servers>
+for $duel in (/duel, /ctf)[@simple-id=$game-id]
+let $demos :=
+  for $server in $servers/server[@duelgg-id = data($duel/@server)]
+  return if ( $server/@effic-name ) then (
+    let $uri := 'http://effic.me/demos/'||data($server/@effic-name)||'/'
+    let $request := <http:request href='{$uri}' method='get'/>
+    let $parsed := http:send-request($request)[2]
+    for $li in $parsed//li
+    let $fn := data($li/@data-href)
+    let $link := $uri || $fn
+    let $date := '20' || replace(substring-before($fn, '.'), '_', '-') || 'T' || replace(substring-before(substring-after($fn, '.'),'.'), '_', ':') || ':00'
+    let $mode := replace(substring-before(substring($fn, 16), '.'), '_', ' ')
+    let $map := substring-before(substring-after(substring($fn, 16), '.'), '.')
+    where $date castable as xs:dateTime
+    let $dateTime := xs:dateTime($date)
+    return <demo server='{data($server/@duelgg-id)}' date="{$dateTime}" mode="{$mode}" map="{$map}" link="{$link}"/>
+  ) else if ( $server/@ogros-name ) then (
+    let $request :=
+      <http:request href='http://ogros.org/server/demos.php' method='post'>
+      <http:header name="Referer" value="http://ogros.org/server/demos.php"/>
+      <http:body media-type='application/x-www-form-urlencoded' method="text">results=&amp;timezone=0&amp;server={replace(data($server/@ogros-name), ' ', '+')}</http:body>
+    </http:request>
+    let $response := http:send-request($request)
+    for $demo in $response//tr
+    for $dateV in $demo/td[1]
+    for $link in data($demo/td[4][a = 'Download']/a/@href)
+    let $dateT := replace(data($demo/td[1]), ' ', 'T')
+    where $dateT castable as xs:dateTime
+    let $dateTime := xs:dateTime($dateT)
+    let $mode := data($demo/td[2])
+    let $map  := data($demo/td[3])
+    return <demo server='{data($server/@duelgg-id)}' date="{$dateTime}" mode="{$mode}" map="{$map}" link="{$link}"/>
+  ) else ()
+let $earliest-demo :=
+  let $demo-dates :=
+    for $demo in $demos
+    where $demo/@date gt string(xs:dateTime("2015-01-01T00:00:00Z"))
+    return xs:string(data($demo/@date))
+  return string(xs:dateTime(min($demo-dates)) - xs:dayTimeDuration("PT1H"))
+where $duel/@start-time gt string($earliest-demo)
+for $demo in $demos
+where $duel/@server = $demo/@server
+where $duel/@mode = $demo/@mode
+where $duel/@map = $demo/@map
+let $earlier := string(xs:dateTime(data($demo/@date)) - xs:dayTimeDuration("PT3M"))
+let $later := string(xs:dateTime(data($demo/@date)) + xs:dayTimeDuration("PT3M"))
+where $duel/@start-time lt $later
+where $duel/@start-time gt $earlier
+let $available-demo :=
+  copy $nd := $demo
+  modify (
+    insert node (attribute simple-id {data($duel/@simple-id)}) into $nd,
+    rename node $nd as 'available-demo'
+  )
+  return $nd
+let $existing-node := db:open("]]>{dbName}<![CDATA[")/available-demo[@simple-id = data($available-demo/@simple-id)]
+return if ( not(empty($existing-node)) ) then () else (db:add("]]>{dbName}<![CDATA[", $available-demo, "demo-availability"))
+]]>
+      </rest:text>
+      <rest:variable name="game-id" value={gameId}/>
+    </rest:query>
+    postIntoDatabase(xml).map(_ => ())
+  }
 }
 trait ServerRetriever {
   self: BaseXClient =>
@@ -202,6 +318,7 @@ class WSAsyncGamePersister(val client: HttpRequest => Future[HttpResponse], val 
   with BaseXClient
   with ServerRetriever
   with MetaPersister
+with DemoChecker
 {
 
   lazy val functions: String = {

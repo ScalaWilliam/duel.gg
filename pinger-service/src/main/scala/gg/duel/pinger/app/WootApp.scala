@@ -1,5 +1,7 @@
 package gg.duel.pinger.app
 
+import java.io.File
+
 import akka.actor.ActorSystem
 import com.hazelcast.core.{HazelcastInstance, Hazelcast}
 import com.typesafe.config.ConfigFactory
@@ -14,6 +16,8 @@ object WootAppConfig {
   val basexContext = config.getString("pinger.basex.context")
   val dbName = config.getString("pinger.basex.name")
   val chars = config.getString("pinger.chars")
+  val saveDemosTo = config.getString("pinger.demos.download.to")
+  val doSaveDemos = config.getBoolean("pinger.demos.download.enable")
 }
 
 object WootApp extends App with StrictLogging {
@@ -56,7 +60,8 @@ object WootApp extends App with StrictLogging {
     hazelcast = tempHazelcastInstance,
     persister = persister,
     journalGenerator = JournalGenerator.standard,
-    disableHashing = disableHashing
+    disableHashing = disableHashing,
+    saveDemosToO = if ( WootAppConfig.doSaveDemos ) Option(new File(WootAppConfig.saveDemosTo)) else None
   )
 
   import akka.actor.ActorDSL._

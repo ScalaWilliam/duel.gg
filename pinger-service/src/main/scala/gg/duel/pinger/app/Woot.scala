@@ -8,19 +8,19 @@ import com.hazelcast.core.{ItemEvent, ItemListener, HazelcastInstance}
 import gg.duel.pinger.analytics.MultiplexedReader
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
-import gg.duel.pinger.service.WSAsyncGamePersister
+import gg.duel.pinger.service.DemoLoader.DemoDownloaded
+import gg.duel.pinger.service.{DemoLoader, WSAsyncGamePersister, BaseXServers, PingerController}
 import MultiplexedReader.{CompletedGame, SInitial, SFoundGame, SIteratorState}
 import gg.duel.pinger.app.Woot._
 import gg.duel.pinger.data.Server
 import gg.duel.pinger.data.journal.{SauerBytesWriter, IterationMetaData}
 import gg.duel.pinger.service.PingPongProcessor.ReceivedBytes
-import gg.duel.pinger.service.{BaseXServers, PingerController}
 import gg.duel.pinger.service.PingerController.{Unmonitor, Monitor}
 import gg.duel.pinger.service.analytics.JournalBytes
 
 import scala.concurrent.Future
 
-class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journalGenerator: JournalGenerator, disableHashing: Boolean) extends Act {
+class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journalGenerator: JournalGenerator, disableHashing: Boolean, saveDemosToO: Option[File]) extends Act {
   val serversSet = hazelcast.getSet[String]("servers")
 
   whenStarting {
@@ -106,6 +106,14 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
     }
 
   })
+
+  val demoLoader = {
+    for { saveDemosTo <- saveDemosToO }
+      yield {
+      saveDemosTo.mkdirs()
+      context.actorOf(DemoLoader.props(saveDemosTo, persister))
+    }
+  }
 
   val completedDuelPublish =
   actor(context)(new Act with ActorLogging {
@@ -200,10 +208,15 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
       context.parent ! r
     case g: MetaCompletedDuel =>
       completedDuelPublish ! g
+      demoLoader.foreach(_ ! g)
       context.parent ! g
     case g: MetaCompletedCtf =>
       completedDuelPublish ! g
+      demoLoader.foreach(_ ! g)
       context.parent ! g
+    case dd: DemoDownloaded =>
+      context.parent ! dd
+      hazelcast.getTopic[String]("downloaded-demos").publish(dd.gameId)
     case m: IterationMetaData =>
       context.parent ! m
     case RotateMeta =>
@@ -219,8 +232,8 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
 object Woot {
 
   def props(hazelcast: HazelcastInstance,
-             persister: WSAsyncGamePersister, journalGenerator: JournalGenerator, disableHashing: Boolean) = {
-    Props(new Woot(hazelcast, persister, journalGenerator, disableHashing))
+             persister: WSAsyncGamePersister, journalGenerator: JournalGenerator, disableHashing: Boolean, saveDemosToO: Option[File]) = {
+    Props(new Woot(hazelcast, persister, journalGenerator, disableHashing, saveDemosToO))
   }
 
   case class MetaCompletedDuel(metaId: IterationMetaData, completedDuel: SimpleCompletedDuel)
