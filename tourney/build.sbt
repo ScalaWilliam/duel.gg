@@ -16,7 +16,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0",
   "com.typesafe.akka" %% "akka-testkit"  % "2.3.8" % "test",
   "ch.qos.logback" % "logback-classic" % "1.1.2",
-  "com.typesafe.akka" %% "akka-slf4j" % "2.3.8"
+  "com.typesafe.akka" %% "akka-slf4j" % "2.3.8",
+  "org.seleniumhq.selenium" % "selenium-java" % "2.44.0"
 )
 
 mainClass in Compile := Option("acleague.ranker.app.MasterRankerApp")
