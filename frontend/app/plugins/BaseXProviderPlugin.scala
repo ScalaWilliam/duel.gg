@@ -18,6 +18,11 @@ class BasexProviderPlugin(implicit app: Application) extends Plugin {
     } yield r
   }
 
+  def queryOption(xml: Elem) = {
+    import scala.concurrent.ExecutionContext.Implicits.global
+    for { r <- query(xml) } yield Option(r.body).filter(_.nonEmpty)
+  }
+
   // todo onstart - check that it connects
 
 }

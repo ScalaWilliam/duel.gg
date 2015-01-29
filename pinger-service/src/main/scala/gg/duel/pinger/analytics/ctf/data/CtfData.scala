@@ -33,7 +33,7 @@ case class SimpleCompletedCTF
       {for {(team, scores) <- teams}
     yield <team name={team} flags={scores.flags.toString}>
         <flag-log>
-          {for {(time, flags) <- scores.flagLog} yield <flags at={time.toString}>{flags}</flags>}
+          {for {(time, flags) <- scores.flagLog.sortBy(_._1)} yield <flags at={time.toString}>{flags}</flags>}
         </flag-log>{for {player <- scores.players} yield
             <player name={player.name} partial-ip={player.ip} weapon={player.weapon}/>}
       </team>}

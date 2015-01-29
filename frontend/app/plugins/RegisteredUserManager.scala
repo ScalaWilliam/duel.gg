@@ -34,89 +34,120 @@ class RegisteredUserManager(implicit app: Application) extends Plugin {
 
     val registerXml = <rest:query xmlns:rest='http://basex.org/rest'>
       <rest:text><![CDATA[
-          declare variable $game-nickname as xs:string external;
-          declare variable $short-name as xs:string external;
-          declare variable $user-id as xs:string external;
-          declare variable $email as xs:string external;
-          declare variable $country-code as xs:string external;
-          declare variable $ip as xs:string external;
-
-          if (
-            exists(/game/team/player[@name = $game-nickname])
-           (: and exists(/game/team/player[@name = $game-nickname and @host = $ip]) :)
-            and not(exists(/registered-user[@game-nickname = $game-nickname]))
-            and not(exists(/registered-user[@name = $short-name]))
-            and not(exists(/registered-user[@id = $user-id]))
-      ) then (
-      db:add("]]>{dbName}<![CDATA[",
+          declare variable $user-name as xs:string external;
+declare variable $email as xs:string external;
+declare variable $user-id as xs:string external;
+declare variable $game-nickname as xs:string external;
+declare variable $user-ip as xs:string external;
+declare variable $country-code as xs:string external;
+declare function local:reverse-string ($arg as xs:string?) as xs:string {
+   codepoints-to-string(reverse(string-to-codepoints($arg)))
+};
+let $partial-ip := local:reverse-string(substring-after(local:reverse-string($user-ip), ".")) || ".x"
+let $faults := (
+  if ( not(exists(/duel/player[@name = $game-nickname])) )
+  then ("No duel with nickname " || $game-nickname ||" found") else (),
+  if ( not (exists(/duel/player[@name = $game-nickname and @partial-ip = $partial-ip])) )
+  then ("No duel with nickname "||$game-nickname ||" with partial IP "||$partial-ip||" found") else (),
+  if ( not (exists(/duel/player[@name = $game-nickname and @partial-ip = $partial-ip and @country-code = $country-code])) )
+  then ("No duel with nickname "||$game-nickname ||" with partial IP "||$partial-ip||" and country "||$country-code||" found") else (),
+  if ( exists(/registered-user[@game-nickname = $game-nickname]) )
+  then ("User with nickname "||$game-nickname||" already exists") else (),
+  if ( exists(/registered-user/nickname[. = $game-nickname]) )
+  then ("Nickname "||$game-nickname ||" already used") else (),
+  if ( exists(/registered-user[@id = $user-id]) )
+  then ("User "||$user-id||" already exists") else ()
+)
+return if ( not(empty($faults)) ) then () else
+(
+db:add("]]>{dbName}<![CDATA[",
         <registered-user
         id="{$user-id}"
         game-nickname="{$game-nickname}"
-        name="{$short-name}"
+        name="{$user-name}"
         country-code="{$country-code}"
         email="{$email}"
-        registration-ip="{$ip}"
+        registration-ip="{$user-ip}"
         registration-date="{current-dateTime()}"
-        />,
+        >
+        <nickname from="2014-09-21T00:00:00.00">{$game-nickname}</nickname>
+        </registered-user>,
         "online-register")
       )
-      else ()
         ]]></rest:text>
       <rest:variable name="game-nickname" value={registrationDetail.gameNickname}/>
-      <rest:variable name="short-name" value={registrationDetail.shortName}/>
+      <rest:variable name="user-name" value={registrationDetail.shortName}/>
       <rest:variable name="user-id" value={registrationDetail.userId}/>
       <rest:variable name="email" value={registrationDetail.email}/>
       <rest:variable name="country-code" value={registrationDetail.countryCode}/>
-      <rest:variable name="ip" value={registrationDetail.ip}/>
+      <rest:variable name="user-ip" value={registrationDetail.ip}/>
     </rest:query>
     BasexProviderPlugin.awaitPlugin.query(registerXml).map(x => if ( x.body.nonEmpty) throw new Exception("Expected empty response") else Unit)
   }
+
+  
   def registerValidation(registrationDetail: RegistrationDetail)(implicit ec: ExecutionContext): Future[Unit Or Every[ErrorMessage]] = {
     val xmlData = <rest:query xmlns:rest='http://basex.org/rest'>
       <rest:text><![CDATA[
-          declare variable $game-nickname as xs:string external;
-          declare variable $short-name as xs:string external;
-          declare variable $user-id as xs:string external;
-          declare variable $email as xs:string external;
-          declare variable $country-code as xs:string external;
-          declare variable $ip as xs:string external;
-                  (: <registered-user id="harrek" game-nickname="w00p|Harrek" name="Harrek" country-code="FR"/> :)
-
-          let $nickname-found-in-game :=
-            if ( not(exists(/game/team/player[@name = $game-nickname])) )
-            then ("Nickname "||$game-nickname||" not found in any games") else ()
-          let $nickname-ip-found-in-game :=
-            if ( not(exists(/game/team/player[@name = $game-nickname and @host = $ip])) )
-            then ("Nickname "||$game-nickname||" with your IP "||$ip||" not found in database") else ()
-          let $nickname-available :=
-            if ( exists(/registered-user[@game-nickname = $game-nickname]))
-            then ("In-game nickname "||$game-nickname||" already taken.") else ()
-          let $name-available :=
-            if ( exists(/registered-user[@name = $short-name]))
-            then ("Short name "||$short-name||" already taken.") else ()
-          let $user-id-available :=
-            if ( exists(/registered-user[@id = $user-id]))
-            then ("User ID "||$user-id||" already taken.") else ()
-          return <result>
-          { for $failure in ($nickname-found-in-game, $nickname-available,$name-available,$user-id-available)
-          return <failure>{$failure}</failure>}
-          </result>
-        ]]></rest:text>
+declare variable $user-name as xs:string external;
+declare variable $email as xs:string external;
+declare variable $user-id as xs:string external;
+declare variable $game-nickname as xs:string external;
+declare variable $user-ip as xs:string external;
+declare variable $country-code as xs:string external;
+declare function local:reverse-string ($arg as xs:string?) as xs:string {
+   codepoints-to-string(reverse(string-to-codepoints($arg)))
+};
+let $partial-ip := local:reverse-string(substring-after(local:reverse-string($user-ip), ".")) || ".x"
+let $faults := (
+  if ( not(exists(/duel/player[@name = $game-nickname])) )
+  then ("No duel with nickname " || $game-nickname ||" found") else (),
+  if ( not (exists(/duel/player[@name = $game-nickname and @partial-ip = $partial-ip])) )
+  then ("No duel with nickname "||$game-nickname ||" with partial IP "||$partial-ip||" found") else (),
+  if ( not (exists(/duel/player[@name = $game-nickname and @partial-ip = $partial-ip and @country-code = $country-code])) )
+  then ("No duel with nickname "||$game-nickname ||" with partial IP "||$partial-ip||" and country "||$country-code||" found") else (),
+  if ( exists(/registered-user[@game-nickname = $game-nickname]) )
+  then ("User with nickname "||$game-nickname||" already exists") else (),
+  if ( exists(/registered-user/nickname[. = $game-nickname]) )
+  then ("Nickname "||$game-nickname ||" already used") else (),
+  if ( exists(/registered-user[@id = $user-id]) )
+  then ("User "||$user-id||" already exists") else ()
+)
+return
+  if ( empty($faults) ) then () else (
+    <faults>{
+      for $fault in $faults
+      return <fault>{$fault}</fault>
+      }</faults>
+  )
+]]>
+      </rest:text>
       <rest:variable name="game-nickname" value={registrationDetail.gameNickname}/>
-      <rest:variable name="short-name" value={registrationDetail.shortName}/>
+      <rest:variable name="user-name" value={registrationDetail.shortName}/>
       <rest:variable name="user-id" value={registrationDetail.userId}/>
       <rest:variable name="email" value={registrationDetail.email}/>
       <rest:variable name="country-code" value={registrationDetail.countryCode}/>
-      <rest:variable name="ip" value={registrationDetail.ip}/>
+      <rest:variable name="user-ip" value={registrationDetail.ip}/>
     </rest:query>
     BasexProviderPlugin.awaitPlugin.query(xmlData).map { x =>
-
-      (x.xml \\ "failure").map(_.text).toList match {
-        case first :: Nil => Bad(One(first))
-        case first :: rest => Bad(Every(first, rest :_*))
-        case _ => Good(Unit)
+      if ( x.body.isEmpty ) Good(Unit) else {
+        (x.xml \\ "fault").map(_.text).toList match {
+          case first :: Nil => Bad(One(first))
+          case first :: rest => Bad(Every(first, rest: _*))
+          case _ => Good(Unit)
+        }
       }
     }
+  }
+
+
+  def getUserByNick(nick: String)(implicit ec: ExecutionContext): Future[Option[String]] = {
+    BasexProviderPlugin.awaitPlugin.query(<rest:query xmlns:rest='http://basex.org/rest'>
+      <rest:text><![CDATA[
+          declare variable $nickname as xs:string external;
+          data(/registered-user[nickname = $nickname]/@id)
+        ]]></rest:text>
+      <rest:variable name="nickname" value={nick}/></rest:query>).map(x => Option(x.body).filter(_.nonEmpty))
   }
 
   def registerGoogleUser(email: String, data: String)(implicit ec: ExecutionContext): Future[Unit] = {
@@ -133,9 +164,13 @@ class RegisteredUserManager(implicit app: Application) extends Plugin {
   def ipExists(ip: String)(implicit ec: ExecutionContext): Future[Boolean] = {
     BasexProviderPlugin.awaitPlugin.query(<rest:query xmlns:rest='http://basex.org/rest'>
       <rest:text><![CDATA[
-          declare variable $host as xs:string external;
-        not(empty(/game/team/player[@host = $host]))
-        ]]></rest:text><rest:variable name="host" value={ip}/></rest:query>).map(x => x.body == "true")
+declare variable $user-ip as xs:string external;
+declare function local:reverse-string ($arg as xs:string?) as xs:string {
+   codepoints-to-string(reverse(string-to-codepoints($arg)))
+};
+let $partial-ip := local:reverse-string(substring-after(local:reverse-string($user-ip), ".")) || ".x"
+return not(empty(//player[@partial-ip = $partial-ip]))
+]]></rest:text><rest:variable name="user-ip" value={ip}/></rest:query>).map(x => x.body == "true")
   }
 
   def getRegisteredUser(email: String)(implicit ec: ExecutionContext): Future[Option[RegisteredUser]] = {
@@ -144,7 +179,6 @@ class RegisteredUserManager(implicit app: Application) extends Plugin {
         <rest:query xmlns:rest='http://basex.org/rest'>
           <rest:text>
             <![CDATA[
-            (: <registered-user id="harrek" game-nickname="w00p|Harrek" name="Harrek" country-code="FR"/> :)
             declare variable $email as xs:string external;
             (/registered-user[@id and @game-nickname and @name and @country-code and @email = $email])[1]
               ]]>
@@ -170,7 +204,8 @@ class RegisteredUserManager(implicit app: Application) extends Plugin {
     val sessionStateO =
       for {
         sessionId <- sessionIdO
-        sessionEmail <- Option(sessionEmails.get(sessionId))
+      sessionEmail = "william@vynar.com"
+//        sessionEmail <- Option(sessionEmails.get(sessionId))
       } yield for {
         profileO <- getRegisteredUser(sessionEmail)
       } yield SessionState(sessionIdO, Option(GoogleEmailAddress(sessionEmail)), profileO)

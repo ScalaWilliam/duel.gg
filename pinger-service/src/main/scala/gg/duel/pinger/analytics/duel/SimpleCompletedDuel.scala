@@ -36,16 +36,14 @@ case class SimpleCompletedDuel
   server={server}
   winner={winner.orNull}>
     <played-at>{playedAt.mkString(" ")}</played-at>
-    <players>
-      {for {(name, stats) <- players} yield
-      <player name={name} partial-ip={stats.ip} frags={s"${stats.frags}"} accuracy={s"${stats.accuracy}"}
-              weapon={stats.weapon}>
-        {for {(at, frags) <- stats.fragLog}
-      yield
-        <frags at={at.toString}>{frags}</frags>}
-      </player>
-      }
-    </players>
+    {for {(name, stats) <- players} yield
+    <player name={name} partial-ip={stats.ip} frags={s"${stats.frags}"} accuracy={s"${stats.accuracy}"}
+            weapon={stats.weapon}>
+      {for {(at, frags) <- stats.fragLog}
+    yield
+      <frags at={at.toString}>{frags}</frags>}
+    </player>
+    }
   </completed-duel>
 
 

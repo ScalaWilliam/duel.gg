@@ -333,8 +333,8 @@ with DemoChecker
     } yield code
   }
   def lookupCountryByPartialIp(ip: String): Option[String] = {
-//    Try(lookupCountryByIp(ip.replaceAllLiterally("x","1"))).toOption.flatten
-    lookupCountryByIp(ip.replaceAllLiterally("x","1"))
+    Try(lookupCountryByIp(ip.replaceAllLiterally("x","1"))).toOption.flatten
+//    lookupCountryByIp(ip.replaceAllLiterally("x","1"))
   }
 
   val reader = {

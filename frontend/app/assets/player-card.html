@@ -1,0 +1,12 @@
+<polymer-element name="player-card"
+                 attributes="name">
+    <template>
+        <div class="player">
+            <h2>{{name}}</h2>
+            <content></content>
+        </div>
+    </template>
+    <script>
+        Polymer("player-card", {})
+    </script>
+</polymer-element>

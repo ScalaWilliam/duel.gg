@@ -1,13 +1,13 @@
-<link rel="import" href="/assets/javascripts/bower_components/polymer/polymer.html">
 <polymer-element name="duel-card"
-                 attributes="duelId leftPlayerScore leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson viewingDetail isLive">
+                 attributes="duelId atTime context mode map leftPlayerScore leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson viewingDetail isLive">
     <template>
         <div class="duel">
             <div class="duel-summary">
-                <a href="gaungnngub">
+                <a href="{{context || '/'}}duel/{{duelId}}/">
                     <header>
                         <h2>{{leftPlayerName}} vs {{rightPlayerName}}</h2>
                         <h3>{{mode}} @ {{map}}</h3>
+                        <h4>{{atTime}}</h4>
                     </header>
                     <footer>
                         <p class="score">{{leftPlayerScore}}-{{rightPlayerScore}}</p>
