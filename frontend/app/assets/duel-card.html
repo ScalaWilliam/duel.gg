@@ -1,6 +1,48 @@
 <polymer-element name="duel-card"
                  attributes="duelId atTime context mode map leftPlayerScore leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson viewingDetail isLive">
     <template>
+        <style scoped>
+            header {
+                color:#d8f0f0;
+                width:57%;
+                text-align: right;
+                display:inline-block;
+                margin:0; padding:0;
+                margin-right:2%;
+            }
+            footer {
+                vertical-align: top;
+                color:#fcfbe3;
+                text-align: center;
+                width:29%;
+                display: inline-block;
+                margin:0; padding:0;
+            }
+            .duel {
+                padding:0;
+                margin-bottom:1em;
+                font-size:1.6em;
+            }
+            .score h2 {
+                color: #fcfbe3;
+            }
+            h2, h3, p {
+                font-size:inherit;
+                margin:0;
+                padding:0;
+            }
+            a:hover {
+                background:#1b325f;
+            }
+            a {
+                text-decoration: none;
+                display:block;
+                -webkit-transition:opacity 3s, background 0.4s, color 0.4s;
+                transition:opacity 3s,background 0.4s,color 0.4s;
+                border-radius:0.2em;
+                padding:0.5em;
+            }
+        </style>
         <div class="duel">
             <div class="duel-summary">
                 <a href="{{context || '/'}}duel/{{duelId}}/">

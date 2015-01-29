@@ -1,43 +1,7 @@
-@(counts: Html)(data: Html)(implicit sessionState: plugins.RegisteredUserManager.SessionState)
-@defining {
-
-    <h2>Videos</h2>
-    <h3>swatllama</h3>
-    <iframe width="240" height="180" src="https://www.youtube-nocookie.com/embed/FyG_MaeK6R8?rel=0" frameborder="0" allowfullscreen></iframe>
-
-    <h2>Counts</h2>
-    <div id="dates">
-        <style scoped>
-        dates {
-        display:flex;
-        flex-wrap:wrap;
-        width:9em;
-        }
-        date {
-        width:1em;
-        height:1em;
-        background:black;
-        margin:0.1em;
-        display:block;
-        }
-        date[weight="0"] {
-        background:white;
-        }
-        date[weight="1"] {
-        background : rgb(20, 50, 10)
-        }
-        date[weight="2"] {
-        background : rgb(80, 100, 10)
-        }
-        date[weight="3"] {
-        background : rgb(180, 100, 10)
-        }
-        </style>
-        @counts
-    </div>
-} { right =>
-    @mainTwo("Profile")(Html(""))(right) {
+@(data: Html)(implicit sessionState: plugins.RegisteredUserManager.SessionState)
+    @main("Profile")(Html("")) {
         <article id="duel-detail">
+
             @data
                 <!--suppress BadExpressionStatementJS, BadExpressionStatementJS -->
             <script type="text/javascript">
@@ -67,4 +31,3 @@
             </script>
         </article>
     }
-}

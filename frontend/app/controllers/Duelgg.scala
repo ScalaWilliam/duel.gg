@@ -13,16 +13,14 @@ import scala.util.Try
 import scala.async.Async.{async, await}
 object Duelgg extends Controller {
 
-  case class Server(connect: String, alias: Option[String])
-  case class ServersListing(servers: List[Server])
-
   val SESSION_ID = "sessionId"
   import scala.concurrent.ExecutionContext.Implicits.global
 
   def viewPlayers = stated {
     _ => implicit s =>
       async {
-        Ok(views.html.homepage(Html(await(DataSourcePlugin.plugin.getPlayers))))
+        val r = await(DataSourcePlugin.plugin.getPlayers)
+        Ok(views.html.main("Player")(Html(""))(Html(r)))
       }
   }
 
@@ -38,8 +36,9 @@ object Duelgg extends Controller {
   def index = stated {
     _ => implicit sess =>
       async {
+        val servers = await(DataSourcePlugin.plugin.getServers)
         await(DataSourcePlugin.plugin.getIndex) match {
-          case Some(data) => Ok(views.html.homepage(Html(data)))
+          case Some(data) => Ok(views.html.homepage(Html(servers),Html(data)))
           case None => NotFound("Fail")
         }
       }
@@ -51,7 +50,7 @@ object Duelgg extends Controller {
         await(DataSourcePlugin.plugin.getPlayerDuel(id, duelId)) match {
           case Some(data) =>
             val cnts = await(DataSourcePlugin.plugin.getPlayerCounts(id))
-            Ok(views.html.playerDuel(Html(cnts.getOrElse("Cnts not found")))(Html(data)))
+            Ok(views.html.playerDuel(Html(data)))
           case None => NotFound("Fail)")
         }
       }

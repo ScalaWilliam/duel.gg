@@ -16,18 +16,19 @@
     <body>
 
         <div role="main">
-            <header>
-                <h1><a href="/">duel.gg</a></h1>
+            <header id="top">
+                <h1><a href="/">Duel? GG!</a></h1>
             </header>
-            <div id="top">
-                <article><a href="/">Home</a> &bull; <a href="/questions/">Questions</a> &bull; <a href="/players/">Players</a> &bull; <a href="/servers/">Servers</a>
+
+            <div id="menu">
+                <a href="/">Home</a> &bull; <a href="/questions/">Questions</a> &bull; <a href="/players/">Players</a> &bull; <a href="/servers/">Servers</a>
                     @if(sessionState.profile.nonEmpty) {
-                            &bull; <a href="/profile/">View my profile</a>
+                            &bull; <a href="/me/">View my profile</a>
                     } else {
                             &bull; <a href="/login/">Log in with Google</a>
                     }
-                </article>
             </div>
+            <div id="main">
 
             @if(sessionState.profile.isEmpty) {
                 <div id="download-ac-button">
@@ -39,6 +40,8 @@
             }
             <div id="content">
             @data
-            </div></div>
+            </div>
+            </div>
+        </div>
     </body>
 </html>

@@ -29,7 +29,7 @@ class DataSourcePlugin(implicit app: Application) extends Plugin {
               duelId="{$duel/@int-id}"
               leftPlayerScore="{($duel/player)[1]/@frags}" leftPlayerName="{($duel/player)[1]/@name}"
               rightPlayerScore="{($duel/player)[2]/@frags}" rightPlayerName="{($duel/player)[2]/@name}"
-            mode="{$duel/@mode}" map="{$duel/@map}"><!-- --></duel-card>
+            mode="{data($duel/@mode)}" map="{data($duel/@map)}"><!-- --></duel-card>
           return <duels>{$duels[position() = 1 to 20]}</duels>
           ]]></rest:text>
     </rest:query>
@@ -37,6 +37,20 @@ class DataSourcePlugin(implicit app: Application) extends Plugin {
       val r = await(BasexProviderPlugin.awaitPlugin.query(query))
       Option(r.body).filter(_.nonEmpty)
     }
+  }
+
+  def getServers = {
+    BasexProviderPlugin.awaitPlugin.query(<query xmlns="http://basex.org/rest">
+          <text><![CDATA[
+          <ul>{
+          for $server in /server[@connect and not(@inactive)]
+          order by $server/@connect ascending
+          let $alias := data($server/@alias)
+          let $connect := data($server/@connect)
+          let $txt := if ( $alias ) then ($alias || " (" ||$connect||")") else ($connect)
+          return <li>{$txt}</li>
+          }</ul>
+]]></text></query>).map(_.body)
   }
 
   def getPlayerDuel(playerId: String, duelId: Int) = {
@@ -71,6 +85,8 @@ class DataSourcePlugin(implicit app: Application) extends Plugin {
           context="/player/{$user-id}/"
           leftPlayerScore="{data($duel/player[1]/@frags)}"
           leftPlayerName="{data($duel/player[1]/@name)}"
+          map="{data($duel/@map)}"
+          mode="{data($duel/@mode)}"
           rightPlayerScore="{data($duel/player[2]/@frags)}"
           rightPlayerName="{data($duel/player[2]/@name)}"
           >{
@@ -136,6 +152,8 @@ class DataSourcePlugin(implicit app: Application) extends Plugin {
           duelId="{$duel/@int-id}"
           atTime="{adjust-dateTime-to-timezone(xs:dateTime($duel/@start-time), ())}"
           leftPlayerScore="{data($duel/player[1]/@frags)}"
+           map="{data($duel/@map)}"
+          mode="{data($duel/@mode)}"
           leftPlayerName="{data($duel/player[1]/@name)}"
           rightPlayerScore="{data($duel/player[2]/@frags)}"
           rightPlayerName="{data($duel/player[2]/@name)}"
@@ -174,6 +192,7 @@ for $duel in $duels
 order by $duel/@start-time descending
 return
   <duel-card
+  atTime="{adjust-dateTime-to-timezone(xs:dateTime($duel/@start-time), ())}"
     duelId="{$duel/@int-id}"
     leftPlayerScore="{($duel/player)[1]/@frags}" leftPlayerName="{($duel/player)[1]/@name}"
     rightPlayerScore="{($duel/player)[2]/@frags}" rightPlayerName="{($duel/player)[2]/@name}"
