@@ -1,9 +1,6 @@
 {
-  "name": "assets",
+  "name": "javascripts",
   "version": "0.0.0",
-  "authors": [
-    "William Narmontas <william@scalawilliam.com>"
-  ],
   "license": "MIT",
   "ignore": [
     "**/.*",
@@ -13,6 +10,15 @@
     "tests"
   ],
   "dependencies": {
-    "webcomponentsjs": "~0.5.2"
+    "polymer": "Polymer/polymer#~0.5.2",
+    "polymer-elements": "Polymer/polymer-elements#~0.3.0",
+    "webcomponentsjs": "~0.5.2",
+    "paper-elements": "Polymer/paper-elements#~0.5.2"
+  },
+  "resolutions": {
+    "core-component-page": "^0.5.0",
+    "polymer": "~0.5.2",
+    "platform": "^0.4.0",
+    "web-animations-js": "1.0.5"
   }
 }

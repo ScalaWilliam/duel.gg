@@ -1,17 +1,30 @@
-<link rel="import" href="/assets/javascripts/bower_components/polymer/polymer.html">
-<polymer-element name="duel-detailed-card" attributes="duelId leftPlayerScore leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson">
+<polymer-element name="duel-detailed-card" attributes="duelId atTime context leftPlayerScore olderDuelId newerDuelId hasDemo leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson">
     <template>
     <section class="duel">
+        <template if="{{hasDemo}}">
+            <p><a href="{{context ||'/'}}duel/{{duelId}}/{{duelId}}.dmo">Download demo</a></p>
+        </template>
+        <p>{{atTime}}</p>
         <section class="score score-left">
             <p class="score">{{leftPlayerScore}}</p>
             <p class="name">
-                <a href="/player/{{leftPlayerId}}/">{{leftPlayerName}}</a>
+                <template if="{{leftPlayerId}}">
+                    <a href="/player/{{leftPlayerId}}/">{{leftPlayerName}}</a>
+                </template>
+                <template if="{{!leftPlayerId}}">
+                    <a href="/player/?nickname={{leftPlayerName}}">{{leftPlayerName}}</a>
+                </template>
             </p>
         </section>
         <section class="score score-right">
             <p class="score">{{rightPlayerScore}}</p>
             <p class="name">
-                <a href="/player/{{rightPlayerId}}/">{{rightPlayerName}}</a>
+                <template if="{{rightPlayerId}}">
+                    <a href="/player/{{rightPlayerId}}/">{{rightPlayerName}}</a>
+                </template>
+                <template if="{{!rightPlayerId}}">
+                    <a href="/player/?nickname={{rightPlayerName}}">{{rightPlayerName}}</a>
+                </template>
             </p>
         </section>
         <svg version="1.1" height="139" width="240">

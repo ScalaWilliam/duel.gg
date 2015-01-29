@@ -1,3 +1,4 @@
 1701:plugins.HazelcastPlugin
 1702:plugins.BasexProviderPlugin
-1703:plugins.RegisteredUserManager
+1703:plugins.DataSourcePlugin
+1704:plugins.RegisteredUserManager

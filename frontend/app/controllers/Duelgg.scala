@@ -4,14 +4,13 @@ import java.io.File
 import java.net.InetAddress
 import java.util.UUID
 import com.maxmind.geoip2.DatabaseReader
-import play.api.Play
-import play.api.libs.json.JsValue
 import play.api.mvc._
-import plugins.RegisteredUserManager.{RegistrationDetail, GoogleEmailAddress, RegisteredSession, SessionState}
+import play.twirl.api.Html
+import plugins.RegisteredUserManager._
 import plugins._
 import scala.concurrent.Future
 import scala.util.Try
-
+import scala.async.Async.{async, await}
 object Duelgg extends Controller {
 
   case class Server(connect: String, alias: Option[String])
@@ -20,16 +19,75 @@ object Duelgg extends Controller {
   val SESSION_ID = "sessionId"
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def showDuel(id: Int) = Action {
-    _ => NotFound
+  def viewPlayers = stated {
+    _ => implicit s =>
+      async {
+        Ok(views.html.homepage(Html(await(DataSourcePlugin.plugin.getPlayers))))
+      }
   }
 
-  def viewPlayer(id: String) = Action {
-    _ => NotFound
+  def showDuel(id: Int) = stated {
+    _ => implicit sess =>
+      async {
+        await(DataSourcePlugin.plugin.getDuelDetailedCard(id)) match {
+          case Some(data) => Ok(views.html.duel(Html(data)))
+          case None => NotFound("Fail")
+        }
+      }
+  }
+  def index = stated {
+    _ => implicit sess =>
+      async {
+        await(DataSourcePlugin.plugin.getIndex) match {
+          case Some(data) => Ok(views.html.homepage(Html(data)))
+          case None => NotFound("Fail")
+        }
+      }
   }
 
-  def index = statedSync{ implicit request => implicit suzzy =>
-    Ok(s"$suzzy")
+  def viewPlayerDuel(id: String, duelId: Int) = stated {
+    req => implicit sess =>
+      async {
+        await(DataSourcePlugin.plugin.getPlayerDuel(id, duelId)) match {
+          case Some(data) =>
+            val cnts = await(DataSourcePlugin.plugin.getPlayerCounts(id))
+            Ok(views.html.playerDuel(Html(cnts.getOrElse("Cnts not found")))(Html(data)))
+          case None => NotFound("Fail)")
+        }
+      }
+  }
+
+  def viewPlayer(id: String) = stated {
+    req => implicit sess =>
+      async {
+        val nicknameO = req.queryString.get("nickname").toList.flatten.headOption
+        val userO = Option(id).filter(_.nonEmpty)
+        (userO, nicknameO) match {
+          case (Some(username), _) =>
+            await(DataSourcePlugin.plugin.getUsername(username)) match {
+              case Some(data) =>
+                val counts = await(DataSourcePlugin.plugin.getPlayerCounts(username))
+                Ok(views.html.player(Html(counts.getOrElse("<p>Counts not available</p>")))(Html(data)))
+              case _ => NotFound
+            }
+          case (_, Some(nick)) =>
+            val hasUser = await(RegisteredUserManager.userManagement.getUserByNick(nick))
+            hasUser match {
+              case Some(user) => SeeOther(controllers.routes.Duelgg.viewPlayer(user).url)
+              case None =>
+                await(DataSourcePlugin.plugin.getNickname(nick)) match {
+                  case Some(data) => Ok(views.html.basicPlayer(Html(data)))
+                  case _ => NotFound
+                }
+            }
+          case _ => NotFound
+        }
+      }
+  }
+
+
+  def viewMe = registeredSync { _ => (rs: RegisteredSession) =>
+    SeeOther(controllers.routes.Duelgg.viewPlayer(rs.profile.userId).url)
   }
 
   def logout = Action { _ =>
@@ -62,6 +120,7 @@ object Duelgg extends Controller {
     stated { a => b =>
       Future{f(a)(b)}
     }
+
   def registeredSync[V](f: Request[AnyContent] => RegisteredSession => Result): Action[AnyContent] =
     registered { a => b =>
       Future{f(a)(b)}
@@ -98,8 +157,9 @@ object Duelgg extends Controller {
         user <- RegisteredUserManager.userManagement.acceptOAuth(code)
       } yield {
         RegisteredUserManager.userManagement.sessionEmails.put(sessionId, user.email)
-        NotFound
-        //        todo SeeOther(controllers.routes.UUse.viewMe().absoluteURL())
+//        NotFound
+        SeeOther("/")
+//       SeeOther(controllers.routes.UUse.viewMe().absoluteURL())
       }
   }
 
@@ -128,17 +188,12 @@ object Duelgg extends Controller {
       shortName = shortName,
       gameNickname = gameNickname, ip = ip
     )
-  case class PreventAccess(reason: String) extends Exception
-  case class FailRegistration(countryCode: String, reasons: List[String]) extends Exception
-  case class InitialPage(countryCode: String) extends Exception
-  case class UserRegistered(userId: String) extends Exception
-  case class ContinueRegistering(countryCode: String) extends Exception
-  case class YouAlreadyHaveAProfile() extends Exception
   def createProfile = stated{implicit request => implicit state =>
-    import scala.async.Async.{async, await}
     state match {
       case SessionState(_, None, _) =>
         Future{SeeOther(controllers.routes.Duelgg.login().url)}
+      case SessionState(_, _, Some(_)) =>
+        Future{SeeOther(controllers.routes.Duelgg.viewMe().url)}
       case _ =>
         async {
           if ( state.profile.nonEmpty ) {
