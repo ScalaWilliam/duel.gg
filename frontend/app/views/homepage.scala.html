@@ -1,16 +1,29 @@
-@(data: Html)(implicit sessionState: plugins.RegisteredUserManager.SessionState)
+@(servers:Html,data: Html)(implicit sessionState: plugins.RegisteredUserManager.SessionState)
 @defining {
+    <style scoped>
+        #left-panel {
+        text-align:left;
+        }
+    </style>
+    <div id="left-panel">
     <h2>News</h2>
     <h3>duel.gg introduces player registration</h3>
     <p>Following woop.ac success, Drakas has been working to improve duel.gg</p>
     <p>duel.gg now supports demo downloads for PSL and effic.me servers.</p>
     <p>Players are welcome to register and begin playing now.</p>
     <p>Players also are welcome to make video submissions. Just include your profile link or duel link in the YouTube video description.</p>
+    <h2>What is duel.gg?</h2>
+    <p>duel.gg is a duel league for the <a href="http://www.sauerbraten.org/">Sauerbraten</a> first-person shooter.</p>
+    <h2>Which servers do you record from?</h2>
+    <div id="servers-list">
+    @servers
+    </div>
+    </div>
 } { left =>
     @defining {
         <h2>Community Videos</h2>
         <h3>swatllama</h3>
-        <iframe width="420" height="315" src="https://www.youtube-nocookie.com/embed/FyG_MaeK6R8?rel=0" frameborder="0" allowfullscreen></iframe>
+        <iframe width="240" height="180" src="https://www.youtube-nocookie.com/embed/FyG_MaeK6R8?rel=0" frameborder="0" allowfullscreen></iframe>
     } { right =>
         @mainThree("Homepage")(Html(""))(left)(right) {
             <article id="homepage">

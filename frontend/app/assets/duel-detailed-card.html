@@ -1,10 +1,59 @@
-<polymer-element name="duel-detailed-card" attributes="duelId atTime context leftPlayerScore olderDuelId newerDuelId hasDemo leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson">
+<polymer-element name="duel-detailed-card" attributes="duelId atTime context leftPlayerScore olderDuelId newerDuelId map mode hasDemo leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson">
     <template>
+        <style scoped>
+
+            section.duel {
+                width:46em;
+                margin:0 auto;
+                margin-top:2em;
+            }
+            .duel header {
+                font-size:2em;
+            }
+            .duel header * {
+                font-size: inherit;
+                margin: 0;
+            }
+
+            .duel p.name a {
+                color:inherit;
+            }
+            .duel p.name a:hover {
+                color:#c7325f;
+                -webkit-transition: color 0.4s;
+            }
+
+            .player-profile-name {
+                font-size:2.4em;
+            }
+            .duel p.score {
+                font-size:10em;
+                color:#fcfbe3;
+            }
+            .duel section.score {
+                display:inline-block;
+                width:49%;
+            }
+            .duel p.name {
+                font-size:3em;
+            }
+            .duel p {
+                margin:0;
+            }
+            .duel svg {
+                transform:scale(2);
+                margin-top:6em;
+                margin-bottom:6em;
+            }
+
+        </style>
+
     <section class="duel">
-        <template if="{{hasDemo}}">
-            <p><a href="{{context ||'/'}}duel/{{duelId}}/{{duelId}}.dmo">Download demo</a></p>
-        </template>
-        <p>{{atTime}}</p>
+
+        <header>
+            <h3 class="mode-map">{{mode}} @ {{map}}</h3>
+            <h2 class="date-time">{{atTime}}</h2>
+        </header>
         <section class="score score-left">
             <p class="score">{{leftPlayerScore}}</p>
             <p class="name">
@@ -50,6 +99,10 @@
 </text>
             </g>
         </svg>
+
+<!--        <template if="{{hasDemo}}">
+            <p><a href="{{context ||'/'}}duel/{{duelId}}/{{duelId}}.dmo">Download demo</a></p>
+        </template>-->
     </section>
     </template>
     <script>
