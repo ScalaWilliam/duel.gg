@@ -23,11 +23,15 @@ import gg.duel.pinger.service.DemoLoader.FoundGameId
 
 class DemoLoader(saveToDirectory: File, demoChecker: DemoChecker) extends Act with ActorLogging {
   import scala.concurrent.ExecutionContext.Implicits.global
+  import concurrent.duration._
   become {
     case mcd: MetaCompletedDuel =>
-      self ! FoundGameId(mcd.completedDuel.simpleId)
+      import context.dispatcher
+      // add delay for psl
+      context.system.scheduler.scheduleOnce(30.seconds, self, FoundGameId(mcd.completedDuel.simpleId))
     case mcc: MetaCompletedCtf =>
-      self ! FoundGameId(mcc.completedCtf.simpleId)
+      import context.dispatcher
+      context.system.scheduler.scheduleOnce(30.seconds, self, FoundGameId(mcc.completedCtf.simpleId))
     case dd @ DemoDownloaded(gameId, from, destination) =>
       for {
         _ <- demoChecker.downloadedDemo(gameId, from.toString, destination.getAbsolutePath)

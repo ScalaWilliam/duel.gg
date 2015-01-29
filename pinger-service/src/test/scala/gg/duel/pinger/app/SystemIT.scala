@@ -76,8 +76,7 @@ with ImplicitSender with  ParentedProbe with Inspectors with BeforeAndAfterAll {
       )
     })
 
-    yay = parentedProbe(Woot.props(tempHazelcastInstance, persister, jg, disableHashing = false))
-
+    yay = parentedProbe(Woot.props(tempHazelcastInstance, persister, jg, disableHashing = false, None))
 
     tempHazelcastClient.getTopic[String]("meta").addMessageListener(new MessageListener[String] {
       override def onMessage(message: Message[String]): Unit = {
