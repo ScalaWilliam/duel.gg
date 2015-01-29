@@ -24,19 +24,18 @@ implicit val patience = PatienceConfig(timeout = scaled(Span(1, Second)), interv
   val serverLister: ServerRetriever = asyncDuelPersister
   import scala.concurrent.ExecutionContext.Implicits.global
   val sampleDuel = CompletedDuel.test.toSimpleCompletedDuel.copy(metaId=Option(IterationMetaData.build.id)).copy(duration = 15)
-  val server = new BaseXHTTP("-p12396", "-e12397", "-h12398", "-s12399")
+  var server:BaseXHTTP = _
+  override def beforeAll(): Unit = {
+    server = new BaseXHTTP("-p12396", "-e12397", "-h12398", "-s12399")
+    try {
+      asyncDuelPersister.dropDatabase.futureValue
+    } catch { case NonFatal(_) => }
+    println(asyncDuelPersister.createDatabase.futureValue)
+  }
   override def afterAll(): Unit = {
     server.stop()
     testSystem.shutdown()
     testSystem.awaitTermination()
-  }
-  "Basex client" must {
-    "Recreate the database" in {
-      try {
-        asyncDuelPersister.dropDatabase.futureValue
-      } catch { case NonFatal(_) => }
-      asyncDuelPersister.createDatabase
-    }
   }
 
   "Duel pusher" must {

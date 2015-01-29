@@ -24,20 +24,19 @@ with Inside {
   import scala.concurrent.ExecutionContext.Implicits.global
   val sampleCtf = SimpleCompletedCTF.test.copy(metaId=Option(IterationMetaData.build.id)).copy(duration = 15)
 
-  val server = new BaseXHTTP("-p12396", "-e12397", "-h12398", "-s12399")
+  var server:BaseXHTTP = _
+  override def beforeAll(): Unit = {
+    server = new BaseXHTTP("-p12396", "-e12397", "-h12398", "-s12399")
+    val fv = try {
+      asyncCtfPersister.dropDatabase.futureValue
+    } catch { case NonFatal(_) => }
+    println("Creating db:", fv, asyncCtfPersister.createDatabase.futureValue)
+    Thread.sleep(2000)
+  }
   override def afterAll(): Unit = {
     server.stop()
     testSystem.shutdown()
     testSystem.awaitTermination()
-  }
-
-  "Basex client for ctf pusher" must {
-    "Recreate the database" in {
-      try {
-        asyncCtfPersister.dropDatabase.futureValue
-      } catch { case NonFatal(_) => }
-      asyncCtfPersister.createDatabase
-    }
   }
 
   "Ctf pusher" must {

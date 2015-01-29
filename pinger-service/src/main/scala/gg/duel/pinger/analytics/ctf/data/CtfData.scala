@@ -33,11 +33,9 @@ case class SimpleCompletedCTF
       {for {(team, scores) <- teams}
     yield <team name={team} flags={scores.flags.toString}>
         <flag-log>
-          {for {(time, flags) <- scores.flagLog} yield <flags at={time.toString}>
-          {flags}
-        </flags>}
+          {for {(time, flags) <- scores.flagLog} yield <flags at={time.toString}>{flags}</flags>}
         </flag-log>{for {player <- scores.players} yield
-            <player name={player.name} ip={player.ip} weapon={player.weapon}/>}
+            <player name={player.name} partial-ip={player.ip} weapon={player.weapon}/>}
       </team>}
     </completed-ctf>
 }
@@ -57,8 +55,8 @@ object SimpleCompletedCTF {
       server = "localhost:123",
       winner = Option("evil"),
       teams = Map(
-        "evil" -> SimpleTeamScore(name = "evil", 5, flagLog = List(1 -> 1, 2 -> 2, 3 -> 4, 4 -> 4, 5 -> 5), players = List(SimplePlayer(name = "Drakas", ip = "123", weapon = "rifle"))),
-        "good" -> SimpleTeamScore(name = "good", 2, flagLog = List(1 -> 1, 2 -> 2, 3 -> 2, 4 -> 2, 5 -> 2), players = List(SimplePlayer(name = "Art", ip = "123", weapon = "rifle")))
+        "evil" -> SimpleTeamScore(name = "evil", 5, flagLog = List(1 -> 1, 2 -> 2, 3 -> 4, 4 -> 4, 5 -> 5), players = List(SimplePlayer(name = "Drakas", ip = "85.214.61.x", weapon = "rifle"))),
+        "good" -> SimpleTeamScore(name = "good", 2, flagLog = List(1 -> 1, 2 -> 2, 3 -> 2, 4 -> 2, 5 -> 2), players = List(SimplePlayer(name = "Art", ip = "87.98.216.x", weapon = "rifle")))
       ),
       metaId = None
     )
