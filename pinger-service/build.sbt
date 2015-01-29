@@ -37,6 +37,7 @@ libraryDependencies ++= Seq(
   "org.eclipse.jetty" % "jetty-servlet" % "8.1.16.v20140903" % "test",
   "org.eclipse.jetty" % "jetty-server" % "8.1.16.v20140903" % "test",
   "org.eclipse.jetty" % "jetty-webapp" % "8.1.16.v20140903" % "test",
+  "com.maxmind.geoip2"%"geoip2"%"2.1.0",
   "javax.servlet" % "javax.servlet-api" % "3.0.1" % "test"
 )
 

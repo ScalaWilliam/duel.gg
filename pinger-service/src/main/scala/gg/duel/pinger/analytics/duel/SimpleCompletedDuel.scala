@@ -38,7 +38,7 @@ case class SimpleCompletedDuel
     <played-at>{playedAt.mkString(" ")}</played-at>
     <players>
       {for {(name, stats) <- players} yield
-      <player name={name} ip={stats.ip} frags={s"${stats.frags}"} accuracy={s"${stats.accuracy}"}
+      <player name={name} partial-ip={stats.ip} frags={s"${stats.frags}"} accuracy={s"${stats.accuracy}"}
               weapon={stats.weapon}>
         {for {(at, frags) <- stats.fragLog}
       yield

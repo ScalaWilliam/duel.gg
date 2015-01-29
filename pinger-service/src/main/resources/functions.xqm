@@ -8,7 +8,14 @@ declare function local:within-time($a as xs:dateTime, $b as xs:dateTime, $max-di
             return $diff
     )
 };
-
+declare function local:parse-geo-ips($ips as xs:string) {
+    let $map-parts :=
+        for $a in tokenize($ips, ',')
+        let $ip := substring-before($a, ' ')
+        let $cc := substring-after($a, ' ')
+        return map {$ip: $cc}
+    return map:merge($map-parts)
+};
 declare function local:within($first as xs:dateTime, $second as xs:dateTime, $maxInterval as xs:dayTimeDuration) {
     let $zero := xs:dayTimeDuration("PT0S")
     let $smf := $second - $first

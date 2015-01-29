@@ -1,5 +1,9 @@
 package gg.duel.pinger.service
 
+import java.io.File
+import java.net.InetAddress
+
+import com.maxmind.geoip2.DatabaseReader
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
 import gg.duel.pinger.service.BaseXPersister.{PublicCtfId, MetaId, PublicDuelId}
@@ -321,18 +325,48 @@ class WSAsyncGamePersister(val client: HttpRequest => Future[HttpResponse], val 
 with DemoChecker
 {
 
+
+  def lookupCountryByIp(ip: String): Option[String] = {
+    for {
+      country <- Option(reader.country(InetAddress.getByName(ip)))
+      code <- Option(country.getCountry.getIsoCode)
+    } yield code
+  }
+  def lookupCountryByPartialIp(ip: String): Option[String] = {
+//    Try(lookupCountryByIp(ip.replaceAllLiterally("x","1"))).toOption.flatten
+    lookupCountryByIp(ip.replaceAllLiterally("x","1"))
+  }
+
+  val reader = {
+    val database = new File(scala.util.Properties.userHome, "GeoLite2-Country.mmdb")
+    new DatabaseReader.Builder(database).build()
+  }
+
+
   lazy val functions: String = {
     import scalax.io.JavaConverters._
     this.getClass.getResource("/functions.xqm").asInput.string
   }
 
   override def pushCtf(ctfXml: SimpleCompletedCTF)(implicit ec: ExecutionContext): Future[Unit] = {
+
+    val ips = ctfXml.teams.valuesIterator.flatMap(_.players).map(_.ip).toSet.toList
+    val matchingIps = ips.flatMap(ip => lookupCountryByPartialIp(ip).map(cc => ip -> cc)).toSet
     val xml = ctfXml.toXml
     postIntoDatabase(
       <rest:query xmlns:rest="http://basex.org/rest">
         <rest:text>{PCData(functions +
           s"""
-            |let $$ctx := /completed-ctf
+            |declare variable $$ips as xs:string external;
+            |let $$ips-map := local:parse-geo-ips($$ips)
+            |let $$ctx :=
+            |   copy $$new-ctf := /completed-ctf
+            |   modify (
+            |     for $$ip in $$new-ctf//@partial-ip
+            |     for $$country-code in map:get($$ips-map, data($$ip))
+            |     return (insert node (attribute country-code {$$country-code}) into $$ip/..)
+            |   )
+            |   return $$new-ctf
             |let $$server := data($$ctx/@server)
             |let $$map := data($$ctx/@map)
             |let $$mode := data($$ctx/@mode)
@@ -354,6 +388,7 @@ with DemoChecker
             |  else ()
             |""".stripMargin
         )}</rest:text>
+        <rest:variable name="ips" value={matchingIps.map(x => x._1+" "+x._2).mkString(",")}/>
         <rest:context>{xml}</rest:context>
       </rest:query>
     ).map(x => ())
@@ -399,12 +434,24 @@ with DemoChecker
   }
 
   override def pushDuel(duelXml: SimpleCompletedDuel)(implicit ec: ExecutionContext): Future[Unit] = {
+    val ips = duelXml.players.valuesIterator.map(_.ip).toSet.toList
+    val matchingIps = ips.flatMap(ip => lookupCountryByPartialIp(ip).map(cc => ip -> cc)).toSet
     val xml = duelXml.toXml
+
     postIntoDatabase(
       <rest:query xmlns:rest="http://basex.org/rest">
         <rest:text>{PCData(functions +
           s"""
-            |let $$ctx := /completed-duel
+            |declare variable $$ips as xs:string external;
+            |let $$ips-map := local:parse-geo-ips($$ips)
+            |let $$ctx :=
+            |   copy $$new-duel := /completed-duel
+            |   modify (
+            |     for $$ip in $$new-duel//@partial-ip
+            |     for $$country-code in map:get($$ips-map, data($$ip))
+            |     return (insert node (attribute country-code {$$country-code}) into $$ip/..)
+            |   )
+            |   return $$new-duel
             |let $$server := data($$ctx/@server)
             |let $$map := data($$ctx/@map)
             |let $$mode := data($$ctx/@mode)
@@ -425,6 +472,7 @@ with DemoChecker
             |  ) else ()
             |""".stripMargin
         )}</rest:text>
+        <rest:variable name="ips" value={matchingIps.map(x => x._1+" "+x._2).mkString(",")}/>
         <rest:context>{xml}</rest:context>
       </rest:query>
     ).map(x => ())
