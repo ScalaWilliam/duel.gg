@@ -28,9 +28,11 @@ class DemoLoader(saveToDirectory: File, demoChecker: DemoChecker) extends Act wi
     case mcd: MetaCompletedDuel =>
       import context.dispatcher
       // add delay for psl
+      log.info(s"Found duel game id: ${mcd.completedDuel.simpleId}")
       context.system.scheduler.scheduleOnce(30.seconds, self, FoundGameId(mcd.completedDuel.simpleId))
     case mcc: MetaCompletedCtf =>
       import context.dispatcher
+      log.info(s"Found ctf game id: ${mcc.completedCtf.simpleId}")
       context.system.scheduler.scheduleOnce(30.seconds, self, FoundGameId(mcc.completedCtf.simpleId))
     case dd @ DemoDownloaded(gameId, from, destination) =>
       for {
