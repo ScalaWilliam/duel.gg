@@ -2,6 +2,7 @@ import com.typesafe.sbt.packager.Keys._
 import com.typesafe.sbt.packager.SettingsHelper._
 organization := "gg.duel"
 name := "frontend"
+version := "1.0-SNAPSHOT"
 enablePlugins(PlayScala, SbtWeb)
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 scalaVersion := "2.11.5"
