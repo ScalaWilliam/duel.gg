@@ -38,9 +38,11 @@
                     background:#1b325f;
                     outline: 0;
                 }
+                #duels.hidden {
+                    display:none;
+                }
             </style>
-            <template if="{{duels.items.length}}">
-                <div id="duels" class="flexed">
+            <div id="duels" class="{{ { hidden: duels.items.length == 0, flexed: true } | tokenList}}">
                     <h2>Duels</h2>
                     <ol>
                         <template repeat="{{duel in duels.items}}">
@@ -54,7 +56,6 @@
                         </template>
                     </ol>
                 </div>
-            </template>
 
             <duel-detailed-card duelId="{{currentDuel.id}}" atTime="{{currentDuel.atTime}}" leftPlayerScore="{{currentDuel['left-player-score']}}"
                                 map="{{currentDuel.map}}" mode="{{currentDuel.mode}}" leftPlayerName="{{currentDuel['left-player-name']}}"
@@ -73,6 +74,10 @@
                     items: JSON.parse(v)
                 };
                 this.currentDuel = this.duels.items[0];
+            },
+            attached: function() {
+
+                scrollHorizons(unwrap(this.shadowRoot.querySelector('#duels ol')));
             }
 
         })
