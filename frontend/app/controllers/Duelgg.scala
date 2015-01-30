@@ -24,6 +24,134 @@ object Duelgg extends Controller {
       }
   }
 
+  def search = stated {
+    r => implicit s =>
+      val term = r.queryString.get("q").toList.flatten.headOption
+      async {
+        Ok(views.html.search(term))
+      }
+  }
+
+  def dynamicSearch = stated {
+    r => _ =>
+      val term = r.queryString.get("term").toList.flatten.headOption.get
+      val page = r.queryString.get("page").toList.flatten.headOption.flatMap(s => Try(s.toInt).toOption).getOrElse(1)
+      val query = <rest:query xmlns:rest="http://basex.org/rest">
+        <rest:text><![CDATA[
+declare variable $term as xs:string external;
+declare variable $duel-page as xs:int external;
+declare variable $duel-limit as xs:int external;
+declare variable $required-anonymous-games as xs:int external;
+(:declare option output:method "json";:)
+(:
+List:
+* Matching registered players (& some kind of emblem?)
+* Other matching players
+* Matching duels of the above
+:)
+let $lt := lower-case($term)
+let $registered-users :=
+  for $ru in /registered-user
+  where some $nickname in $ru/nickname satisfies contains(lower-case($nickname), $lt)
+  return $ru
+let $other-nicks :=
+  for $name in /duel/player/@name
+  where not(some $nickname in $registered-users/nickname satisfies $nickname = data($name))
+  where contains(lower-case($name), $lt)
+  let $nom := data($name)
+  group by $nom
+  where count($name) ge $required-anonymous-games
+  order by count($name) descending
+  return $nom
+let $all-nicks := (data($registered-users/nickname), $other-nicks)
+let $matching-duels :=
+  for $duel in /duel
+  where $duel/player/@name = $all-nicks
+  order by $duel/@start-time descending
+  return $duel
+let $start-from := 1 + (($duel-page - 1) * $duel-limit)
+let $end-at := $start-from + $duel-limit
+let $duel-count := count($matching-duels)
+let $has-more := $duel-count > $end-at
+let $reduced-duels := $matching-duels[position() = $start-from to $end-at]
+return map{
+  "registered-users": array {
+    for $ru in $registered-users
+    return map {
+      "id": data($ru/@id),
+      "game-nickname": data($ru/@game-nickname),
+      "name": data($ru/@name)
+    }
+  },
+  "other-nicknames": array {
+    for $nick in $other-nicks
+    return map {
+      "nick": $nick
+    }
+  },
+  "duels": map {
+    "page": $duel-page,
+    "count": $duel-count,
+    "has-more": $has-more,
+    "start-at": $start-from,
+    "end-at": $end-at,
+    "items": array {
+      for $duel in $reduced-duels
+      return map {
+        "id": data($duel/@int-id),
+        "at-time": adjust-dateTime-to-timezone(xs:dateTime($duel/@start-time), ()),
+        "left-player-score": data($duel/player[1]/@frags),
+        "left-player-name": data($duel/player[1]/@name),
+        "right-player-score": data($duel/player[2]/@frags),
+        "right-player-name": data($duel/player[2]/@name),
+        "mode": data($duel/@mode),
+        "map": data($duel/@map)
+      }
+    }
+  }
+}
+
+]]>
+        </rest:text>
+        <rest:variable name="term" value={term}/>
+        <rest:variable name="duel-page" value={page.toString}/>
+        <rest:variable name="required-anonymous-games" value="10"/>
+        <rest:variable name="duel-limit" value="25"/>
+      </rest:query>
+      async {
+        Ok(await(BasexProviderPlugin.awaitPlugin.query(query)).body)
+      }
+  }
+
+  def searchPlayers = stated {
+    r => _ =>
+      val term = r.queryString.get("nickname").toList.flatten.headOption.get
+      val query = <rest:query xmlns:rest="http://basex.org/rest">
+        <rest:text><![CDATA[
+declare variable $term as xs:string external;
+declare option output:method "json";
+let $lt := lower-case($term)
+let $noms :=
+for $pn in /duel/player/@name
+let $nom := data($pn)
+where contains(lower-case($nom), $lt)
+group by $nom
+let $cnt := count($pn)
+where $cnt ge 5
+order by $cnt descending
+return $nom
+return
+  if ( count($noms) > 50 ) then ( map{"terms": array{subsequence($noms,1,50)}, "hasMore": true()} )
+  else (map{"terms": array{$noms}, "hasMore": false()})
+]]>
+        </rest:text>
+        <rest:variable name="term" value={term}/>
+      </rest:query>
+      async {
+        Ok(await(BasexProviderPlugin.awaitPlugin.query(query)).body)
+      }
+  }
+
   def showDuel(id: Int) = stated {
     _ => implicit sess =>
       async {

@@ -1,0 +1,16 @@
+@(startTerm: Option[String])(implicit sessionState: plugins.RegisteredUserManager.SessionState)
+@main("wat")(Html("")){
+    <d-sanchez startTerm="@startTerm.orNull"></d-sanchez>
+    <script>
+    window.addEventListener('polymer-ready', function(e) {
+        window.addEventListener('keydown', function(a,b,c,d) {
+            var snc = document.querySelector('d-sanchez');
+            snc.keypressHandler(a,b,c,d);
+        }, true);
+        window.addEventListener('keyup', function(a,b,c,d) {
+            var snc = document.querySelector('d-sanchez');
+            snc.keyupHandler(a,b,c,d);
+        }, true);
+    });
+    </script>
+}
