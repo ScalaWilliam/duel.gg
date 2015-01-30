@@ -8,9 +8,13 @@
         <link href='/assets/stylesheets/main.css' rel="stylesheet" type="text/css"/>
         <meta name="description" content="duel.gg is a match league for the Sauerbraten multiplayer first-person shooter">
         <meta name="keywords" content="online FPS, first person shooter, sauerbraten league, sauerbraten, sauerbraten duel">
+        <script src="/assets/bower_components/webcomponentsjs/webcomponents.js"></script>
         <link rel="import" href="/assets/bower_components/polymer/polymer.html">
+        <link rel="import" href="/assets/bower_components/typeahead-input/typeahead-input.html">
         <link rel="import" href="/assets/duel-card.html">
         <link rel="import" href="/assets/duel-detailed-card.html">
+        <link rel="import" href="/assets/searcher.html">
+        <link rel="import" href="/assets/sanchez.html">
         <link rel="import" href="/assets/player-card.html">
     </head>
     <body>
@@ -21,12 +25,14 @@
             </header>
 
             <div id="menu">
-                <a href="/">Home</a> &bull; <a href="/questions/">Questions</a> &bull; <a href="/players/">Players</a> &bull; <a href="/servers/">Servers</a>
+                <a href="/">Home</a> &bull; <a href="/search/">Search</a> &bull; <a href="/players/">Players</a> &bull; <a href="/servers/">Servers</a>
                     @if(sessionState.profile.nonEmpty) {
                             &bull; <a href="/me/">View my profile</a>
                     } else {
                             &bull; <a href="/login/">Log in with Google</a>
                     }
+                <br/>
+    @*<d-searcher></d-searcher>*@
             </div>
             <div id="main">
 
@@ -38,7 +44,7 @@
                     </a>
                 </div>
             }
-            <div id="content">
+            <div id="content" style="width:60em;margin-left:auto;margin-right:auto;">
             @data
             </div>
             </div>

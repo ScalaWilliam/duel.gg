@@ -10,14 +10,16 @@
     "tests"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#~0.5.2",
+    "polymer": "Polymer/polymer#~0.5.4",
     "polymer-elements": "Polymer/polymer-elements#~0.3.0",
-    "webcomponentsjs": "~0.5.2",
-    "paper-elements": "Polymer/paper-elements#~0.5.2"
+    "webcomponentsjs": "~0.5.4",
+    "paper-elements": "Polymer/paper-elements#~0.5.4",
+    "typeahead-input": "PolymerLabs/typeahead-input#~0.5.0",
+    "core-ajax": "Polymer/core-ajax#~0.5.4"
   },
   "resolutions": {
-    "core-component-page": "^0.5.0",
-    "polymer": "~0.5.2",
+    "core-component-page": "^0.5.4",
+    "polymer": "~0.5.4",
     "platform": "^0.4.0",
     "web-animations-js": "1.0.5"
   }

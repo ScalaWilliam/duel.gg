@@ -1,14 +1,18 @@
-GET        /                          controllers.Duelgg.index
-GET        /login/                    controllers.Duelgg.login
-GET        /logout/                   controllers.Duelgg.logout
-#GET        /googleauthcallback        controllers.Duelgg.oauth2callback
-GET        /oauth2callback            controllers.Duelgg.oauth2callback
-GET        /createProfile/            controllers.Duelgg.createProfile
-POST       /createProfile/            controllers.Duelgg.createProfile
-GET        /duel/:id/                 controllers.Duelgg.showDuel(id: Int)
-GET        /player/                   controllers.Duelgg.viewPlayer(id: String = "")
-GET        /players/                  controllers.Duelgg.viewPlayers
-GET        /player/:id/               controllers.Duelgg.viewPlayer(id: String)
-GET        /player/:id/duel/:duelId/  controllers.Duelgg.viewPlayerDuel(id: String, duelId: Int)
-GET        /assets/*file              controllers.Assets.versioned(path="/public", file: Asset)
-GET        /me/                       controllers.Duelgg.viewMe()
+GET         /                               controllers.Duelgg.index
+GET         /login/                         controllers.Duelgg.login
+GET         /logout/                        controllers.Duelgg.logout
+#GET  /googleauthcallback        controllers.Duelgg.oauth2callback
+GET         /oauth2callback                 controllers.Duelgg.oauth2callback
+GET         /createProfile/                 controllers.Duelgg.createProfile
+POST        /createProfile/                 controllers.Duelgg.createProfile
+GET         /duel/:id/                      controllers.Duelgg.showDuel(id: Int)
+GET         /player/                        controllers.Duelgg.viewPlayer(id: String = "")
+GET         /search-player/                 controllers.Duelgg.searchPlayers
+GET         /dynamic-search/                controllers.Duelgg.dynamicSearch
+GET         /search/                        controllers.Duelgg.search
+GET         /players/                       controllers.Duelgg.viewPlayers
+GET         /player/:id/                    controllers.Duelgg.viewPlayer(id: String)
+GET         /player/:id/duel/:duelId/       controllers.Duelgg.viewPlayerDuel(id: String, duelId: Int)
+GET         /assets/*file                   controllers.Assets.versioned(path="/public", file: Asset)
+GET         /me/                            controllers.Duelgg.viewMe()
+GET         /control/                       controllers.Admin.index
