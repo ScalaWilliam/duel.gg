@@ -164,9 +164,9 @@ return
   def index = stated {
     _ => implicit sess =>
       async {
-        val servers = await(DataSourcePlugin.plugin.getServers)
+//        val servers = await(DataSourcePlugin.plugin.getServers)
         await(DataSourcePlugin.plugin.getIndex) match {
-          case Some(data) => Ok(views.html.homepage(Html(servers),Html(data)))
+          case Some(data) => Ok(views.html.homepage(data))
           case None => NotFound("Fail")
         }
       }

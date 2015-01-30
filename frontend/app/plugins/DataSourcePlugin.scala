@@ -22,15 +22,20 @@ class DataSourcePlugin(implicit app: Application) extends Plugin {
   def getIndex = {
     val query = <rest:query xmlns:rest='http://basex.org/rest'>
       <rest:text><![CDATA[
+      declare option output:method 'json';
          let $duels := for $duel in /duel[@int-id]
           order by $duel/@start-time descending
-          return
-            <duel-card
-              duelId="{$duel/@int-id}"
-              leftPlayerScore="{($duel/player)[1]/@frags}" leftPlayerName="{($duel/player)[1]/@name}"
-              rightPlayerScore="{($duel/player)[2]/@frags}" rightPlayerName="{($duel/player)[2]/@name}"
-            mode="{data($duel/@mode)}" map="{data($duel/@map)}"><!-- --></duel-card>
-          return <duels>{$duels[position() = 1 to 20]}</duels>
+          return map {
+        "id": data($duel/@int-id),
+        "at-time": adjust-dateTime-to-timezone(xs:dateTime($duel/@start-time), ()),
+        "left-player-score": data($duel/player[1]/@frags),
+        "left-player-name": data($duel/player[1]/@name),
+        "right-player-score": data($duel/player[2]/@frags),
+        "right-player-name": data($duel/player[2]/@name),
+        "mode": data($duel/@mode),
+        "map": data($duel/@map)
+      }
+      return array { $duels[position() = 1 to 20] }
           ]]></rest:text>
     </rest:query>
     async {
@@ -186,19 +191,21 @@ let $duels :=
   where $duel/player/@name = $nickname
   return $duel
 where not(empty($duels))
-return <player-card name="{$nickname}">
-{
-for $duel in $duels
-order by $duel/@start-time descending
-return
-  <duel-card
-  atTime="{adjust-dateTime-to-timezone(xs:dateTime($duel/@start-time), ())}"
-    duelId="{$duel/@int-id}"
-    leftPlayerScore="{($duel/player)[1]/@frags}" leftPlayerName="{($duel/player)[1]/@name}"
-    rightPlayerScore="{($duel/player)[2]/@frags}" rightPlayerName="{($duel/player)[2]/@name}"
-    mode="{$duel/@mode}" map="{$duel/@map}"><!-- --></duel-card>
-}
-</player-card>
+let $duels-mapped :=
+  for $duel in $duels[position() = 1 to 10]
+  order by $duel/@start-time descending
+  return map {
+        "id": data($duel/@int-id),
+        "at-time": adjust-dateTime-to-timezone(xs:dateTime($duel/@start-time), ()),
+        "left-player-score": data($duel/player[1]/@frags),
+        "left-player-name": data($duel/player[1]/@name),
+        "right-player-score": data($duel/player[2]/@frags),
+        "right-player-name": data($duel/player[2]/@name),
+        "mode": data($duel/@mode),
+        "map": data($duel/@map)
+      }
+return <player-card name="{$nickname}" initialGamesJson="{json:serialize(array{$duels-mapped})}">
+<!-- --></player-card>
 ]]>
       </rest:text>
       <rest:variable name="nickname" value={nickname}/>
@@ -213,8 +220,6 @@ declare variable $user-id as xs:string external;
 for $ru in /registered-user[@id = $user-id]
 let $current-nickname := $ru/nickname[not(@to)]
 let $past-nicknames := $ru/nickname[@to]
-return <player-card name="{$ru/@game-nickname}">
-{
 let $duels := (
   for $duel in /duel
   where $duel/@start-time ge $current-nickname/@from
@@ -227,19 +232,20 @@ let $duels := (
   where $duel/@start-time le $nickname/@to
   return $duel
 )
-for $duel in $duels
-let $start-time := $duel/@start-time
-order by $start-time descending
-return
-  <duel-card
-    atTime="{adjust-dateTime-to-timezone(xs:dateTime($duel/@start-time), ())}"
-    duelId="{$duel/@int-id}"
-    context="/player/{$user-id}/"
-    leftPlayerScore="{($duel/player)[1]/@frags}" leftPlayerName="{($duel/player)[1]/@name}"
-    rightPlayerScore="{($duel/player)[2]/@frags}" rightPlayerName="{($duel/player)[2]/@name}"
-    mode="{$duel/@mode}" map="{$duel/@map}"><!-- --></duel-card>
-}
-</player-card>
+let $duels-mapped :=
+  for $duel in $duels[position() = 1 to 30]
+  order by $duel/@start-time descending
+  return map {
+        "id": data($duel/@int-id),
+        "at-time": adjust-dateTime-to-timezone(xs:dateTime($duel/@start-time), ()),
+        "left-player-score": data($duel/player[1]/@frags),
+        "left-player-name": data($duel/player[1]/@name),
+        "right-player-score": data($duel/player[2]/@frags),
+        "right-player-name": data($duel/player[2]/@name),
+        "mode": data($duel/@mode),
+        "map": data($duel/@map)
+      }
+return <player-card name="{$ru/@game-nickname}" initialGamesJson="{json:serialize(array{$duels-mapped})}"><!-- --></player-card>
 ]]>
       </rest:text>
       <rest:variable name="user-id" value={userId}/>

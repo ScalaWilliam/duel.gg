@@ -1,8 +1,6 @@
-<polymer-element name="player-card"
+<polymer-element name="home-duels"
                  attributes="name initialGamesJson">
     <template>
-        <div class="player">
-            <h2>{{name}}</h2>
             <style scoped>
                 a { color: wheat;}
                 .flexed ol {
@@ -41,11 +39,11 @@
             </style>
             <template if="{{duels.items.length}}">
                 <div id="duels" class="flexed">
-                    <h2>Duels</h2>
+                    <h2>Latest Duels</h2>
                     <ol>
                         <template repeat="{{duel in duels.items}}">
                             <li id="{{duel.globalId}}" class="{{ {active: duel == activeItem} | tokenList}}">
-                                <a href="/player/drakas/?duel={{duel.id}}">
+                                <a href="/duel/{{duel.id}}/">
                                     <h3>{{duel['left-player-name']}} vs {{duel['right-player-name']}}</h3>
                                     <h4>{{duel['left-player-score']}} vs {{duel['right-player-score']}}</h4>
                                     <h5>{{duel.mode}} @ {{duel.map}}</h5>
@@ -55,26 +53,14 @@
                     </ol>
                 </div>
             </template>
-
-            <duel-detailed-card duelId="{{currentDuel.id}}" atTime="{{currentDuel.atTime}}" leftPlayerScore="{{currentDuel['left-player-score']}}"
-                                map="{{currentDuel.map}}" mode="{{currentDuel.mode}}" leftPlayerName="{{currentDuel['left-player-name']}}"
-                                rightPlayerScore="{{currentDuel['right-player-score']}}" rightPlayerName="{{currentDuel['right-player-name']}}"
-                                leftPlayerId="{{currentDuel['left-player-id']}}"
-                                rightPlayerId="{{currentDuel['right-player-id']}}"
-                    >
-
-        </div>
     </template>
     <script>
-        Polymer("player-card", {
-
+        Polymer("home-duels", {
             initialGamesJsonChanged: function(_, v) {
                 this.duels = {
                     items: JSON.parse(v)
                 };
-                this.currentDuel = this.duels.items[0];
             }
-
         })
     </script>
 </polymer-element>
