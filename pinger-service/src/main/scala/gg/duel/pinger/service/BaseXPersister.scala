@@ -362,9 +362,13 @@ with DemoChecker
             |let $$ctx :=
             |   copy $$new-ctf := /completed-ctf
             |   modify (
-            |     for $$ip in $$new-ctf//@partial-ip
-            |     for $$country-code in map:get($$ips-map, data($$ip))
-            |     return (insert node (attribute country-code {$$country-code}) into $$ip/..)
+            |       rename node $$new-ctf as 'ctf',
+            |       for $$ip in $$new-ctf//@partial-ip
+            |       for $$country-code in map:get($$ips-map, data($$ip))
+            |       return insert node (attribute country-code {$$country-code}) into $$ip/..
+            |       ,
+            |       let $$int-id := substring(string(abs(convert:integer-from-base(string(xs:hexBinary(hash:sha256(string($$new-ctf/@simple-id)))), 16))), 1, 9)
+            |       return insert node (attribute int-id {$$int-id}) as first into $$new-ctf
             |   )
             |   return $$new-ctf
             |let $$server := data($$ctx/@server)
@@ -381,10 +385,7 @@ with DemoChecker
             |let $$exist-no-matches := empty($$matching-ctfs)
             |return
             |  if ( $$exist-no-matches )
-            |  then (
-            |   let $$new-ctf-id := local:get-new-ctf-id(db:open("$dbName")/ctf, "$chars")
-            |   return local:add-new-ctf($$new-ctf-id, "$dbName", $$ctx)
-            |  )
+            |  then (db:add("$dbName", $$ctx, data($$ctx/@meta-id)))
             |  else ()
             |""".stripMargin
         )}</rest:text>
@@ -399,7 +400,7 @@ with DemoChecker
       <query xmlns="http://basex.org/rest">
         <text>{PCData(functions + s"""
       declare variable $$ctf-id as xs:string external;
-      (db:open("$dbName")/ctf)[@web-id=$$ctf-id]]
+      (db:open("$dbName")/ctf)[@int-id=$$ctf-id]]
       """)}</text>
         <variable name="ctf-id" value={ctfId.value}/>
       </query>
@@ -447,9 +448,13 @@ with DemoChecker
             |let $$ctx :=
             |   copy $$new-duel := /completed-duel
             |   modify (
+            |     rename node $$new-duel as 'duel',
             |     for $$ip in $$new-duel//@partial-ip
             |     for $$country-code in map:get($$ips-map, data($$ip))
-            |     return (insert node (attribute country-code {$$country-code}) into $$ip/..)
+            |     return insert node (attribute country-code {$$country-code}) into $$ip/..
+            |     ,
+            |     let $$int-id := substring(string(abs(convert:integer-from-base(string(xs:hexBinary(hash:sha256(string($$new-duel/@simple-id)))), 16))), 1, 9)
+            |     return insert node (attribute int-id {$$int-id}) as first into $$new-duel
             |   )
             |   return $$new-duel
             |let $$server := data($$ctx/@server)
@@ -467,8 +472,7 @@ with DemoChecker
             |return
             |  if ( $$exist-no-matches )
             |  then (
-            |    let $$new-duel-id := local:get-new-duel-id(db:open("$dbName")/duel, "$chars")
-            |    return local:add-new-duel($$new-duel-id, "$dbName", $$ctx)
+            |     db:add("$dbName", $$ctx, data($$ctx/@meta-id))
             |  ) else ()
             |""".stripMargin
         )}</rest:text>
@@ -483,7 +487,7 @@ with DemoChecker
       <query xmlns="http://basex.org/rest">
       <text>{PCData(functions + s"""
       declare variable $$duel-id as xs:string external;
-      (db:open("$dbName")/duel)[@web-id=$$duel-id]]
+      (db:open("$dbName")/duel)[@int-id=$$duel-id]]
       """)}</text>
         <variable name="duel-id" value={duelId.value}/>
       </query>
