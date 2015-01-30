@@ -8,7 +8,10 @@
                     overflow-x:scroll;
                     margin:0;
                     padding:0;
+                    height:20em;
                     list-style-type: none;
+                    flex-flow: column;
+                    flex-wrap:wrap;
                 }
                 ::-webkit-scrollbar {
                     width:  0.5em;
@@ -37,7 +40,6 @@
                     outline: 0;
                 }
             </style>
-            <template if="{{duels.items.length}}">
                 <div id="duels" class="flexed">
                     <h2>Latest Duels</h2>
                     <ol>
@@ -52,10 +54,12 @@
                         </template>
                     </ol>
                 </div>
-            </template>
     </template>
     <script>
         Polymer("home-duels", {
+            ready: function() {
+                scrollHorizons(unwrap(this.shadowRoot.querySelector('#duels ol')));
+            },
             initialGamesJsonChanged: function(_, v) {
                 this.duels = {
                     items: JSON.parse(v)

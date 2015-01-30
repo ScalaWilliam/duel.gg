@@ -9,6 +9,24 @@
         <meta name="description" content="duel.gg is a match league for the Sauerbraten multiplayer first-person shooter">
         <meta name="keywords" content="online FPS, first person shooter, sauerbraten league, sauerbraten, sauerbraten duel">
         <script src="/assets/bower_components/webcomponentsjs/webcomponents.js"></script>
+        <script>
+        function scrollHorizons(el) {
+
+        function scrollHorizontally ( e ) {
+        e = window.event || e ;
+        var delta = Math.max ( - 1, Math.min ( 1, ( e.wheelDelta || - e.detail ) ) ) ;
+        el.scrollLeft -= ( delta * 40 ) ; // Multiplied by 40
+        e.preventDefault ( ) ;
+        }
+            if ( !el) {}
+        else if ( el.addEventListener ) {
+        el.addEventListener ( "mousewheel", scrollHorizontally, false ) ;
+        el.addEventListener ( "DOMMouseScroll", scrollHorizontally, false ) ;
+        } else {
+        el.attachEvent ( "onmousewheel", scrollHorizontally ) ;
+        } ;
+        }
+        </script>
         <link rel="import" href="/assets/bower_components/polymer/polymer.html">
         <link rel="import" href="/assets/bower_components/typeahead-input/typeahead-input.html">
         <link rel="import" href="/assets/duel-card.html">

@@ -48,12 +48,14 @@
             paper-input /deep/ input {
                 text-align: center;
             }
+            .flexed.hidden {
+                display:none;
+            }
         </style>
         <div class="searcher">
             <paper-input label="Search for player" on-input="{{ngn}}">
             </paper-input>
-            <template if="{{registeredPlayers.length}}">
-            <div id="registered" class="flexed">
+            <div id="registered" class="{{ { hidden: registeredPlayers.length == 0, flexed: true } | tokenList}}">
                 <h2>Registered Players</h2>
                 <ol>
                 <template repeat="{{player in registeredPlayers}}">
@@ -64,9 +66,7 @@
                 </template>
                 </ol>
             </div>
-            </template>
-            <template if="{{otherPlayers.length}}">
-            <div id="players" class="flexed">
+            <div id="players" class="{{ { hidden: otherPlayers.length == 0, flexed: true } | tokenList}}">
                 <h2>Other Players</h2>
                 <ol>
                     <template repeat="{{other in otherPlayers}}">
@@ -76,9 +76,7 @@
                     </template>
                 </ol>
             </div>
-            </template>
-            <template if="{{duels.items.length}}">
-            <div id="duels" class="flexed">
+            <div id="duels" class="{{ { hidden: !duels.items || (duels.items.length == 0), flexed: true } | tokenList}}">
                 <h2>Duels</h2>
                 <ol>
                     <template repeat="{{duel in duels.items}}">
@@ -92,7 +90,6 @@
                     </template>
                 </ol>
             </div>
-            </template>
             <core-ajax id="primary"
                        url="http://127.0.0.1:9000/dynamic-search/"
                        params='{"term":"vaQ"}'
@@ -135,6 +132,11 @@
                 this.registeredPlayers.forEach(function(p) { p.globalId = "rp-"+hashCode(p.id);});
                 this.duels.items.forEach(function(p) { p.globalId = "duel-"+hashCode(p.id);});
                 this.otherPlayers.forEach(function(p) { p.globalId = "op-"+hashCode(p.nick);});
+            },
+            attached: function() {
+                scrollHorizons(unwrap(this.shadowRoot.querySelector ('#duels ol')));
+                scrollHorizons(unwrap(this.shadowRoot.querySelector('#registered ol')));
+                scrollHorizons(unwrap(this.shadowRoot.querySelector('#players ol')));
             },
             handleResponseLazy: function(a, b, c) {
                 var hashCode = function(s){
