@@ -124,12 +124,12 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
 
     become {
       case nd: NewlyAddedDuel =>
-        for { att <- nd.duel \ "@web-id" } {
+        for { att <- nd.duel \ "@int-id" } {
           hazelcast.getTopic[String]("new-duels").publish(att.text)
           context.parent ! nd
         }
       case nc: NewlyAddedCtf =>
-        for { att <- nc.ctf \ "@web-id" } {
+        for { att <- nc.ctf \ "@int-id" } {
           hazelcast.getTopic[String]("new-ctfs").publish(att.text)
           context.parent ! nc
         }
