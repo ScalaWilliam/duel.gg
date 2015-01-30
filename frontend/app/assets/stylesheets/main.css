@@ -47,7 +47,7 @@ body {
     color: #303048;
     padding-top:0.5em;
     font-size:4em;
-    margin-bottom:0.5em;
+    margin-bottom:1em;
     font-family: 'Permanent Marker', cursive;
 }
 #top h1 {
@@ -156,20 +156,17 @@ article.duel header * {
 }
 
 #top h2 {
-    position:absolute;
-    top:2.5em;
-    left:50%;
-    z-index:2;
-    margin-left:5em;
-    width:1em;
-    color:#fcfbe3;
+    font-size:0.5em;
+    font-style: italic;
+    font-weight: normal;
+font-family: Signika;
 }
 #top h2 a{
     -webkit-transition: color 0.4s;
     transition:color 0.4s;
+    text-decoration: underline;
 }
 #top h2 a:hover {
-    color:#d8f0f0;
 }
 
 .duel p.name a {
