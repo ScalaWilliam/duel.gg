@@ -79,7 +79,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
           Good(this)
       }
     case ParsedMessage(_, time, info: ConvertedServerInfoReply) if info.remain == 0 && timeRemaining == 0 =>
-      completeDuel(this)(Option(info)).map(BetterDuelFound(gameHeader, _)) match {
+      this.completeDuel(Option(info)).map(BetterDuelFound(gameHeader, _)) match {
         case result@Bad(reasons) =>
           // psl override - in case they don't send enough data, we'll wait one more tick
           // they send thomas extinfo sometimes instead of the usual extinfo
@@ -95,83 +95,122 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
     case ParsedMessage(_, time, info: ConvertedServerInfoReply) if info.remain == 0 =>
       Good(copy(isRunning = true, timeRemaining = 0))
     case ParsedMessage(_, time, info: ConvertedServerInfoReply) if BetterDuelState.isSwitch(gameHeader.startMessage, info) =>
-      completeDuel(this)(Option(info)).map(BetterDuelFound(gameHeader, _))
+      this.completeDuel(Option(info)).map(BetterDuelFound(gameHeader, _))
     case ParsedMessage(_, time, info: ConvertedServerInfoReply) =>
       Good(copy(isRunning = !info.gamepaused, timeRemaining = info.remain))
     case other => Good(this)
   }
 
-  def completeDuel(transitionalDuel: TransitionalBetterDuel)(nextMessage: Option[ConvertedServerInfoReply]): SimpleCompletedDuel Or Every[ErrorMessage] = {
-    import transitionalDuel.duelAccumulation.playerStatistics
-    for {
-      twoPlayers <- {
-        val activePlayers = playerStatistics.map(_.playerId).toSet
-        activePlayers.toList match {
-          case first :: second :: Nil => Good(List(first, second))
-          case other => Bad(One(s"Expected exactly two players, got: $other"))
-        }
-      }
-      startedSeconds <- {
-        if (playerStatistics.isEmpty) {
-          Bad(One("Player log empty"))
-        } else {
-          Good(playerStatistics.map(_.remaining).map(_.seconds).max)
-        }
-      }
-      bothPlayersStarted = {
-        twoPlayers.forall(playerId =>
-          playerStatistics.exists(logItem =>
-            logItem.remaining.seconds == startedSeconds &&
-              logItem.playerId == playerId))
-      }
-      bothPlayersFinished = {
-        twoPlayers.forall(playerId =>
-          playerStatistics.exists(logItem =>
-            logItem.remaining.seconds <= 3 &&
-              logItem.playerId == playerId))
-      }
-      _ <- if (bothPlayersStarted) Good(Unit) else Bad(One("Could not find a log item to say that both players started the game"))
-      durationSeconds = playerStatistics.head.remaining.seconds
-      durationMinutes = Math.ceil(durationSeconds / 60.0).toInt
-      foundDurationSeconds = durationSeconds - playerStatistics.last.remaining.seconds
-      foundDurationMinutes = Math.ceil(foundDurationSeconds / 60.0).toInt
-      _ <- if (foundDurationMinutes >= 8 ) Good(Unit) else Bad(One(s"Expected at least 8 minutes to duel, found $foundDurationMinutes (${foundDurationSeconds}s)"))
+  def twoPlayersOr = {
+    val activePlayers = duelAccumulation.playerStatistics.map(_.playerId).toSet
+    activePlayers.toList match {
+      case first :: second :: Nil => Good(List(first, second))
+      case other => Bad(One(s"Expected exactly two players, got: $other"))
+    }
+  }
+  def startedSecondsOr = {
+    if (duelAccumulation.playerStatistics.isEmpty) {
+      Bad(One("Player log empty"))
+    } else {
+      Good(duelAccumulation.playerStatistics.map(_.remaining).map(_.seconds).max)
+    }
 
-      _ <- if (bothPlayersFinished) Good(Unit) else Bad(One(s"Could not find a log item to say that both players finished the game ($nextMessage)"))
-      players = {
-        for {
-          playerId@PlayerId(name, ip) <- twoPlayers
-          hisStats = playerStatistics.filter(_.playerId == playerId)
-          simplePlayerStatistics = SimplePlayerStatistics(
-            name, ip, accuracy = hisStats.last.accuracy.accuracy,
-            frags = hisStats.last.frags.frags,
-            weapon = hisStats.groupBy(_.weapon).toList.sortBy(_._2.size).head._1.weapon,
-            fragLog = {
-              val first = hisStats.groupBy(stat => Math.ceil((durationSeconds - stat.remaining.seconds) / 60.0)).mapValues(_.minBy(_.remaining.seconds)).toList.sortBy(_._1)
-              first.map(eh => eh._1.toInt -> eh._2.frags.frags).filterNot(_._1 == 0)
-            }
-          )
-        } yield name -> simplePlayerStatistics
-      }
+  }
+  def allPlayersStartedOr(startedSeconds: Int) = {
+    val bv = duelAccumulation.playerStatistics.map(_.playerId).forall(playerId =>
+      duelAccumulation.playerStatistics.exists(logItem =>
+        logItem.remaining.seconds == startedSeconds &&
+          logItem.playerId == playerId))
+    if (bv) Good(Unit) else Bad(One("Could not find a log item to say that all the players started the game"))
+  }
+  def allPlayersFinishedOr(nextMessage: Option[ConvertedServerInfoReply]) = {
+    val bv = duelAccumulation.playerStatistics.map(_.playerId).forall(playerId =>
+      duelAccumulation.playerStatistics.exists(logItem =>
+        logItem.remaining.seconds <= 3 &&
+          logItem.playerId == playerId))
+    if (bv) Good(Unit) else Bad(One(s"Could not find a log item to say that both players finished the game ($nextMessage)"))
+  }
+
+  def formPlayers(players: List[PlayerId]) = {
+    val durationSeconds = duelAccumulation.playerStatistics.head.remaining.seconds
+    for {
+      playerId@PlayerId(name, ip) <- players
+      hisStats = duelAccumulation.playerStatistics.filter(_.playerId == playerId)
+      simplePlayerStatistics = SimplePlayerStatistics(
+        name, ip, accuracy = hisStats.last.accuracy.accuracy,
+        frags = hisStats.last.frags.frags,
+        weapon = hisStats.groupBy(_.weapon).toList.sortBy(_._2.size).head._1.weapon,
+        fragLog = {
+          val first = hisStats.groupBy(stat => Math.ceil((durationSeconds - stat.remaining.seconds) / 60.0)).mapValues(_.minBy(_.remaining.seconds)).toList.sortBy(_._1)
+          first.map(eh => eh._1.toInt -> eh._2.frags.frags).filterNot(_._1 == 0)
+        }
+      )
+    } yield name -> simplePlayerStatistics
+  }
+
+  def liveDuel: LiveDuel Or Every[ErrorMessage] = {
+    for {
+      twoPlayers <- twoPlayersOr
+      startedSeconds <- startedSecondsOr
+      bothPlayersStarted <- allPlayersStartedOr(startedSeconds )
+      durationMinutes = saidDurationMinutes
+      isADuelGame <- if ( Set("ffa", "instagib", "efficiency") contains gameHeader.mode ) Good(true) else Bad(One(s"Found mode ${gameHeader.mode} in game, rejecting."))
+      players = formPlayers(twoPlayers)
+    } yield LiveDuel(
+      simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
+      duration = durationMinutes,
+      playedAt = duelAccumulation.playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).toSet.toList.sorted,
+      startTimeText = gameHeader.startTimeText,
+      startTime = gameHeader.startTime,
+      map = gameHeader.map,
+      mode = gameHeader.mode,
+      server = gameHeader.server,
+      players = players.toMap, winner = None, metaId = None
+    )
+  }
+
+  def saidDurationMinutes = {
+    val durationSeconds = duelAccumulation.playerStatistics.head.remaining.seconds
+    Math.ceil(durationSeconds / 60.0).toInt
+  }
+
+  def calculatedDurationMinutesOr = {
+    val durationSeconds = duelAccumulation.playerStatistics.head.remaining.seconds
+    val durationMinutes = Math.ceil(durationSeconds / 60.0).toInt
+    val foundDurationSeconds = durationSeconds - duelAccumulation.playerStatistics.last.remaining.seconds
+    val foundDurationMinutes = Math.ceil(foundDurationSeconds / 60.0).toInt
+    if (foundDurationMinutes >= 8 ) Good(foundDurationMinutes) else Bad(One(s"Expected at least 8 minutes to duel, found $foundDurationMinutes (${foundDurationSeconds}s)"))
+  }
+
+  def completeDuel(nextMessage: Option[ConvertedServerInfoReply]): SimpleCompletedDuel Or Every[ErrorMessage] = {
+    import duelAccumulation.playerStatistics
+    for {
+      twoPlayers <- twoPlayersOr
+      startedSeconds <- startedSecondsOr
+      bothPlayersStarted <- allPlayersStartedOr(startedSeconds)
+      durationMinutes = saidDurationMinutes
+      foundDurationMinutes <- calculatedDurationMinutesOr
+      bothPlayersFinished <- allPlayersFinishedOr(nextMessage)
+      players = formPlayers(twoPlayers)
       isValidEfficGame <- {
-        if (transitionalDuel.gameHeader.mode == "efficiency" && players.forall(_._2.frags >= 10))
+        if (gameHeader.mode == "efficiency" && players.forall(_._2.frags >= 10))
           Good(Unit)
-        else if (transitionalDuel.gameHeader.mode == "efficiency")
+        else if (gameHeader.mode == "efficiency")
           Bad(One(s"in efficiency both frags to be >=10, got ${players.map(_._2.frags)}"))
         else Good(Unit)
       }
       isValidInstagibGame <- {
-        if (transitionalDuel.gameHeader.mode == "instagib" && players.forall(_._2.frags >= 20))
+        if (gameHeader.mode == "instagib" && players.forall(_._2.frags >= 20))
           Good(Unit)
-        else if (transitionalDuel.gameHeader.mode == "instagib")
+        else if (gameHeader.mode == "instagib")
           Bad(One(s"In instagib expect both frags to be >= 20, got ${players.map(_._2.frags)}"))
         else Good(Unit)
       }
       isValidFFAGame <- {
         val sum = players.map(_._2.frags).sum
-        if (transitionalDuel.gameHeader.mode == "ffa" && sum >= 15)
+        if (gameHeader.mode == "ffa" && sum >= 15)
           Good(Unit)
-        else if (transitionalDuel.gameHeader.mode == "ffa")
+        else if (gameHeader.mode == "ffa")
           Bad(One(s"In ffa expect sum of frags to be >= 15, got , got $sum"))
         else Good(Unit)
       }
@@ -181,14 +220,14 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
       }
     } yield
       SimpleCompletedDuel(
-        simpleId = s"${transitionalDuel.gameHeader.startTimeText}::${transitionalDuel.gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
+        simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
         duration = durationMinutes,
         playedAt = playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).toSet.toList.sorted,
-        startTimeText = transitionalDuel.gameHeader.startTimeText,
-        startTime = transitionalDuel.gameHeader.startTime,
-        map = transitionalDuel.gameHeader.map,
-        mode = transitionalDuel.gameHeader.mode,
-        server = transitionalDuel.gameHeader.server,
+        startTimeText = gameHeader.startTimeText,
+        startTime = gameHeader.startTime,
+        map = gameHeader.map,
+        mode = gameHeader.mode,
+        server = gameHeader.server,
         players = players.toMap, winner = winner, metaId = None
       )
 

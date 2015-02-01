@@ -1,5 +1,24 @@
 package gg.duel.pinger.analytics.duel
 
+case class LiveDuel
+(
+  simpleId: String,
+  duration: Int,
+  playedAt: List[Int],
+  startTimeText: String,
+  startTime: Long,
+  map: String,
+  mode: String,
+  server: String,
+  players: Map[String, SimplePlayerStatistics],
+  winner: Option[String], metaId: Option[String]
+  ) {
+  def asScd = SimpleCompletedDuel(simpleId, duration, playedAt, startTimeText, startTime, map, mode, server, players, winner, metaId)
+  def toJson = asScd.toJson
+  def toPrettyJson = asScd.toPrettyJson
+  def toXml = asScd.toXml.copy(label = "live-duel")
+}
+
 case class SimpleCompletedDuel
 (
   simpleId: String,
