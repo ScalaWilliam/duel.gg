@@ -62,7 +62,7 @@ object DuelStoragePlugin {
     val duelszMap = scala.collection.immutable.IntMap.apply(duelIdToDuel.mapValues(_.jsonData).toList :_*)
     val users = usersList.mapValues(_.nicknames.toList)
     val sortedDuelIds = duelIdToDuel.valuesIterator.toVector.sortBy(-_.dateTime).map(_.id)
-    val sortedDuelIdsPerNickname = duelIdToDuel.valuesIterator.flatMap{g => g.nicknames.map(n => n -> g.id)}.toVector.groupBy(_._1).mapValues(_.map(_._2).toVector)
+    val sortedDuelIdsPerNickname = duelIdToDuel.valuesIterator.flatMap{g => g.nicknames.map(n => n -> g.id)}.toVector.groupBy(_._1).mapValues(_.map(_._2).toVector.sortBy(sortedDuelIds.indexOf))
     val slidingDuels = createSliders(sortedDuelIds)
     val slidingPerUsername = {
       users.mapValues(_.flatMap(sortedDuelIdsPerNickname.get).flatten.sortBy(sortedDuelIds.indexOf).toVector).mapValues(createSliders)
