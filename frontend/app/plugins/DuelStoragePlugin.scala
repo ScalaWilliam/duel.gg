@@ -3,9 +3,10 @@ package plugins
 import akka.actor.FSM.Failure
 import akka.actor.{ActorRef, ActorLogging, Status, Kill}
 import akka.util.Timeout
+import com.hazelcast.core.{Message, MessageListener}
 import play.api.libs.concurrent.Akka
 import play.api.libs.json.Json
-import plugins.DuelStoragePlugin.StorageEvents.{UserAvailableInSearch, UserUpdated}
+import plugins.DuelStoragePlugin.StorageEvents.{DuelUpdated, UserAvailableInSearch, UserUpdated}
 import plugins.DuelStoragePlugin.{DuelStorage, User, Duel}
 import scala.annotation.tailrec
 import scala.async.Async.{async, await}
@@ -15,6 +16,7 @@ import scala.collection.immutable.SortedMap
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, ExecutionContext}
+import scala.util.Try
 import scala.xml.{PCData, Text}
 
 object DuelStoragePlugin {
@@ -135,6 +137,13 @@ class DuelStoragePlugin(implicit app: Application) extends Plugin {
   import akka.actor.ActorDSL._
   import akka.pattern.pipe
   case class WaitForUser(userId: String)
+  lazy val hazelcastTopic = HazelcastPlugin.hazelcastPlugin.hazelcast.getTopic[String]("new-duels")
+  lazy val listenerId = hazelcastTopic.addMessageListener(new MessageListener[String] {
+    override def onMessage(message: Message[String]): Unit = {
+      try { controllerActor ! DuelUpdated(message.getMessageObject.toInt) }
+      catch { case _ => }
+    }
+  })
   lazy val recordsUserRecords = actor(new Act {
     whenStarting {
       context.system.eventStream.subscribe(self, classOf[UserAvailableInSearch])
@@ -300,8 +309,10 @@ class DuelStoragePlugin(implicit app: Application) extends Plugin {
     // * that's about it! :-)
     controllerActor
     recordsUserRecords
+    listenerId
   }
   override def onStop(): Unit = {
     controllerActor ! Kill
+    hazelcastTopic.removeMessageListener(listenerId)
   }
 }
