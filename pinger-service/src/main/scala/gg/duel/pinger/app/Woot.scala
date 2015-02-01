@@ -67,8 +67,10 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
         hazelcastStatusMap.clear()
       }
       val currentDetail = scala.collection.mutable.Map.empty[Server, Option[LiveDuel]]
+      val lastUpdated = scala.collection.mutable.Map.empty[Server, Long]
       become {
         case LiveDuelUpdated(server, liveDuelO) =>
+          lastUpdated += server -> System.currentTimeMillis
           currentDetail += server -> liveDuelO
           liveDuelO match {
             case Some(liveDuel) => hazelcastStatusMap.put(server.toString, liveDuel.toXml.toString)
@@ -76,13 +78,15 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
           }
         // remove servers that may have disappeared whilst in the middle of a duel
         case CleanupOld =>
-          val removeServers = for {
+          val removeServersA = for {
             (server, Some(liveDuel)) <- currentDetail.toList
-            // 20 minutes
-            if System.currentTimeMillis - liveDuel.startTime > (20 * 60 * 1000)
+            // 15 minutes
+            if System.currentTimeMillis - liveDuel.startTime > (15 * 60 * 1000)
           } yield server
+          val removeServersB = lastUpdated.filter(k => System.currentTimeMillis() - k._2 > 60 * 1000 ).map(_._1)
+          val removeServers = (removeServersA ++ removeServersB).toSet
           removeServers foreach currentDetail.remove
-          removeServers map (_.toString) foreach hazelcastStatusMap.remove
+          removeServers map (_.toString) filter hazelcastStatusMap.containsKey foreach hazelcastStatusMap.remove
       }
     })
 
