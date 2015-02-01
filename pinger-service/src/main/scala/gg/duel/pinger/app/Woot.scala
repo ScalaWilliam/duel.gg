@@ -74,7 +74,7 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
           currentDetail += server -> liveDuelO
           liveDuelO match {
             case Some(liveDuel) => hazelcastStatusMap.put(server.toString, liveDuel.toXml.toString)
-            case None => hazelcastStatusMap.remove(server.toString)
+            case None => if (hazelcastStatusMap.containsKey(server.toString)) hazelcastStatusMap.remove(server.toString)
           }
         // remove servers that may have disappeared whilst in the middle of a duel
         case CleanupOld =>
