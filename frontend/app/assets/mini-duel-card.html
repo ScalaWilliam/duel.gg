@@ -1,4 +1,4 @@
-<polymer-element name="mini-duel-card" attributes="duelId scoreLog atTime contextUser context leftPlayerScore olderDuelId newerDuelId map mode hasDemo leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson">
+<polymer-element name="mini-duel-card" attributes="duelId isLive scoreLog atTime contextUser context leftPlayerScore olderDuelId newerDuelId map mode hasDemo leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson">
     <template>
         <style scoped>
 
@@ -12,16 +12,26 @@
                 background:#1b325f;
                 outline: 0;
             }
+            :host(.selected) a {
+                background:#1b325f;
+            }
 
         </style>
-        <template if="{{contextUser}}">
+        <template if="{{isLive}}">
+            <a class="mini-duel-card" on-click="{{fireMe}}">
+                <h3>{{leftPlayerName}} vs {{rightPlayerName}}</h3>
+                <h4>{{leftPlayerScore}}-{{rightPlayerScore}}</h4>
+                <h5>{{mode}} @ {{map}} ({{atTime}})</h5>
+            </a>
+        </template>
+        <template if="{{!isLive && contextUser}}">
         <a href="/player/{{contextUser}}/?duel={{duelId}}" class="mini-duel-card">
             <h3>{{leftPlayerName}} vs {{rightPlayerName}}</h3>
             <h4>{{leftPlayerScore}}-{{rightPlayerScore}}</h4>
             <h5>{{mode}} @ {{map}} ({{atTime}})</h5>
         </a>
         </template>
-        <template if="{{!contextUser}}">
+        <template if="{{!isLive && !contextUser}}">
             <a href="/duel/{{duelId}}/" class="mini-duel-card">
                 <h3>{{leftPlayerName}} vs {{rightPlayerName}}</h3>
                 <h4>{{leftPlayerScore}}-{{rightPlayerScore}}</h4>
@@ -31,6 +41,9 @@
     </template>
     <script>
         Polymer("mini-duel-card", {
+            fireMe: function() {
+                this.fire('clicked-duel-card', {duelId: this.duelId});
+            }
         })
     </script>
 </polymer-element>

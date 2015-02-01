@@ -114,7 +114,7 @@
         Polymer("duel-detailed-card", {
             scoreLogChanged: function(_, v) {
                 var scoreLog = JSON.parse(v);
-                var maxScore = Math.max.apply(null, scoreLog[0].concat(scoreLog[1]));
+                var maxScore = Math.max.apply(null, scoreLog[0].concat(scoreLog[1]).filter(function(x) { return x != '-'; }));
                 var stepSize = Math.ceil(maxScore / 6);
                 var ys = [0,1,2,3,4,5,6];
                 var xs = [0,1,2,3,4,5,6,7,8,9,10];
@@ -127,7 +127,7 @@
                 var duration = Math.max(scoreLog[0].length, scoreLog[1].length) - 1;
                 var stuff = scoreLog.map(
                     function(sl) {
-                        var items = xs.map(function(t) {
+                        var items = xs.filter(function(t) { return sl[t] != '-'; }).map(function(t) {
                             var x = lx +  t * ((rx - lx) / duration);
                             if ( t == 0 ) { x = lx; }
                             var score = sl[t];
