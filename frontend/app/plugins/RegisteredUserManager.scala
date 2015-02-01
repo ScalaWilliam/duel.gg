@@ -31,7 +31,6 @@ class RegisteredUserManager(implicit app: Application) extends Plugin {
   lazy val sessionEmails = HazelcastPlugin.hazelcastPlugin.hazelcast.getMap[String, String]("session-emails")
   lazy val sessionTokens = HazelcastPlugin.hazelcastPlugin.hazelcast.getMap[String, String]("session-tokens")
   def registerUser(registrationDetail: RegistrationDetail)(implicit ec: ExecutionContext): Future[Unit] = {
-
     val registerXml = <rest:query xmlns:rest='http://basex.org/rest'>
       <rest:text><![CDATA[
           declare variable $user-name as xs:string external;
@@ -70,7 +69,7 @@ db:add("]]>{dbName}<![CDATA[",
         registration-ip="{$user-ip}"
         registration-date="{current-dateTime()}"
         >
-        <nickname from="2014-09-21T00:00:00.00">{$game-nickname}</nickname>
+        <nickname country-code="{$country-code}" from="2014-09-21T00:00:00.00">{$game-nickname}</nickname>
         </registered-user>,
         "online-register")
       )
@@ -204,8 +203,7 @@ return not(empty(//player[@partial-ip = $partial-ip]))
     val sessionStateO =
       for {
         sessionId <- sessionIdO
-      sessionEmail = "william@vynar.com"
-//        sessionEmail <- Option(sessionEmails.get(sessionId))
+        sessionEmail <- Option(sessionEmails.get(sessionId))
       } yield for {
         profileO <- getRegisteredUser(sessionEmail)
       } yield SessionState(sessionIdO, Option(GoogleEmailAddress(sessionEmail)), profileO)

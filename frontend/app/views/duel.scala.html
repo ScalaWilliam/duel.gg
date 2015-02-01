@@ -1,7 +1,19 @@
-@(data: Html)(implicit sessionState: plugins.RegisteredUserManager.SessionState)
+@(id: Int, data: String)(implicit sessionState: plugins.RegisteredUserManager.SessionState)
 @main("Duel")(Html("")){
     <article id="duel-detail">
-        @data
+        <duel-view initialJson="@data"></duel-view>
+        <script>
+        window.addEventListener('polymer-ready', function(e) {
+        window.addEventListener('keydown', function(a,b,c,d) {
+        var snc = document.querySelector('duel-view');
+        snc.keypressHandler(a,b,c,d);
+        }, true);
+        //    window.addEventListener('keyup', function(a,b,c,d) {
+        //    var snc = document.querySelector('player-card');
+        //    snc.keyupHandler(a,b,c,d);
+        //    }, true);
+        });
+        </script>
             <!--suppress BadExpressionStatementJS, BadExpressionStatementJS -->
         <script type="text/javascript">
         (function(document) {

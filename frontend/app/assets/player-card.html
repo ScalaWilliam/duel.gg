@@ -1,8 +1,11 @@
 <polymer-element name="player-card"
-                 attributes="name initialGamesJson">
+                 attributes="name initialJson focusDuel">
     <template>
         <div class="player">
-            <h2>{{name}}</h2>
+            <h2>{{user.name}} ({{user.nickname}})</h2>
+            <template if="{{!user.id}}">
+                <p>Register to show more than your latest 9 duels.</p>
+            </template>
             <style scoped>
                 a { color: wheat;}
                 .flexed ol {
@@ -42,44 +45,182 @@
                     display:none;
                 }
             </style>
-            <div id="duels" class="{{ { hidden: duels.items.length == 0, flexed: true } | tokenList}}">
-                    <h2>Duels</h2>
+            <div id="duels" class="{{ { hidden: duels.length == 0, flexed: true } | tokenList}}">
                     <ol>
-                        <template repeat="{{duel in duels.items}}">
+                        <template repeat="{{duel in duels}}">
                             <li id="{{duel.globalId}}" class="{{ {active: duel == activeItem} | tokenList}}">
-                                <a href="/player/drakas/?duel={{duel.id}}">
-                                    <h3>{{duel['left-player-name']}} vs {{duel['right-player-name']}}</h3>
-                                    <h4>{{duel['left-player-score']}} vs {{duel['right-player-score']}}</h4>
-                                    <h5>{{duel.mode}} @ {{duel.map}}</h5>
-                                </a>
+                                <mini-duel-card duelId="{{duel.id}}"
+                                                contextUser="{{user.id}}"
+                                                leftPlayerName="{{duel.leftPlayerName}}"
+                                                rightPlayerName="{{duel.rightPlayerName}}"
+                                                leftPlayerScore="{{duel.leftPlayerScore}}"
+                                                rightPlayerScore="{{duel.rightPlayerScore}}"
+                                                atTime="{{duel.atTime}}"
+                                                mode="{{duel.mode}}"
+                                                map="{{duel.map}}"></mini-duel-card>
                             </li>
                         </template>
                     </ol>
                 </div>
-
-            <duel-detailed-card duelId="{{currentDuel.id}}" atTime="{{currentDuel.atTime}}" leftPlayerScore="{{currentDuel['left-player-score']}}"
-                                map="{{currentDuel.map}}" mode="{{currentDuel.mode}}" leftPlayerName="{{currentDuel['left-player-name']}}"
-                                rightPlayerScore="{{currentDuel['right-player-score']}}" rightPlayerName="{{currentDuel['right-player-name']}}"
-                                leftPlayerId="{{currentDuel['left-player-id']}}"
-                                rightPlayerId="{{currentDuel['right-player-id']}}"
+            <core-ajax id="secondary"
+                       url="http://127.0.0.1:9000/json/user/{{user.id}}/"
+                       params='{}'
+                       handleAs="json"
+                       on-core-response="{{handleResponseLazy}}"></core-ajax>
+            <core-ajax id="after"
+                       url="http://127.0.0.1:9000/json/user/{{user.id}}/"
+                       params='{}'
+                       handleAs="json"
+                       on-core-response="{{handleResponseLazyAfter}}"></core-ajax>
+            <template if="{{currentDuel}}">
+            <duel-detailed-card duelId="{{currentDuel.id}}" atTime="{{currentDuel.atTime}}" leftPlayerScore="{{currentDuel.leftPlayerScore}}"
+                                map="{{currentDuel.map}}" mode="{{currentDuel.mode}}" leftPlayerName="{{currentDuel.leftPlayerName}}"
+                                rightPlayerScore="{{currentDuel.rightPlayerScore}}" rightPlayerName="{{currentDuel.rightPlayerName}}"
+                                leftPlayerId="{{currentDuel.leftPlayerId}}"
+                                scoreLog="{{currentDuel.scoreLog|ser}}"
+                                rightPlayerId="{{currentDuel.rightPlayerId}}"
                     >
-
+                <!-- -->
+            </duel-detailed-card>
+            </template>
         </div>
     </template>
     <script>
         Polymer("player-card", {
-
-            initialGamesJsonChanged: function(_, v) {
-                this.duels = {
-                    items: JSON.parse(v)
+            ready: function() {
+                scrollHorizons(unwrap(this.shadowRoot.querySelector('#duels ol')));
+            },
+            initialJsonChanged: function(_, v) {
+                var json = JSON.parse(v);
+                this.duels = json.duels;
+                this.user = json.user;
+                this.player = json.player;
+                var hashCode = function(s){
+                    return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
                 };
-                this.currentDuel = this.duels.items[0];
+                this.duels.forEach(function(d) {
+                    d.globalId = "duel-"+hashCode(d.id);
+                })
+            },
+            activeItemChanged: function(_, v) {
+                this.currentDuel = this.activeItem;
+                if ( this.user.id ) {
+                    window.history.replaceState(null, null, '/player/'+this.user.id+'/?duel=' + this.currentDuel.id);
+                } else {
+                    window.history.replaceState(null, null, '/player/?nickname='+encodeURIComponent(this.user.nickname)+'&duel='+this.currentDuel.id);
+                }
+            },
+            focusDuelChanged: function(_, v) {
+                this.currentDuel = this.duels.filter(function(d) { return d.id == v; })[0];
+                this.activeItem = this.currentDuel;
+                var ensureVisible = (function() {
+                    if ( this.activeItem ) {
+                        if ( this.duels.indexOf(this.activeItem) > -1 ) {
+                            try {
+                                this.shadowRoot.querySelector(' #' + this.activeItem.globalId + ' mini-duel-card').shadowRoot.querySelector('a').focus();
+                            }catch(e) {}
+                            try {
+                                this.querySelector('::shadow #' + this.activeItem.globalId + ' mini-duel-card ::shadow a').focus();
+                            } catch (e) {
+                            }
+                        } else {
+
+                            this.shadowRoot.querySelector(' #' + this.activeItem.globalId + ' a').focus();
+                            try {this.querySelector('::shadow #' + this.activeItem.globalId + ' a').focus();
+                            } catch (e) {}
+                        }
+
+                    }
+                }).bind(this);
+                setTimeout(ensureVisible, 500);
+            },
+            ser: function(x) {
+                return JSON.stringify(x);
             },
             attached: function() {
-
                 scrollHorizons(unwrap(this.shadowRoot.querySelector('#duels ol')));
-            }
+            },
+            handleResponseLazy: function(a, b, c) {
+                var hashCode = function(s){
+                    return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+                };
+                b.response.duels.forEach(function(item) {
+                    for ( var i = 0; i < this.duels.length; i++ ) {
+                        if ( this.duels[i].id == item.id) return;
+                    }
+                    this.duels.push(item);
+                    item.globalId = "duel-"+hashCode(item.id);
+                }.bind(this));
+            },
+            handleResponseLazyAfter: function(a, b, c) {
+                var hashCode = function(s){
+                    return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+                };
+                b.response.duels.reverse().forEach(function(item) {
+                    for ( var i = 0; i < this.duels.length; i++ ) {
+                        if ( this.duels[i].id == item.id) return;
+                    }
+                    this.duels.unshift(item);
+                    item.globalId = "duel-"+hashCode(item.id);
+                }.bind(this));
+            },
+            keypressHandler: function(event, detail, sender) {
+                var ensureVisible = (function() {
+                    if ( this.activeItem ) {
+                        if ( this.duels.indexOf(this.activeItem) > -1 ) {
+                            try {
+                                this.shadowRoot.querySelector(' #' + this.activeItem.globalId + ' mini-duel-card').shadowRoot.querySelector('a').focus();
+                            }catch(e) {}
+                            try {
+                                this.querySelector('::shadow #' + this.activeItem.globalId + ' mini-duel-card ::shadow a').focus();
+                            } catch (e) {
+                            }
+                        } else {
 
+                            this.shadowRoot.querySelector(' #' + this.activeItem.globalId + ' a').focus();
+                            try {this.querySelector('::shadow #' + this.activeItem.globalId + ' a').focus();
+                            } catch (e) {}
+                        }
+
+                    }
+                }).bind(this);
+                // right
+                if ( event.keyCode == 39 ) {
+                    if ( this.duels.indexOf(this.activeItem) > -1 ) {
+                        event.stopPropagation();
+                        this.activeItem = this.duels[this.duels.indexOf(this.activeItem) + 1] || this.activeItem;
+                        ensureVisible();
+                        if ( this.user && this.user.id && this.duels.indexOf(this.activeItem) == this.duels.length - 2 ) {
+                            var ajax = this.shadowRoot.querySelector('core-ajax#secondary');
+                            ajax.params = JSON.stringify({'before-duel': this.duels[this.duels.length - 1].id});
+                            ajax.go();
+                        }
+                    } else {
+                        this.activeItem = this.duels[0];
+                        ensureVisible();
+                    }
+                }
+                // left
+                else if ( event.keyCode == 37) {
+                    if ( this.duels.indexOf(this.activeItem) > -1 ) {
+                        event.stopPropagation();
+                        this.activeItem = this.duels[this.duels.indexOf(this.activeItem) - 1] || this.activeItem;
+                        ensureVisible();
+
+                        if ( this.user && this.user.id && this.duels.indexOf(this.activeItem) == 0 ) {
+                            var ajax = this.shadowRoot.querySelector('core-ajax#after');
+                            ajax.params = JSON.stringify({'after-duel': this.duels[0].id});
+                            ajax.go();
+                        }
+                    } else {
+                        if ( this.user && this.user.id ) {
+                            var ajax = this.shadowRoot.querySelector('core-ajax#after');
+                            ajax.params = JSON.stringify({'after-duel': this.duels[0].id});
+                            ajax.go();
+                        }
+                    }
+                }
+            }
         })
     </script>
 </polymer-element>

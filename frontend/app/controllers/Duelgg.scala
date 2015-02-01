@@ -4,8 +4,10 @@ import java.io.File
 import java.net.InetAddress
 import java.util.UUID
 import com.maxmind.geoip2.DatabaseReader
+import play.api.libs.json.Json
 import play.api.mvc._
 import play.twirl.api.Html
+import plugins.DataSourcePlugin._
 import plugins.RegisteredUserManager._
 import plugins._
 import scala.concurrent.Future
@@ -29,97 +31,6 @@ object Duelgg extends Controller {
       val term = r.queryString.get("q").toList.flatten.headOption
       async {
         Ok(views.html.search(term))
-      }
-  }
-
-  def dynamicSearch = stated {
-    r => _ =>
-      val term = r.queryString.get("term").toList.flatten.headOption.get
-      val page = r.queryString.get("page").toList.flatten.headOption.flatMap(s => Try(s.toInt).toOption).getOrElse(1)
-      val query = <rest:query xmlns:rest="http://basex.org/rest">
-        <rest:text><![CDATA[
-declare variable $term as xs:string external;
-declare variable $duel-page as xs:int external;
-declare variable $duel-limit as xs:int external;
-declare variable $required-anonymous-games as xs:int external;
-(:declare option output:method "json";:)
-(:
-List:
-* Matching registered players (& some kind of emblem?)
-* Other matching players
-* Matching duels of the above
-:)
-let $lt := lower-case($term)
-let $registered-users :=
-  for $ru in /registered-user
-  where some $nickname in $ru/nickname satisfies contains(lower-case($nickname), $lt)
-  return $ru
-let $other-nicks :=
-  for $name in /duel/player/@name
-  where not(some $nickname in $registered-users/nickname satisfies $nickname = data($name))
-  where contains(lower-case($name), $lt)
-  let $nom := data($name)
-  group by $nom
-  where count($name) ge $required-anonymous-games
-  order by count($name) descending
-  return $nom
-let $all-nicks := (data($registered-users/nickname), $other-nicks)
-let $matching-duels :=
-  for $duel in /duel
-  where $duel/player/@name = $all-nicks
-  order by $duel/@start-time descending
-  return $duel
-let $start-from := 1 + (($duel-page - 1) * $duel-limit)
-let $end-at := $start-from + $duel-limit
-let $duel-count := count($matching-duels)
-let $has-more := $duel-count > $end-at
-let $reduced-duels := $matching-duels[position() = $start-from to $end-at]
-return map{
-  "registered-users": array {
-    for $ru in $registered-users
-    return map {
-      "id": data($ru/@id),
-      "game-nickname": data($ru/@game-nickname),
-      "name": data($ru/@name)
-    }
-  },
-  "other-nicknames": array {
-    for $nick in $other-nicks
-    return map {
-      "nick": $nick
-    }
-  },
-  "duels": map {
-    "page": $duel-page,
-    "count": $duel-count,
-    "has-more": $has-more,
-    "start-at": $start-from,
-    "end-at": $end-at,
-    "items": array {
-      for $duel in $reduced-duels
-      return map {
-        "id": data($duel/@int-id),
-        "at-time": adjust-dateTime-to-timezone(xs:dateTime($duel/@start-time), ()),
-        "left-player-score": data($duel/player[1]/@frags),
-        "left-player-name": data($duel/player[1]/@name),
-        "right-player-score": data($duel/player[2]/@frags),
-        "right-player-name": data($duel/player[2]/@name),
-        "mode": data($duel/@mode),
-        "map": data($duel/@map)
-      }
-    }
-  }
-}
-
-]]>
-        </rest:text>
-        <rest:variable name="term" value={term}/>
-        <rest:variable name="duel-page" value={page.toString}/>
-        <rest:variable name="required-anonymous-games" value="10"/>
-        <rest:variable name="duel-limit" value="25"/>
-      </rest:query>
-      async {
-        Ok(await(BasexProviderPlugin.awaitPlugin.query(query)).body)
       }
   }
 
@@ -155,60 +66,153 @@ return
   def showDuel(id: Int) = stated {
     _ => implicit sess =>
       async {
-        await(DataSourcePlugin.plugin.getDuelDetailedCard(id)) match {
-          case Some(data) => Ok(views.html.duel(Html(data)))
-          case None => NotFound("Fail")
+          DuelStoragePlugin.plugin.currentStorage.duelszMap.get(id) match {
+            case None => NotFound(s"Duel $id not found")
+            case Some(theDuel) =>
+              DuelStoragePlugin.plugin.currentStorage.getDuelFocus(id) match {
+                case Some(data) =>
+                  val json = s"""{"duel":$theDuel, "duels":[${data.mkString(", ")}]}"""
+                  Ok(views.html.duel(id, json))
+                case None => NotFound(s"Could not find duel $id")
+              }
+          }
+      }
+  }
+  def jsonDuel(id: Int) = stated {
+    _ => implicit sess =>
+      async {
+        val o = DuelStoragePlugin.plugin.currentStorage.getDuelFocus(id)
+        Ok(s"$o")
+      }
+  }
+  def jsonUser(userId: String) = stated {
+    r => implicit sess =>
+      async {
+        val duelIdO = r.queryString.get("duel").flatMap(_.headOption).map(_.toInt)
+        val beforeDuelIdO = r.queryString.get("before-duel").flatMap(_.headOption).map(_.toInt)
+        val afterDuelIdO = r.queryString.get("after-duel").flatMap(_.headOption).map(_.toInt)
+        (duelIdO, beforeDuelIdO, afterDuelIdO) match {
+          case (Some(duelId), _, _) =>
+            DuelStoragePlugin.plugin.currentStorage.getUserDuelsFocus(userId, duelId) match {
+              case Some(duels) =>
+                Ok( s"""{"duels": [${duels.mkString(", ")}]}""")
+              case None => NotFound("No!")
+            }
+          case (_, Some(beforeDuelId), _) =>
+            DuelStoragePlugin.plugin.currentStorage.getUserDuelsBefore(userId, beforeDuelId) match {
+              case Some(duels) => Ok( s"""{"duels": [${duels.mkString(", ")}]}""")
+              case None => NotFound("Could not ...")
+            }
+          case (_, _, Some(afterDuelId)) =>
+            DuelStoragePlugin.plugin.currentStorage.getUserDuelsAfter(userId, afterDuelId) match {
+              case Some(duels) => Ok( s"""{"duels": [${duels.mkString(", ")}]}""")
+              case None => NotFound(s"Could not...")
+            }
+          case _ =>
+            DuelStoragePlugin.plugin.currentStorage.getUserDuels(userId) match {
+              case Some(ds) => Ok( s"""{"duels": [${ds.mkString(", ")}]}""")
+              case None => NotFound(s"Could not...")
+            }
         }
       }
   }
+
+  def jsonSearch = stated {
+    r => implicit sess =>
+      async {
+        val beforeDuel = r.queryString.get("duel-before").flatMap(_.headOption).map(_.toInt)
+        val q = r.queryString.get("q").flatMap(_.headOption).get
+        val (matchingUsers, matchingNicknames, matchingDuels) = DuelStoragePlugin.plugin.currentStorage.search(q, beforeDuel)
+        val regsJson = Json.toJson(matchingUsers.map{case (name, nicks) => Json.toJson(Map("id"->name, "name"->name, "gameNickname" -> nicks.head))})
+        val others = Json.toJson(matchingNicknames.map(n => Json.toJson(Map("nickname"-> n))))
+        val duels = s"""[${matchingDuels.mkString(", ")}]"""
+        val outJson = s"""{"registeredUsers":$regsJson,
+           |"otherNicknames": $others,
+           |"duels": $duels}""".stripMargin
+        Ok(outJson)
+      }
+  }
+
+  def jsonMain = stated {
+    r => implicit sess =>
+    async {
+      val did = r.queryString.get("before-duel").flatMap(_.headOption)
+      val daf = r.queryString.get("after-duel").flatMap(_.headOption)
+      val o = did match {
+        case Some(v) =>DuelStoragePlugin.plugin.currentStorage.getMainBefore(v.toInt)
+        case None =>
+          daf match {
+            case Some(n) => DuelStoragePlugin.plugin.currentStorage.getMainAfter(n.toInt)
+            case _ => DuelStoragePlugin.plugin.currentStorage.getMain
+          }
+      }
+      Ok(s"""{"duels": [${o.mkString(", ")}]}""")
+    }
+
+//      async {
+//        val q = did match {
+//          case Some(v) => MainUpToDuel(v)
+//          case _ => Main
+//        }
+//        Ok(await(DataSourcePlugin.plugin.googQ(q)).get)
+//      }
+
+  }
+
+  def servers = stated {
+    _ => implicit  s =>
+      async {
+        val servahs = await(DataSourcePlugin.plugin.getServers)
+        Ok(views.html.servers(Html(servahs)))
+      }
+  }
+
   def index = stated {
     _ => implicit sess =>
       async {
-//        val servers = await(DataSourcePlugin.plugin.getServers)
-        await(DataSourcePlugin.plugin.getIndex) match {
-          case Some(data) => Ok(views.html.homepage(data))
-          case None => NotFound("Fail")
-        }
+        val duelsJsons = DuelStoragePlugin.plugin.currentStorage.getMain
+        Ok(views.html.homepage(s"""[${duelsJsons.mkString(",")}]"""))
       }
-  }
+    }
 
-  def viewPlayerDuel(id: String, duelId: Int) = stated {
+  def viewPlayer(userId: String) = stated {
     req => implicit sess =>
       async {
-        await(DataSourcePlugin.plugin.getPlayerDuel(id, duelId)) match {
-          case Some(data) =>
-            val cnts = await(DataSourcePlugin.plugin.getPlayerCounts(id))
-            Ok(views.html.playerDuel(Html(data)))
-          case None => NotFound("Fail)")
-        }
-      }
-  }
-
-  def viewPlayer(id: String) = stated {
-    req => implicit sess =>
-      async {
-        val nicknameO = req.queryString.get("nickname").toList.flatten.headOption
-        val userO = Option(id).filter(_.nonEmpty)
-        (userO, nicknameO) match {
-          case (Some(username), _) =>
-            await(DataSourcePlugin.plugin.getUsername(username)) match {
-              case Some(data) =>
-                val counts = await(DataSourcePlugin.plugin.getPlayerCounts(username))
-                Ok(views.html.player(Html(counts.getOrElse("<p>Counts not available</p>")))(Html(data)))
-              case _ => NotFound
+        val nickname = req.queryString.get("nickname").toList.flatten.headOption
+        val did = req.queryString.get("duel").flatMap(_.headOption).map(_.toInt)
+        nickname match {
+          case Some(nick) =>
+            DuelStoragePlugin.plugin.currentStorage.getNickDuels(nick) match {
+              case Some(o) =>
+                val playerJson = Json.toJson(Map("nickname" -> nick))
+                val json = s"""{"user": $playerJson, "duels": [${o.mkString(", ")}]}"""
+                Ok(views.html.player(json, did))
+              case _ =>
+                NotFound(s"Could not find duels for $nick")
             }
-          case (_, Some(nick)) =>
-            val hasUser = await(RegisteredUserManager.userManagement.getUserByNick(nick))
-            hasUser match {
-              case Some(user) => SeeOther(controllers.routes.Duelgg.viewPlayer(user).url)
-              case None =>
-                await(DataSourcePlugin.plugin.getNickname(nick)) match {
-                  case Some(data) => Ok(views.html.basicPlayer(Html(data)))
-                  case _ => NotFound
+          case None =>
+            did match {
+              case Some(duelId) =>
+                DuelStoragePlugin.plugin.currentStorage.getUserDuelsFocus(userId, duelId) match {
+                  case Some(o) =>
+                    val userJson = DuelStoragePlugin.plugin.currentStorage.usersList(userId).asBasicJson
+                    val json = s"""{ "user": $userJson, "duels": [${o.mkString(", ")}]}"""
+                    Ok(views.html.player(json, did))
+                  case None =>
+                    NotFound(s"Could not find user $userId with focus $duelId")
+                }
+              case _ =>
+                DuelStoragePlugin.plugin.currentStorage.getUserDuels(userId) match {
+                  case Some(o) =>
+                    val userJson = DuelStoragePlugin.plugin.currentStorage.usersList(userId).asBasicJson
+                    val json = s"""{ "user": $userJson, "duels": [${o.mkString(", ")}]}"""
+                    Ok(views.html.player(json, did))
+                  case None =>
+                    NotFound(s"Could not find user $userId")
                 }
             }
-          case _ => NotFound
         }
+
       }
   }
 
@@ -222,10 +226,8 @@ return
     val emptyCookie = Cookie(RegisteredUserManager.SESSION_ID, "")
     SeeOther(newUrl).withCookies(emptyCookie)
   }
-
   def login = Action.async {
     implicit request =>
-
       val sessionId = request.cookies.get(RegisteredUserManager.SESSION_ID).map(_.value).getOrElse(UUID.randomUUID().toString)
       val sessionCookie = Cookie(RegisteredUserManager.SESSION_ID, sessionId, maxAge = Option(200000))
       val newTokenValue = UUID.randomUUID().toString
@@ -284,9 +286,7 @@ return
         user <- RegisteredUserManager.userManagement.acceptOAuth(code)
       } yield {
         RegisteredUserManager.userManagement.sessionEmails.put(sessionId, user.email)
-//        NotFound
-        SeeOther("/")
-//       SeeOther(controllers.routes.UUse.viewMe().absoluteURL())
+        SeeOther(controllers.routes.Duelgg.viewMe().absoluteURL())
       }
   }
 
@@ -357,10 +357,10 @@ return
                               Ok(views.html.createProfile(countryCode, stuff.toList))
                             case _ =>
                               await(RegisteredUserManager.userManagement.registerUser(reg))
-                              topic.publish(reg.userId)
-                              //                              await(AwaitUserUpdatePlugin.awaitPlugin.awaitUser(reg.userId).recover{case _: AskTimeoutException => "whatever"})
-                              NotFound
-                            //                              todo SeeOther(controllers.routes.Main.viewPlayer(reg.userId).url)
+                              await(DuelStoragePlugin.plugin.createProfile(reg.userId))
+//                              topic.publish(reg.userId)
+//                              await(AwaitUserUpdatePlugin.awaitPlugin.awaitUser(reg.userId).recover{case _: AskTimeoutException => "whatever"})
+                            SeeOther(controllers.routes.Duelgg.viewMe().url)
                           }
                         }
                     }
@@ -371,5 +371,8 @@ return
       case _ => Future { Forbidden }
     }
   }
-
+  def questions = stated {
+    r => implicit s =>
+      async { Ok(views.html.questions(s))}
+  }
 }

@@ -1,6 +1,18 @@
-@(counts: Html)(data: Html)(implicit sessionState: plugins.RegisteredUserManager.SessionState)
+@(data: String, focusDuel: Option[Int])(implicit sessionState: plugins.RegisteredUserManager.SessionState)
 @main("Profile")(Html("")){
 <article id="player-profile">
-    @data
+    <player-card initialJson="@data" focusDuel="@focusDuel.getOrElse(null)"></player-card>
+    <script>
+    window.addEventListener('polymer-ready', function(e) {
+    window.addEventListener('keydown', function(a,b,c,d) {
+    var snc = document.querySelector('player-card');
+    snc.keypressHandler(a,b,c,d);
+    }, true);
+//    window.addEventListener('keyup', function(a,b,c,d) {
+//    var snc = document.querySelector('player-card');
+//    snc.keyupHandler(a,b,c,d);
+//    }, true);
+    });
+    </script>
 </article>
 }
