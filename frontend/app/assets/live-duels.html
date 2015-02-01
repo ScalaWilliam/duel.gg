@@ -42,9 +42,10 @@
                     display:none;
                 }
             </style>
-                <div id="duels" class="{{ { hidden: !(duels && duels.length > 0), flexed: true } | tokenList}}">
+                <div id="duels" class="flexed">
                     <h2>Live Duels</h2>
-                    <ol>
+                    <p class="{{ { hidden: (duels && duels.length > 0)} | tokenList}}">No duels taking place right now.</p>
+                    <ol class="{{ { hidden: !(duels && duels.length > 0)} | tokenList}}">
                         <template repeat="{{duel in duels}}">
                             <li id="{{duel.globalId}}" class="{{ {active: duel == activeItem} | tokenList}}">
                                 <mini-duel-card
