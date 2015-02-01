@@ -89,9 +89,7 @@
             },
             clicker: function(a,b,c,d) {
                 this.currentDuelId = a.detail.duelId;
-            },
-            currentDuelIdChanged: function(_, id) {
-                this.currentDuel = this.duels.filter(function(duel) { return duel.id == id; })[0];
+                this.currentDuel = this.duels.filter(function(duel) { return duel.id == this.currentDuelId;}.bind(this))[0];
             },
             onMessage: function(msg) {
                 var resp = JSON.parse(msg.data);
@@ -106,7 +104,10 @@
 //                        this.currentDuelId = this.duels[0].id;
 //                    } else {
                         this.currentDuelId = null;
+                    this.currentDuel = null;
 //                    }
+                } else {
+                    this.currentDuel = this.duels.filter(function(duel) { return duel.id == this.currentDuelId;}.bind(this))[0];
                 }
             },
             onClose: function() {
