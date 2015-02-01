@@ -2,7 +2,6 @@
                  attributes="name initialGamesJson">
     <template>
             <style scoped>
-                a { color: wheat;}
                 .flexed ol {
                     display:flex;
                     overflow-x:scroll;
@@ -43,13 +42,16 @@
                 <div id="duels" class="flexed">
                     <h2>Latest Duels</h2>
                     <ol>
-                        <template repeat="{{duel in duels.items}}">
+                        <template repeat="{{duel in duels}}">
                             <li id="{{duel.globalId}}" class="{{ {active: duel == activeItem} | tokenList}}">
-                                <a href="/duel/{{duel.id}}/">
-                                    <h3>{{duel['left-player-name']}} vs {{duel['right-player-name']}}</h3>
-                                    <h4>{{duel['left-player-score']}} vs {{duel['right-player-score']}}</h4>
-                                    <h5>{{duel.mode}} @ {{duel.map}}</h5>
-                                </a>
+                                <mini-duel-card duelId="{{duel.id}}"
+                                                leftPlayerName="{{duel.leftPlayerName}}"
+                                                rightPlayerName="{{duel.rightPlayerName}}"
+                                                leftPlayerScore="{{duel.leftPlayerScore}}"
+                                                rightPlayerScore="{{duel.rightPlayerScore}}"
+                                                atTime="{{duel.atTime}}"
+                                                mode="{{duel.mode}}"
+                                                map="{{duel.map}}"></mini-duel-card>
                             </li>
                         </template>
                     </ol>
@@ -61,9 +63,77 @@
                 scrollHorizons(unwrap(this.shadowRoot.querySelector('#duels ol')));
             },
             initialGamesJsonChanged: function(_, v) {
-                this.duels = {
-                    items: JSON.parse(v)
+                this.duels = JSON.parse(v);
+                var hashCode = function(s){
+                    return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
                 };
+                this.duels.forEach(function(item) {
+                    item.globalId = "duel-"+hashCode(item.id);
+                }.bind(this));
+                this.activeItem = this.duels[0];
+                var ensureVisible = (function() {
+                    if ( this.activeItem ) {
+                        if ( this.duels.indexOf(this.activeItem) > -1 ) {
+                            try {
+                                this.shadowRoot.querySelector(' #' + this.activeItem.globalId + ' mini-duel-card').shadowRoot.querySelector('a').focus();
+                            }catch(e) {}
+                            try {
+                                this.querySelector('::shadow #' + this.activeItem.globalId + ' mini-duel-card ::shadow a').focus();
+                            } catch (e) {
+                            }
+                        } else {
+
+                            this.shadowRoot.querySelector(' #' + this.activeItem.globalId + ' a').focus();
+                            try {this.querySelector('::shadow #' + this.activeItem.globalId + ' a').focus();
+                            } catch (e) {}
+                        }
+
+                    }
+                }).bind(this);
+                setTimeout(ensureVisible, 100);
+            },
+            keypressHandler: function(event, detail, sender) {
+                var ensureVisible = (function() {
+                    if ( this.activeItem ) {
+                        if ( this.duels.indexOf(this.activeItem) > -1 ) {
+                            try {
+                                this.shadowRoot.querySelector(' #' + this.activeItem.globalId + ' mini-duel-card').shadowRoot.querySelector('a').focus();
+                            }catch(e) {}
+                            try {
+                                this.querySelector('::shadow #' + this.activeItem.globalId + ' mini-duel-card ::shadow a').focus();
+                            } catch (e) {
+                            }
+                        } else {
+
+                            this.shadowRoot.querySelector(' #' + this.activeItem.globalId + ' a').focus();
+                            try {this.querySelector('::shadow #' + this.activeItem.globalId + ' a').focus();
+                            } catch (e) {}
+                        }
+
+                    }
+                }).bind(this);
+                // right
+                if ( event.keyCode == 39 ) {
+                    if ( this.duels.indexOf(this.activeItem) > -1 ) {
+                        event.stopPropagation();
+                        this.activeItem = this.duels[this.duels.indexOf(this.activeItem) + 1] || this.activeItem;
+                        ensureVisible();
+                        if ( this.duels.indexOf(this.activeItem) == this.duels.length - 2 ) {
+                            window.location = '/duel/'+ this.duels[this.duels.length - 1].id+'/';
+                        }
+                    } else {
+                        this.activeItem = this.duels[0];
+                        ensureVisible();
+                    }
+                }
+                // left
+                else if ( event.keyCode == 37) {
+                    if ( this.duels.indexOf(this.activeItem) > -1 ) {
+                        event.stopPropagation();
+                        this.activeItem = this.duels[this.duels.indexOf(this.activeItem) - 1] || this.activeItem;
+                        ensureVisible();
+                    }
+                }
             }
         })
     </script>

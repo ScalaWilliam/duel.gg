@@ -1,21 +1,39 @@
 @(data: String)(implicit sessionState: plugins.RegisteredUserManager.SessionState)
 @main("Homepage")(Html("")) {
 <div id="first">
+    <br/>
     <div style="display:flex">
-    <div id="vid" style="order:2; flex:1">
+    <div id="vid" style="order:2; width:240px;">
         <iframe width="240" height="180" src="https://www.youtube-nocookie.com/embed/FyG_MaeK6R8?rel=0" frameborder="0" allowfullscreen></iframe>
     </div>
 <div id="news" style="order:1; flex:1; text-align:left;">
     <h3 style="margin-top:0">duel.gg introduces player registration</h3>
-    <p>Following woop.ac success, Drakas has been working to improve duel.gg</p>
-    <p>duel.gg now supports demo downloads for PSL and effic.me servers.</p>
-    <p>Players are welcome to register and begin playing now.</p>
-    <p>Players also are welcome to make video submissions. Just include your profile link or duel link in the YouTube video description.</p>
+    <p>Following the <a href="http://woop.ac" target="_blank">http://woop.ac</a> success, <a href="/player/drakas/">Drakas</a> is now back onto duel.gg.</p>
+    <p>You are welcome to register and start playing now. Make video submissions: include your profile or duel link in your YouTube video description.</p>
+    <p>Navigate duels on the site using your <core-icon icon="hardware:keyboard"></core-icon> <em>arrow keys</em>:
+
+        <core-icon icon="hardware:keyboard-arrow-down"></core-icon>
+        <core-icon icon="hardware:keyboard-arrow-left"></core-icon>
+        <core-icon icon="hardware:keyboard-arrow-right"></core-icon>
+        <core-icon icon="hardware:keyboard-arrow-up"></core-icon>
+</p>
 </div>
     </div>
 </div>
 <div id="dduelss">
     <home-duels initialGamesJson="@data"> </home-duels>
+    <script>
+    window.addEventListener('polymer-ready', function(e) {
+    window.addEventListener('keydown', function(a,b,c,d) {
+    var snc = document.querySelector('home-duels');
+    snc.keypressHandler(a,b,c,d);
+    }, true);
+    //    window.addEventListener('keyup', function(a,b,c,d) {
+    //    var snc = document.querySelector('player-card');
+    //    snc.keyupHandler(a,b,c,d);
+    //    }, true);
+    });
+    </script>
 </div>
 <div id="rest">
 
