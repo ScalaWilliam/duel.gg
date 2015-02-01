@@ -34,13 +34,12 @@ object RealtimeDuelsPlugin {
   </live-duel>
   def plugin: RealtimeDuelsPlugin = Play.current.plugin[RealtimeDuelsPlugin]
     .getOrElse(throw new RuntimeException("RealtimeDuelsPlugin plugin not loaded"))
-  case class ServerUpdated(serverId: String, xmlData: String)
-  case class ServerEnriched(serverId: String, duel: RealtimeDuel)
-  case class ServerRemoved(serverId: String)
-  case class CurrentStatus(duels: Vector[RealtimeDuel]) {
+  case class EnrichedDuels(duels: Vector[RealtimeDuel]) {
     def toJson = s"""[${duels.map(_.jsonData).mkString(", ")}]"""
   }
-  case object EverythingCleared
+  object EnrichedDuels {
+    def empty = EnrichedDuels(Vector.empty)
+  }
   case object GiveStatus
   case class RealtimeDuel(id: Int, dateTime: Long, users: Set[String], nicknames: Set[String], jsonData: String)
   object RealtimeDuel { def fromXml(elem: scala.xml.Elem) = RealtimeDuel((elem \@ "id").toInt, (elem \@ "at").toLong, (elem \@ "users").split(" ").toSet, (elem \@ "nicknames").split(" ").toSet, elem \@ "json") }
@@ -50,74 +49,47 @@ object RealtimeDuelsPlugin {
   import akka.actor.ActorDSL._
   class DuelUpdatesSenderActor(out: ActorRef) extends Act {
     whenStarting {
-      context.system.eventStream.subscribe(self, classOf[CurrentStatus])
+      context.system.eventStream.subscribe(self, classOf[EnrichedDuels])
       RealtimeDuelsPlugin.plugin.giveStatus pipeTo self
     }
     become {
-      case status: CurrentStatus => out ! status.toJson
+      case status: EnrichedDuels => out ! status.toJson
     }
   }
 }
 class RealtimeDuelsPlugin(implicit app: Application) extends Plugin {
   implicit lazy val as = Akka.system
-  def giveStatus: Future[CurrentStatus] = {
+  def giveStatus: Future[EnrichedDuels] = {
     implicit val timeout = Timeout(1.second)
-    ask(good, GiveStatus).mapTo[CurrentStatus]
+    ask(good, GiveStatus).mapTo[EnrichedDuels]
   }
   lazy val theMap = HazelcastPlugin.hazelcastPlugin.hazelcast.getMap[String, String]("live-duel-updates")
   lazy val good = actor(new Act with ActorLogging {
-    val servers = scala.collection.mutable.Map.empty[String, RealtimeDuel]
+    var enrichedDuels = EnrichedDuels.empty
     case object Tick
     whenStarting {
-//      context.system.scheduler.schedule(1.second, 5.seconds, self, ServerUpdated("wat?", RealtimeDuelsPlugin.sampleLiveXml.toString))
-//      context.system.scheduler.schedule(2.second, 5.seconds, self, ServerUpdated("uw0t", RealtimeDuelsPlugin.sampleLiveXml2.toString))
       context.system.scheduler.schedule(0.seconds, 5.seconds, self, Tick)
-      import collection.JavaConverters._
-      theMap.asScala.foreach{case (k, v) => self ! ServerUpdated(k, v)}
     }
     become {
-      case ServerUpdated(serverId, xmlData) =>
-        async {
-          val xmlElem = scala.xml.XML.loadString(xmlData)
-          val enrichedData = await(DataSourcePlugin.plugin.enrichLiveDuel(xmlElem))
-          ServerEnriched(serverId, enrichedData)
-        } pipeTo self
+      case ed: EnrichedDuels =>
+        enrichedDuels = ed
+        context.system.eventStream.publish(ed)
       case akka.actor.Status.Failure(reason) =>
         log.error(reason, s"Failed to process live duel due to $reason")
-      case ServerEnriched(serverId, duel) =>
-        servers += serverId -> duel
-      case ServerRemoved(serverId) =>
-        servers.remove(serverId)
-      case EverythingCleared =>
-        servers.clear()
       case GiveStatus =>
-        sender() ! CurrentStatus(servers.values.toVector)
+        sender() ! enrichedDuels
       case Tick =>
-        context.system.eventStream.publish(CurrentStatus(servers.values.toVector))
+        import collection.JavaConverters._
+        async {
+          EnrichedDuels(await(DataSourcePlugin.plugin.enrichLiveDuels(theMap.asScala.valuesIterator.toVector.map(scala.xml.XML.loadString))))
+        } pipeTo self
     }
   })
-  lazy val listenerId = theMap.addEntryListener(new EntryListener[String, String] {
-    override def entryAdded(event: EntryEvent[String, String]): Unit = {good ! ServerUpdated(event.getKey, event.getValue)}
-    override def entryUpdated(event: EntryEvent[String, String]): Unit = {good ! ServerUpdated(event.getKey,event.getValue)}
-    override def entryEvicted(event: EntryEvent[String, String]): Unit = {good!ServerRemoved(event.getKey)}
-    override def mapEvicted(event: MapEvent): Unit = {good!EverythingCleared}
-    override def entryRemoved(event: EntryEvent[String, String]): Unit = {good!ServerRemoved(event.getKey)}
-    override def mapCleared(event: MapEvent): Unit = {good !EverythingCleared}
-  }, true)
 
   override def onStart(): Unit = {
     good
-    listenerId
-//    try {
-//      DataSourcePlugin.plugin.enrichLiveDuel(RealtimeDuelsPlugin.sampleLiveXml)
-//      good
-//      listenerId
-//    } catch {
-//      case e => println(e); throw e
-//    }
   }
 
   override def onStop(): Unit = {
-//    theMap.removeEntryListener(listenerId)
   }
 }

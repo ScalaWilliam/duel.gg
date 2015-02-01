@@ -159,6 +159,65 @@ for $duel in $live-duel
       }
     }
   }
+  def enrichLiveDuels(inputs: Vector[scala.xml.Elem]): Future[Vector[RealtimeDuel]] = {
+    async {
+      val a = await(BasexProviderPlugin.awaitPlugin.query {
+        <rest:query xmlns:rest="http://basex.org/rest">
+          <rest:text>
+            <![CDATA[
+    let $live-duel :=
+(
+    ]]>{PCData(inputs.map(_.toString).mkString(", "))}<![CDATA[
+    )
+return <duels>{
+for $duel in $live-duel
+  let $int-id := xs:int(substring(string(abs(convert:integer-from-base(string(xs:hexBinary(hash:sha256(string($duel/@simple-id)))), 16))), 1, 9))
+  let $first-map := map {
+    "id": $int-id,
+    "atTime": adjust-dateTime-to-timezone(xs:dateTime($duel/@start-time), ()),
+    "leftPlayerScore": data($duel/player[1]/@frags),
+    "leftPlayerName": data($duel/player[1]/@name),
+    "rightPlayerScore": data($duel/player[2]/@frags),
+    "rightPlayerName": data($duel/player[2]/@name),
+    "mode": data($duel/@mode),
+    "map": data($duel/@map)
+  }
+  let $score-log :=
+    let $times :=
+      for $t in 0 to data($duel/@duration)
+      order by $t ascending
+      return $t
+    let $player-times :=
+      for $player in $duel/player
+      return array {
+        for $t in $times
+        let $frags := if ($t = 0) then (0) else ((xs:int(data($player/frags[@at = $t])), '-')[1])
+        return $frags
+      }
+    return $player-times
+  let $left-player := for $ru in /registered-user[nickname = data($duel/player[1]/@name)] return data($ru/@id)
+  let $right-player := for $ru in /registered-user[nickname = data($duel/player[2]/@name)] return data($ru/@id)
+  let $second-map := for $id in $left-player return map { "leftPlayerId": $id }
+  let $third-map := for $id in $right-player return map { "rightPlayerId": $id }
+
+  let $json := json:serialize(map:merge(($first-map, $second-map, $third-map, map { "scoreLog": array { $score-log } } )))
+  let $unix-time := (xs:dateTime(data($duel/@start-time)) - xs:dateTime("1970-01-01T00:00:00-00:00")) div xs:dayTimeDuration('PT0.001S')
+  return <materialised-duel
+  id="{$int-id}"
+   at="{$unix-time}" updated-at="{current-dateTime()}" users="{($left-player, $right-player) => string-join(" ")}" nicknames="{data($duel/player/@name) => string-join(" ")}" json="{$json}"/>
+  }</duels>
+]]>
+          </rest:text>
+        </rest:query>
+      })
+      try {
+        val duels = a.xml \ "materialised-duel" collect { case e: scala.xml.Elem => RealtimeDuel.fromXml(e)}
+        duels.toVector
+      } catch {
+        case NonFatal(e) => throw new RuntimeException(s"Failed to parse due to $e: ${a.body}", e)
+      }
+    }
+  }
   def queryGames(fromPos: Int, toPos: Int) = {
     async {
       val a = await(BasexProviderPlugin.awaitPlugin.query {
