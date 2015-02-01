@@ -8,6 +8,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.twirl.api.Html
 import plugins.DataSourcePlugin._
+import plugins.RealtimeDuelsPlugin.DuelUpdatesSenderActor
 import plugins.RegisteredUserManager._
 import plugins._
 import scala.concurrent.Future
@@ -24,6 +25,16 @@ object Duelgg extends Controller {
         val r = await(DataSourcePlugin.plugin.getPlayers)
         Ok(views.html.main("Player")(Html(""))(Html(r)))
       }
+  }
+  def liveStreamStatus = stated {
+    r => implicit s =>
+      async {
+        Ok(await(RealtimeDuelsPlugin.plugin.giveStatus).toJson)
+      }
+  }
+  import play.api.Play.current
+  def liveStream = WebSocket.acceptWithActor[String, String] { request => out =>
+    DuelUpdatesSenderActor.props(out)
   }
 
   def search = stated {

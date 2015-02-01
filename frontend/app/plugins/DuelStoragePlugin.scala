@@ -179,6 +179,7 @@ class DuelStoragePlugin(implicit app: Application) extends Plugin {
     whenStarting {
       log.info("Starting materialisation of unmaterialised duels...")
       DataSourcePlugin.plugin.materialiseUnmaterialisedGames.map(_ => InitialMaterialisationFinished) pipeTo self
+
 //      self ! DuelRegistered(389639368)
 //      self ! DuelRegistered(389639368)
 //      self ! DuelRegistered(38963932)
