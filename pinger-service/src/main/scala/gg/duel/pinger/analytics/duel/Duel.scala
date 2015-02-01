@@ -39,7 +39,7 @@ object Duel {
         gameHeader = gameHeader,
         duelAccumulation = duelAccumulation,
         isRunning = !message.gamepaused,
-        timeRemaining = message.remain
+        timeRemaining = SecondsRemaining(message.remain)
       )
     }
   }

@@ -53,12 +53,12 @@ case class BetterDuelFound(gameHeader: GameHeader, simpleCompletedDuel: SimpleCo
   lazy val next: StateTransition = throw new NotImplementedError("Should not get here...")
 }
 
-case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, timeRemaining: Int, duelAccumulation: DuelAccumulation) extends BetterDuelState {
+case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, timeRemaining: SecondsRemaining, duelAccumulation: DuelAccumulation) extends BetterDuelState {
   override def next: StateTransition = {
     case ParsedMessage(_, time, info: PlayerExtInfo) if info.state <= 3 && isRunning =>
       val logItem = LogItem(
         playerId = PlayerId(info.name, info.ip),
-        remaining = SecondsRemaining(timeRemaining),
+        remaining = timeRemaining,
         frags = Frags(info.frags - info.teamkills),
         weapon = Weapon(ModesList.guns.getOrElse(info.gun, "unknown")),
         accuracy = Accuracy(info.accuracy)
@@ -93,11 +93,11 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
         case other => other
       }
     case ParsedMessage(_, time, info: ConvertedServerInfoReply) if info.remain == 0 =>
-      Good(copy(isRunning = true, timeRemaining = 0))
+      Good(copy(isRunning = true, timeRemaining = SecondsRemaining(0)))
     case ParsedMessage(_, time, info: ConvertedServerInfoReply) if BetterDuelState.isSwitch(gameHeader.startMessage, info) =>
       this.completeDuel(Option(info)).map(BetterDuelFound(gameHeader, _))
     case ParsedMessage(_, time, info: ConvertedServerInfoReply) =>
-      Good(copy(isRunning = !info.gamepaused, timeRemaining = info.remain))
+      Good(copy(isRunning = !info.gamepaused, timeRemaining = SecondsRemaining(info.remain)))
     case other => Good(this)
   }
 
@@ -108,13 +108,13 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
       case other => Bad(One(s"Expected exactly two players, got: $other"))
     }
   }
+
   def startedSecondsOr = {
     if (duelAccumulation.playerStatistics.isEmpty) {
       Bad(One("Player log empty"))
     } else {
       Good(duelAccumulation.playerStatistics.map(_.remaining).map(_.seconds).max)
     }
-
   }
   def allPlayersStartedOr(startedSeconds: Int) = {
     val bv = duelAccumulation.playerStatistics.map(_.playerId).forall(playerId =>
@@ -148,11 +148,20 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
     } yield name -> simplePlayerStatistics
   }
 
+  def allPlayersStillHere = {
+    val bv = duelAccumulation.playerStatistics.map(_.playerId).forall(playerId =>
+      duelAccumulation.playerStatistics.exists(logItem =>
+        Math.abs(logItem.remaining.seconds - timeRemaining.seconds) <= 5 &&
+          logItem.playerId == playerId))
+    if (bv) Good(Unit) else Bad(One(s"Players seem to have disappeared"))
+  }
+
   def liveDuel: LiveDuel Or Every[ErrorMessage] = {
     for {
       twoPlayers <- twoPlayersOr
       startedSeconds <- startedSecondsOr
       bothPlayersStarted <- allPlayersStartedOr(startedSeconds )
+      _ <- allPlayersStillHere
       durationMinutes = saidDurationMinutes
       isADuelGame <- if ( Set("ffa", "instagib", "efficiency") contains gameHeader.mode ) Good(true) else Bad(One(s"Found mode ${gameHeader.mode} in game, rejecting."))
       players = formPlayers(twoPlayers)
@@ -165,7 +174,8 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
       map = gameHeader.map,
       mode = gameHeader.mode,
       server = gameHeader.server,
-      players = players.toMap, winner = None, metaId = None
+      players = players.toMap, winner = None, metaId = None,
+      secondsRemaining = timeRemaining.seconds
     )
   }
 
