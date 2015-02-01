@@ -7,10 +7,11 @@ import akka.routing.RoundRobinPool
 import com.hazelcast.core.{ItemEvent, ItemListener, HazelcastInstance}
 import gg.duel.pinger.analytics.MultiplexedReader
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
-import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
+import gg.duel.pinger.analytics.duel.{LiveDuel, TransitionalBetterDuel, SimpleCompletedDuel}
+import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.ZInDuelState
 import gg.duel.pinger.service.DemoLoader.DemoDownloaded
 import gg.duel.pinger.service.{DemoLoader, WSAsyncGamePersister, BaseXServers, PingerController}
-import MultiplexedReader.{CompletedGame, SInitial, SFoundGame, SIteratorState}
+import gg.duel.pinger.analytics.MultiplexedReader._
 import gg.duel.pinger.app.Woot._
 import gg.duel.pinger.data.Server
 import gg.duel.pinger.data.journal.{SauerBytesWriter, IterationMetaData}
@@ -54,6 +55,37 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
     }).props(PingerController.props(disableHashing = disableHashing, context.self)),
       "pingerController")
 
+  val pushLiveUpdates =
+    actor(context)(new Act with ActorLogging {
+      case object CleanupOld
+      val hazelcastStatusMap = hazelcast.getMap[String, String]("live-duel-updates")
+      whenStarting {
+        context.system.eventStream.subscribe(self, classOf[LiveDuelUpdated])
+        import context.dispatcher
+        import concurrent.duration._
+        context.system.scheduler.schedule(5.seconds, 30.seconds, self, CleanupOld)
+        hazelcastStatusMap.clear()
+      }
+      val currentDetail = scala.collection.mutable.Map.empty[Server, Option[LiveDuel]]
+      become {
+        case LiveDuelUpdated(server, liveDuelO) =>
+          currentDetail += server -> liveDuelO
+          liveDuelO match {
+            case Some(liveDuel) => hazelcastStatusMap.put(server.toString, liveDuel.toXml.toString)
+            case None => hazelcastStatusMap.remove(server.toString)
+          }
+        // remove servers that may have disappeared whilst in the middle of a duel
+        case CleanupOld =>
+          val removeServers = for {
+            (server, Some(liveDuel)) <- currentDetail.toList
+            // 20 minutes
+            if System.currentTimeMillis - liveDuel.startTime > (20 * 60 * 1000)
+          } yield server
+          removeServers foreach currentDetail.remove
+          removeServers map (_.toString) foreach hazelcastStatusMap.remove
+      }
+    })
+
   val metaContext =
   actor(context)(new Act {
 
@@ -92,6 +124,12 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
             self ! MetaCompletedCtf(meta, ctf.copy(metaId = Option(meta.id)))
           case _ =>
         }
+        val liveDuelO = for {
+          SProcessing(MProcessing(serverStates, _)) <- Option(nextState)
+          ZInDuelState(_, td: TransitionalBetterDuel) <- serverStates.get(m.server)
+          liveDuel <- td.liveDuel.toOption
+        } yield liveDuel
+        pushLiveUpdates ! LiveDuelUpdated(m.server, liveDuelO)
         become(metad(meta, nextState))
       case g: MetaCompletedDuel if sender() == self =>
         context.parent ! g
@@ -230,6 +268,8 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
 
 }
 object Woot {
+
+  case class LiveDuelUpdated(server: Server, liveDuelO: Option[LiveDuel])
 
   def props(hazelcast: HazelcastInstance,
              persister: WSAsyncGamePersister, journalGenerator: JournalGenerator, disableHashing: Boolean, saveDemosToO: Option[File]) = {
