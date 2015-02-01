@@ -2,7 +2,12 @@
                  attributes="name initialJson focusDuel">
     <template>
         <div class="player">
-            <h2>{{user.name}} ({{user.nickname}})</h2>
+            <template if="{{user.name}}">
+                <h2>{{user.name}} ({{user.nickname}})</h2>
+            </template>
+            <template if="{{!(user.name)}}">
+                <h2>{{user.nickname}}</h2>
+            </template>
             <template if="{{!user.id}}">
                 <p>Register to show more than your latest 9 duels.</p>
             </template>

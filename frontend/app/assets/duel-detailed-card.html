@@ -1,4 +1,4 @@
-<polymer-element name="duel-detailed-card" attributes="duelId scoreLog atTime context leftPlayerScore olderDuelId newerDuelId map mode hasDemo leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson">
+<polymer-element name="duel-detailed-card" attributes="duelId isLive scoreLog atTime context leftPlayerScore olderDuelId newerDuelId map mode hasDemo leftPlayerId leftPlayerName rightPlayerScore rightPlayerId rightPlayerName leftPlayerHistoryJson rightPlayerHistoryJson">
     <template>
         <style scoped>
 
@@ -55,7 +55,13 @@
 
         <header>
             <h3 class="mode-map">{{mode}} @ {{map}}</h3>
-            <h2 class="date-time">{{atTime}}</h2>
+            <h2 class="date-time">
+            <template if="{{isLive}}">
+                <span>Right now</span>
+            </template>
+            <template if="{{!isLive}}">
+                <time is="relative-time" datetime="{{atTime}}">{{atTime}}</time>
+            </template>
         </header>
         <section class="score score-left">
             <p class="score">{{leftPlayerScore}}</p>
