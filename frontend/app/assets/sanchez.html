@@ -94,12 +94,12 @@
                 </ol>
             </div>
             <core-ajax id="primary"
-                       url="http://127.0.0.1:9000/json/search/"
+                       url="/json/search/"
                        params='{"q":"vaQ"}'
                        handleAs="json"
                        on-core-response="{{handleResponse}}"></core-ajax>
             <core-ajax id="secondary"
-                       url="http://127.0.0.1:9000/json/search/"
+                       url="/json/search/"
                        params='{"q":"vaQ"}'
                        handleAs="json"
                        on-core-response="{{handleResponseLazy}}"></core-ajax>
