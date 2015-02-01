@@ -21,21 +21,21 @@
             <a class="mini-duel-card" on-click="{{fireMe}}">
                 <h3>{{leftPlayerName}} vs {{rightPlayerName}}</h3>
                 <h4>{{leftPlayerScore}}-{{rightPlayerScore}}</h4>
-                <h5>{{mode}} @ {{map}} ({{atTime}})</h5>
+                <h5>{{mode}} @ {{map}} (<time is="relative-time" datetime="{{atTime}}">{{atTime}}</time>)</h5>
             </a>
         </template>
         <template if="{{!isLive && contextUser}}">
         <a href="/player/{{contextUser}}/?duel={{duelId}}" class="mini-duel-card">
             <h3>{{leftPlayerName}} vs {{rightPlayerName}}</h3>
             <h4>{{leftPlayerScore}}-{{rightPlayerScore}}</h4>
-            <h5>{{mode}} @ {{map}} ({{atTime}})</h5>
+            <h5>{{mode}} @ {{map}} (<time is="relative-time" datetime="{{atTime}}">{{atTime}}</time>)</h5>
         </a>
         </template>
         <template if="{{!isLive && !contextUser}}">
             <a href="/duel/{{duelId}}/" class="mini-duel-card">
                 <h3>{{leftPlayerName}} vs {{rightPlayerName}}</h3>
                 <h4>{{leftPlayerScore}}-{{rightPlayerScore}}</h4>
-                <h5>{{mode}} @ {{map}} ({{atTime}})</h5>
+                <h5>{{mode}} @ {{map}} (<time is="relative-time" datetime="{{atTime}}">{{atTime}}</time>)</h5>
             </a>
         </template>
     </template>
