@@ -65,12 +65,12 @@
         </template>
 
             <core-ajax id="before"
-                       url="http://127.0.0.1:9000/json/main/"
+                       url="/json/main/"
                        params='{}'
                        handleAs="json"
                        on-core-response="{{handleResponseBefore}}"></core-ajax>
             <core-ajax id="after"
-                       url="http://127.0.0.1:9000/json/main/"
+                       url="/json/main/"
                        params='{}'
                        handleAs="json"
                        on-core-response="{{handleResponseAfter}}"></core-ajax>

@@ -9,7 +9,7 @@
             <paper-input label="Search for player" on-input="{{ngn}}" on-keydown="{{keypressHandler}}">
             </paper-input>
             <core-ajax
-                    url="http://127.0.0.1:9000/search-player/"
+                    url="/search-player/"
                     params='{"nickname":"w00p|"}'
                     handleAs="json"
                     on-core-response="{{handleResponse}}"></core-ajax>

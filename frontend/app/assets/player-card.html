@@ -63,12 +63,12 @@
                     </ol>
                 </div>
             <core-ajax id="secondary"
-                       url="http://127.0.0.1:9000/json/user/{{user.id}}/"
+                       url="/json/user/{{user.id}}/"
                        params='{}'
                        handleAs="json"
                        on-core-response="{{handleResponseLazy}}"></core-ajax>
             <core-ajax id="after"
-                       url="http://127.0.0.1:9000/json/user/{{user.id}}/"
+                       url="/json/user/{{user.id}}/"
                        params='{}'
                        handleAs="json"
                        on-core-response="{{handleResponseLazyAfter}}"></core-ajax>
