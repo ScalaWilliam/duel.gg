@@ -83,7 +83,7 @@ class Woot(hazelcast: HazelcastInstance, persister: WSAsyncGamePersister, journa
             // 15 minutes
             if System.currentTimeMillis - liveDuel.startTime > (15 * 60 * 1000)
           } yield server
-          val removeServersB = lastUpdated.filter(k => System.currentTimeMillis() - k._2 > 60 * 1000 ).map(_._1)
+          val removeServersB = lastUpdated.filter(k => System.currentTimeMillis() - k._2 > 10 * 1000).map(_._1)
           val removeServers = (removeServersA ++ removeServersB).toSet
           removeServers foreach currentDetail.remove
           removeServers map (_.toString) filter hazelcastStatusMap.containsKey foreach hazelcastStatusMap.remove
