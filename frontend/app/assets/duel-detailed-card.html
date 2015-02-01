@@ -57,11 +57,12 @@
             <h3 class="mode-map">{{mode}} @ {{map}}</h3>
             <h2 class="date-time">
             <template if="{{isLive}}">
-                <span>Right now</span>
+                <span>started <time is="relative-time" datetime="{{atTime}}">{{atTime}}</time></span>
             </template>
             <template if="{{!isLive}}">
                 <time is="relative-time" datetime="{{atTime}}">{{atTime}}</time>
             </template>
+            </h2>
         </header>
         <section class="score score-left">
             <p class="score">{{leftPlayerScore}}</p>
