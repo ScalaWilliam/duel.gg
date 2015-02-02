@@ -139,4 +139,38 @@ class ImmutabilitySpec extends WordSpec with Matchers {
       result.resultsWouldCompleteGames shouldBe empty
     }
   }
+  "Timed tournament" must {
+    val initial = TournamentWithTime(Tournament.fourPlayers(Vector("A", "B", "C", "D")), 10)
+
+    "Show correct deadlines" in {
+      initial.completions shouldBe empty
+      initial.deadlines should contain only (1->10, 2->10)
+    }
+    "Show correct completion for a failure" in {
+      val failed = initial.withGameTick(2).withGameFailed(1, "Silly")
+      failed.completions should contain only (1 -> 2)
+      failed.deadlines should contain only (2 -> 10)
+    }
+    "Show correct completion for two failures" in {
+      val failed = initial.withGameTick(2).withGameFailed(1, "Silly").withGameFailed(2, "Worse")
+      failed.completions should contain only (2 -> 2, 3 -> 2)
+      failed.deadlines shouldBe empty
+    }
+    "Show correct deadline for two goods" in {
+      val result = initial.withGameTick(2).withGameWinner(2, "C").withGameTick(3).withGameWinner(1, "A")
+      result.completions should contain only (1 -> 3)
+      result.deadlines should contain only (3 -> 13)
+    }
+    "Show correctly for one good" in {
+      val result = initial.withGameTick(2).withGameWinner(2, "C")
+      result.completions should contain only (2 -> 2)
+      result.deadlines should contain only (1 -> 10)
+    }
+    "Show correctly for one good, one failure" in {
+      val result = initial.withGameTick(2).withGameFailed(1, "Silly").withGameWinner(2, "C")
+      result.completions should contain only (2 -> 2, 3 -> 2)
+      result.deadlines shouldBe empty
+    }
+
+  }
 }
