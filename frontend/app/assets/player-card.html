@@ -46,7 +46,7 @@
                     background:#1b325f;
                     outline: 0;
                 }
-                #duels.hidden {
+                .hidden {
                     display:none;
                 }
             </style>
@@ -67,6 +67,91 @@
                         </template>
                     </ol>
                 </div>
+<style scoped>
+    .maps {
+    }
+    .maps ol {
+        display:flex;
+    }
+    #map-stats ol {
+        margin:0;
+        padding:0;
+        list-style-type: none;
+    }
+    ol.modes > li > ol {
+        display:flex;
+    }
+    ol.modes > li > ol > li:first-child {
+        min-width:6em;
+        font-weight: bold;
+    }
+    #map-stats .maps li, .modes > li > ol > li:not(:first-child) {
+        padding:2px;
+        width:2em;
+    }
+    #map-stats .maps ol li:first-child {
+        min-width:8em;
+        vertical-align: middle;
+        text-align: center;
+        position:relative;
+    }
+    #map-stats .maps ol li:first-child span {
+        position:absolute;
+        bottom:1em;
+        display:inline-block;
+        left:0em;
+        right:0;
+        text-align: center;
+    }
+    #map-stats .summary {
+        font-weight: bold;
+    }
+    #map-stats .maps > ol > li {
+        height:6em;
+        text-align: left;
+    }
+    #map-stats .maps > ol > li:not(:first-child) > span {
+        transform:rotate(-90deg) translate(-4em,120%);
+        transform-origin: 0 100%;
+        display:inline-block;
+        font-weight:bold;
+    }
+    #map-stats .modes li.summary ol li:not(:first-child):not(:nth-child(2)) {
+        border-top:thin solid wheat;
+    }
+    #map-stats .modes li ol li.summary {
+border-right:thin solid wheat;
+    }
+</style>
+            <div id="map-stats" class="{{ { hidden: !stats } | tokenList}}">
+                <h2>Game counts</h2>
+                <div class="maps">
+                    <ol>
+                        <li><span><sub>mode</sub> <sup>map</sup></span></li>
+                        <template repeat="{{map in stats.maps}}">
+                            <li><span>{{map.map}}</span></li>
+                        </template>
+                    </ol>
+                </div>
+                <ol class="modes">
+                    <template repeat="{{mode in stats.modes}}">
+                    <li>
+                    <ol>
+                        <li>{{mode.mode}}</li>
+                        <li class="summary">{{mode.count}}</li>
+                        <template repeat="{{item in mode.items}}">
+                            <li>{{item}}</li>
+                        </template>
+                    </ol>
+                    </li>
+                    </template>
+                    <li class="summary"><ol><li></li><li>{{stats.count}}</li>
+                    <template repeat="{{map in stats.maps}}"><li>{{map.count}}</li></template>
+                    </ol></li>
+                </ol>
+
+            </div>
+
             <core-ajax id="secondary"
                        url="/json/user/{{user.id}}/"
                        params='{}'
@@ -100,6 +185,7 @@
                 this.duels = json.duels;
                 this.user = json.user;
                 this.player = json.player;
+                this.stats = json.stats;
                 var hashCode = function(s){
                     return s.split("").reduce(function(a,b){a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
                 };
