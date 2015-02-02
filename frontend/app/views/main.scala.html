@@ -102,6 +102,13 @@
                         </paper-button>
                         </a>
                     }
+                @if( sessionState.profile.nonEmpty && sessionState.profile.get.userId == "drakas" ) {
+                <a href="/control/">
+                    <paper-button class="colored custom" tabindex="4">
+                        <core-icon icon="group-work" style="width:2em;height:2em"></core-icon>
+                    </paper-button>
+                </a>
+                }
 
                 <a href="/news/atom/" title="Atom News Feed">
                     <paper-button class="colored custom" tabindex="1">

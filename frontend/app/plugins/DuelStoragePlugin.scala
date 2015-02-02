@@ -35,7 +35,7 @@ object DuelStoragePlugin {
   }
 
   case class User(id: String, name: String, nickname: String, nicknames: Set[String]) {
-    def asBasicJson = Json.toJson(Map("id" -> id, "name" -> name, "nickname" -> nickname))
+    def asBasicJson = Json.obj("id" -> id, "name" -> name, "nickname" -> nickname, "nicknames" -> Json.arr(nicknames.toList.sorted))
   }
 
   object User {

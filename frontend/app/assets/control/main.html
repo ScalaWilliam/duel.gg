@@ -127,11 +127,14 @@
     </section>
     <section>
         <h2><core-icon icon="account-box"></core-icon> Users</h2>
-        <div>
+        <ol>
             <template repeat="{{user in users}}">
-                <a href="/player/{{user.id}}/">{{user.id}}</a>
+                <li>
+                    <core-icon icon="refresh" on-click="{{forceUser}}"></core-icon>
+                    <a href="/player/{{user.id}}/" target="_blank">{{user.id}}</a>
+                </li>
             </template>
-        </div>
+        </ol>
     </section>
 
     <core-ajax id="saver"
@@ -141,8 +144,17 @@
                contentType="text/plain"
                method="POST"
                on-core-response="{{handleSaveResponse}}"></core-ajax>
+    <core-ajax id="profileForser"
+               url="/control/"
+               params='{}'
+               handleAs="json"
+               contentType="text/plain"
+               method="POST"
+               on-core-response="{{handleForceResponse}}"></core-ajax>
     <paper-toast id="toast1" text="Failed to save: {{saveFailReason}}.">
         <div style="color: #eeff41;" onclick="window.location.reload()">Refresh</div>
+    </paper-toast>
+    <paper-toast id="toast2">
     </paper-toast>
 
 </div>
@@ -174,6 +186,12 @@
                 this.users = this.users || ['drakas', 'lokio'];
                 this.articles = this.articles || [];
             },
+            forceUser: function() {
+                var userId = arguments[2].templateInstance.model.user.id;
+                console.log("Asking to force user" + userId);
+                this.$.profileForser.url='/control/forceProfile/'+userId+'/';
+                this.$.profileForser.go();
+            },
             saviour: function(_, data, _) {
                 this.$.saver.body = JSON.stringify(data);
                 this.$.saver.go();
@@ -184,6 +202,15 @@
                 } else {
                     this.saveFailReason = x.response.failures.join(", ");
                     this.$.toast1.show();
+                }
+            },
+            handleForceResponse: function(_, x, _) {
+                if (!x.response.error) {
+                    this.$.toast2.text = 'Forced fine: '+ JSON.stringify(x.response);
+                    this.$.toast2.show();
+                } else {
+                    this.$.toast2.text = 'Forcing failed: '+ x.response.error;
+                    this.$.toast2.show();
                 }
             },
             chartItemsChanged: function(_, v) {
