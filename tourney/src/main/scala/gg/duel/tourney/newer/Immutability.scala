@@ -1,12 +1,13 @@
 package gg.duel.tourney.newer
 
-import gg.duel.tourney.newer.Immutability.Tournament
+import gg.duel.tourney.newer.Immutability.{TournamentWithTime, Tournament}
 
 object Immutability {
   sealed trait GameState
   case object GameAwaitingSlots extends GameState
-  case class GameFailed(reason: String) extends GameState
-  case class GameWon(winner: String) extends GameState
+  trait GameCompleted extends GameState
+  case class GameFailed(reason: String) extends GameCompleted
+  case class GameWon(winner: String) extends GameCompleted
   case object GameAwaitingResult extends GameState
 
   sealed trait SlotState
@@ -24,27 +25,6 @@ object Immutability {
         case LeftSlot(a, b) => (a, b, false)
         case RightSlot(a, b) => (a, b, true)
       }
-    }
-  }
-
-  case class TournamentWithTime(tournament: Tournament, deadlines: Map[Int, Int], expectedDuration: Int, completions: Map[Int, Int]) {
-    def withGameTick(time: Int): TournamentWithTime = {
-      val gamesToFail = for {
-        (_, gameId) <- tournament.resultsWouldCompleteGames
-        deadline <- deadlines get gameId
-        if time == deadline
-      }  yield gameId
-      val newTournament = gamesToFail.foldLeft(tournament)(tournament.withGameFailed(_, s"Deadline $time reached"))
-      val extraCompletions = gamesToFail.map(g => g -> time)
-      val newGamesIds = tournament.resultsWouldCompleteGames.map(_._2).toSet.diff(deadlines.keySet)
-      val extraDeadlines = newGamesIds.map(gId => gId -> (time + expectedDuration))
-      val newDeadlines = deadlines ++ extraDeadlines
-      val newCompletions = completions ++ extraCompletions.toMap
-      // then look for newly open slots so we can give them
-      copy(tournament = newTournament, completions = newCompletions, deadlines = newDeadlines)
-    }
-    def withSlotFailed(slotId: Int, reason: String): TournamentWithTime = {
-
     }
   }
 
@@ -119,6 +99,48 @@ object Immutability {
     }
   }
 
+  // store pending deadlines and completions that happened just now.
+  // we can collect them via scanLeft or foldLeft
+  case class TournamentWithTime(expectedDuration: Int, time: Int, deadlines: Map[Int, Int], completions: Map[Int, Int], tournament: Tournament) {
+    def withGameTick(newTime: Int): TournamentWithTime = {
+      val gamesToFail = for {
+        (_, gameId) <- tournament.resultsWouldCompleteGames
+        deadline <- deadlines get gameId
+        if newTime == deadline
+      } yield gameId
+      val newTournament = gamesToFail.foldLeft(tournament)(_.withGameFailed(_, s"Deadline $newTime reached"))
+      copy(time = newTime).transitionToNewTournament(newTournament)
+    }
+    private def transitionToNewTournament(newTournament: Tournament) = {
+      val newDeadlines = newTournament.resultsWouldCompleteGames.map(aag => aag._2 -> deadlines.getOrElse(aag._2, time + expectedDuration)).toMap
+      val gamesThatCompleted = for {
+        (gameId, game) <- tournament.games.toSet
+        (`gameId`, newGame: GameCompleted) <- newTournament.games.toSet
+        if game != newGame
+      } yield gameId
+      val newCompletions = gamesThatCompleted.map(gid => gid -> time).toMap
+      TournamentWithTime(tournament = newTournament, time = time, completions= newCompletions, expectedDuration = expectedDuration, deadlines = newDeadlines)
+    }
+    def withSlotFailed(slotId: Int, reason: String): TournamentWithTime = {
+      val newTournament = tournament.withSlotFailed(slotId, reason)
+      transitionToNewTournament(newTournament)
+    }
+    def withGameFailed(gameId: Int, reason: String): TournamentWithTime = {
+      transitionToNewTournament(tournament.withGameFailed(gameId, reason))
+    }
+    def withGameWinner(gameId: Int, winner: String): TournamentWithTime = {
+      transitionToNewTournament(tournament.withGameWinner(gameId, winner))
+    }
+    def withSlotFilled(slotId: Int, name: String): TournamentWithTime = {
+      transitionToNewTournament(tournament.withSlotFilled(slotId, name))
+    }
+  }
+  object TournamentWithTime {
+    def apply(tournament: Tournament, expectedDuration: Int): TournamentWithTime = {
+      val deadlines = for { (_, gameId) <- tournament.resultsWouldCompleteGames } yield gameId -> expectedDuration
+      TournamentWithTime(tournament = tournament, time = 0, deadlines = deadlines.toMap, expectedDuration = expectedDuration, completions = Map.empty)
+    }
+  }
 }
 object ImmyTestApp extends App {
   val initial = Tournament.fourPlayers(Vector("A", "B", "C", "D"))
@@ -137,4 +159,8 @@ object ImmyTestApp extends App {
   println("failures 3")
   println(initial.withGameFailed(2, "Gamma").withGameWinner(1, "B"))
   println(initial.withGameWinner(1, "B").withGameFailed(2, "Gamma"))
+}
+object ImmatApp extends App {
+  val ttt = TournamentWithTime(Tournament.fourPlayers(Vector("A", "B", "C", "D")), 10).withGameWinner(2, "C")
+  println(ttt)
 }
