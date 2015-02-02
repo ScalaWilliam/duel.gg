@@ -1,0 +1,23 @@
+@(initialData: String)
+<!doctype html>
+<html>
+<head>
+    <title>Control Panel</title>
+    <script src="/assets/bower_components/webcomponentsjs/webcomponents.js"></script>
+    <link rel="import" href="/assets/bower_components/polymer/polymer.html">
+    <link rel="import" href="/assets/bower_components/core-icons/core-icons.html">
+    <link rel="import" href="/assets/bower_components/core-menu/core-menu.html">
+    <link rel="import" href="/assets/bower_components/core-menu/core-submenu.html">
+    <link rel="import" href="/assets/bower_components/core-item/core-item.html">
+    <link rel="import" href="/assets/bower_components/chart-elements/chart-elements.html">
+    <link rel="import" href="/assets/bower_components/chart-elements/chart-bar.html">
+    <link rel="import" href="/assets/control/main.html">
+</head>
+<body>
+    <control-main initialData="@initialData"></control-main>
+    <script>
+        document.querySelector('control-main').users = ['newbe'];
+        document.querySelector('control-main').articles = [{'name':'lel', 'title': 'greatest stuff evah'}];
+    </script>
+</body>
+</html>

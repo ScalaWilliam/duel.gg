@@ -1,32 +1,6 @@
-@(implicit sessionState: plugins.RegisteredUserManager.SessionState)
+@(qs: Html)(implicit sessionState: plugins.RegisteredUserManager.SessionState)
 @main("Questions")(Html("")){
 <article id="questions">
-    <h2>What is duel.gg?</h2>
-    <p>duel.gg collects duel results from selected <a href="http://www.sauerbraten.org/" target="_blank">Sauerbraten</a> servers.</p>
-    <p>Here's some Sauerbraten:</p>
-    <iframe width="560" height="315" src="//www.youtube-nocookie.com/embed/fX7o-1OH-WM?rel=0" frameborder="0" allowfullscreen></iframe>
-
-    <h2>What's the magic behind duel.gg?</h2>
-    <p>The genius of <a target="_blank" href="https://www.scalawilliam.com/">William Narmontas, professional software engineer</a>.<br/>Technology-wise, it's Scala, Akka, Hazelcast, BaseX, XQuery and Play!</p>
-
-    <h2>Where's ELO? Is there a ladder?</h2>
-    <p>There will be no ELO. We have other priorities.</p>
-
-    <h2>I have a suggestion</h2>
-    <p>Go to IRC and let us now &mdash; <a href="https://webchat.gamesurge.net/?channels=duel.gg">#duel.gg @@ GameSurge</a> (nickname Drakas).</p>
-
-    <h2>The site is slow...</h2>
-    <p>Google Chrome is the recommended browser because I used bleeding edge technology.</p>
-
-    <h2>Something is wrong...</h2>
-    <p>duel.gg is still in beta.</p>
-
-    <h2>I have used several nicknames before 1st February 2015</h2>
-    <p>We'll aggregate each nickname of yours that has at least 10 duels. Send Drakas a message on IRC.</p>
-    <p>Stick with a single nickname from 1st February 2015</p>
-
-    <h2>Why the Google sign in?</h2>
-    <p>To save me time. These things don't come free, you know.</p>
-
+    @qs
 </article>
 }

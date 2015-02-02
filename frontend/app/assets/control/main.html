@@ -1,0 +1,203 @@
+<link rel="import" href="/assets/bower_components/chart-elements/chart-elements.html">
+<link rel="import" href="/assets/bower_components/chart-elements/chart-bar.html">
+<link rel="import" href="/assets/bower_components/paper-input/paper-input-decorator.html">
+<link rel="import" href="/assets/bower_components/paper-input/paper-autogrow-textarea.html">
+<link rel="import" href="/assets/bower_components/paper-input/paper-input.html">
+<link rel="import" href="/assets/bower_components/paper-shadow/paper-shadow.html">
+<link rel="import" href="/assets/bower_components/paper-item/paper-item.html">
+<link rel="import" href="/assets/bower_components/core-selector/core-selector.html">
+<link rel="import" href="/assets/bower_components/core-pages/core-pages.html">
+<link rel="import" href="/assets/bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="/assets/bower_components/core-ajax/core-ajax.html">
+<link rel="import" href="/assets/control/news-art.html">
+<polymer-element name="control-main" attributes="initialData chartItems">
+    <!--
+
+    https://www.polymer-project.org/components/core-menu/demo.html
+    https://www.polymer-project.org/docs/elements/core-elements.html#core-menu
+    https://www.polymer-project.org/components/core-icons/demo.html
+
+    -->
+<template>
+<style>
+:host {
+    font-family: sans-serif;
+    margin: 3em;
+}
+</style>	<style>
+
+    .axis {
+        font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+        fill: none;
+        stroke: #000;
+        shape-rendering: crispEdges;
+    }
+    .chart {
+        font-size:0.8em;
+        border:thin solid grey;
+        padding:4px;
+    }
+    .chart .items {
+        display:flex;
+        align-items:flex-end;
+        height:10em;
+        padding-top:14px;
+    }
+    .chart .items div {
+        width:1.6em;
+        background:orangered;
+        border-radius:0.5em 0.5em 0 0;
+        margin:1px;
+        padding:2px;
+        padding-top:0.4em;
+        vertical-align: bottom;
+        text-align: center;
+        min-height:1em;
+    }
+    .chart .items div span {
+        display:block;
+    }
+    .chart span.value {
+
+        font-size:0.9em;
+        font-weight:bold;
+        color:white;
+    }
+    .chart .bottom {
+        display:flex;
+        height:6em;
+    }
+    .chart .bottom div {
+        width:1.6em;
+        margin:1px;
+        padding:2px;
+    }
+    .chart .bottom div span {
+        white-space: nowrap;
+        display:inline-block;
+        transform-origin:0 0;
+        transform: rotate(-90deg) translateX(-100%);
+        padding-top:0.3em;
+        padding-bottom:0.3em;
+    }
+
+</style>
+<div>
+    <section>
+        <h2><core-icon icon="speaker-notes"></core-icon> News</h2>
+        <paper-shadow>
+        <div layout horizontal>
+            <div style="width:15em;">
+            <core-selector selected="0">
+                <paper-item on-click="{{resetArticle}}"><core-icon icon="create"></core-icon> New Article</paper-item>
+                <template repeat="{{article in articles}}">
+                    <paper-item on-click="{{loadArticle}}">{{article.name}}</paper-item>
+                </template>
+            </core-selector>
+            </div>
+            <div flex>
+                <div><news-art id="nea" pageTitle="" pageName="" pageEnabled="" pageContent="" pagePublishTime="" on-saved-me="{{saviour}}"></news-art></div>
+            </div>
+        </div>
+
+        </paper-shadow>
+
+    </section>
+
+    <section>
+        <h2><core-icon icon="assessment"></core-icon> Statistics</h2>
+        <div>
+            <div class="chart">
+                <div class="items">
+                    <template repeat="{{item in chartItems}}">
+                        <div style="height:{{item.percentage}}px"><span class="value">{{item.value}}</span></div>
+                    </template>
+                </div>
+                <div class="bottom">
+                    <template repeat="{{item in chartItems}}">
+                        <div><span>{{item.time}}</span></div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section>
+        <h2><core-icon icon="account-box"></core-icon> Users</h2>
+        <div>
+            <template repeat="{{user in users}}">
+                <a href="/player/{{user.id}}/">{{user.id}}</a>
+            </template>
+        </div>
+    </section>
+
+    <core-ajax id="saver"
+               url="/control/pushArticle/"
+               params='{}'
+               handleAs="json"
+               contentType="text/plain"
+               method="POST"
+               on-core-response="{{handleSaveResponse}}"></core-ajax>
+    <paper-toast id="toast1" text="Failed to save: {{saveFailReason}}.">
+        <div style="color: #eeff41;" onclick="window.location.reload()">Refresh</div>
+    </paper-toast>
+
+</div>
+    </template>
+    <script>
+        Polymer("control-main", {
+            resetArticle: function() {
+                this.$.nea.pageTitle = '';
+                this.$.nea.pageName = '';
+                this.$.nea.pageContent = '';
+                this.$.nea.publishTime = '';
+                this.$.nea.pageEnabled = '';
+            },
+            loadArticle: function() {
+                var article = arguments[2].templateInstance.model.article;
+                this.$.nea.pageTitle = article.title;
+                this.$.nea.pageName = article.name;
+                this.$.nea.pageContent = article.content;
+                this.$.nea.pagePublishTime = article.publishTime;
+                this.$.nea.pageEnabled = article.enabled;
+            },
+            ready: function() {
+                this.chartItems = this.chartItems || [
+                    {"time": "2014-09-31", "value": 92},
+                    {"time": "2014-09-31", "value": 100},
+                    {"time": "2014-10-01", "value": 30},
+                    {"time": "2014-10-02", "value": 35}
+                ];
+                this.users = this.users || ['drakas', 'lokio'];
+                this.articles = this.articles || [];
+            },
+            saviour: function(_, data, _) {
+                this.$.saver.body = JSON.stringify(data);
+                this.$.saver.go();
+            },
+            handleSaveResponse: function(_, x, _) {
+                if (x.response.good) {
+                    window.location.reload();
+                } else {
+                    this.saveFailReason = x.response.failures.join(", ");
+                    this.$.toast1.show();
+                }
+            },
+            chartItemsChanged: function(_, v) {
+                var maxValue = Math.max.apply(null, v.map(function(x) { return x.value }));
+                v.forEach(function(x) {
+                    x.percentage = Math.ceil(100 * x.value / maxValue);
+                });
+            },
+            initialDataChanged: function(_, v) {
+                var r = JSON.parse(v);
+                for ( var k in r ) {
+                    this[k] = r[k];
+                }
+            }
+        })
+    </script>
+</polymer-element>

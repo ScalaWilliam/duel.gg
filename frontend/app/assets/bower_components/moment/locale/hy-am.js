@@ -78,10 +78,6 @@
             yy : '%d տարի'
         },
 
-        meridiemParse: /գիշերվա|առավոտվա|ցերեկվա|երեկոյան/,
-        isPM: function (input) {
-            return /^(ցերեկվա|երեկոյան)$/.test(input);
-        },
         meridiem : function (hour) {
             if (hour < 4) {
                 return 'գիշերվա';

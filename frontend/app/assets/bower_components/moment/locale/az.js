@@ -73,10 +73,6 @@
             y : 'bir il',
             yy : '%d il'
         },
-        meridiemParse: /gecə|səhər|gündüz|axşam/,
-        isPM : function (input) {
-            return /^(gündüz|axşam)$/.test(input);
-        },
         meridiem : function (hour, minute, isLower) {
             if (hour < 4) {
                 return 'gecə';

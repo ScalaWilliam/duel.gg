@@ -382,5 +382,91 @@ return db:add("duelgg", $gg, "materialised-duels")
     </rest:query>
     ).map(_ => Unit)
   }
+  def getNewsArticle = BasexProviderPlugin.awaitPlugin.query {
+    <rest:query xmlns:rest="http://basex.org/rest">
+      <rest:text><![CDATA[
+      declare option output:method 'raw';
+      let $article := (
+        for $article in /article[@enabled = 'true']
+        where xs:dateTime($article/@publish-time) lt current-dateTime()
+        order by $article/@publish-time descending
+        return $article
+      )[1]
+      let $article-bit := <article><header><h2><a href="/news/{data($article/@name)}/">{data($article/@title)}</a></h2>
+      <time is="relative-time" datetime="{$article/@publish-time}">{data($article/@publish-time)}</time></header>
+      <div class="content">CONTENT-GOES-HERE</div>
+        </article>
+        return replace(serialize($article-bit), 'CONTENT-GOES-HERE', string($article))
+        ]]></rest:text>
+      </rest:query>
+  }.map(_.body)
+  def readArticle(id: String) = BasexProviderPlugin.awaitPlugin.queryOption {
+    <rest:query xmlns:rest="http://basex.org/rest">
+      <rest:text><![CDATA[
+declare option output:method 'raw';
+declare variable $article-name as xs:string external;
+let $cgh := 'CONTENT-GOES-HERE'
+for $article in (/article[@name = $article-name])[1]
+where $article/@enabled = 'true'
+where xs:dateTime($article/@publish-time) lt current-dateTime()
+let $art :=
+<article>
+<header>
+<h2>{data($article/@title)}</h2>
+<time is="relative-time" datetime="{data($article/@publish-time)}">{data($article/@publish-time)}</time>
+</header>
+<div class="content">{$cgh}</div>
+</article>
+return replace(serialize($art), $cgh, string($article))
+  ]]></rest:text>
+      <rest:variable name="article-name" value={id}/>
+    </rest:query>
+  }
+  def getQuestions = BasexProviderPlugin.awaitPlugin.query {
+    <rest:query xmlns:rest="http://basex.org/rest">
+      <rest:text><![CDATA[
+declare option output:method 'raw';
+data(/article[@name = 'questions'])
+  ]]></rest:text>
+    </rest:query>
+  }.map(_.body)
+  def getAtomFeed = BasexProviderPlugin.awaitPlugin.query {
+    <rest:query xmlns:rest="http://basex.org/rest">
+      <rest:text>
+        <![CDATA[
+        declare option output:omit-xml-declaration 'no';
+let $entries :=
+for $article in /article
+let $publish-time := xs:dateTime($article/@publish-time)
+where $publish-time le current-dateTime()
+where $article/@enabled = 'true'
+order by $publish-time descending
+let $article-link := "http://duel.gg/news/" || data($article/@name) || "/"
+return <entry xmlns="http://www.w3.org/2005/Atom">
+  <title>{data($article/@title)}</title>
+  <link href="{$article-link}"/>
+  <id>{$article-link}</id>
+  <updated>{data($article/@publish-time)}</updated>
+  <content type="html">{data($article)}</content>
+  <author><name>Drakas</name></author>
+</entry>
+let $main-updated-time := max(
+  for $article in /article
+  return xs:dateTime($article/@publish-time)
+)
+return
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+	<title>Example Feed</title>
+	<subtitle>A subtitle.</subtitle>
+	<link href="http://duel.gg/news/atom/" rel="self" />
+	<link href="http://duel.gg/" />
+	<id>http://duel.gg/</id>
+	<updated>{$main-updated-time}</updated>
+ {$entries}</feed>
+  ]]>
+      </rest:text>
+    </rest:query>
+  }.map(_.body)
 
 }
