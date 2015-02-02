@@ -8,6 +8,7 @@
         <link href='/assets/stylesheets/main.css' rel="stylesheet" type="text/css"/>
         <meta name="description" content="duel.gg is a match league for the Sauerbraten multiplayer first-person shooter">
         <meta name="keywords" content="online FPS, first person shooter, sauerbraten league, sauerbraten, sauerbraten duel">
+        <link href='/news/atom/' rel="alternate" type="application/atom+xml" title="Atom feed of news articles"/>
         <script src="/assets/bower_components/webcomponentsjs/webcomponents.js"></script>
         <script>
         function scrollHorizons(el) {
@@ -65,7 +66,7 @@
                 <a href="/search/">
             <paper-button class="colored custom" tabindex="0" aria-label="search" id="search-btn">
                 <core-icon icon="search" style="width:2em;height:2em"></core-icon>
-                Search Players
+                Search
             </paper-button>
                 </a>
                 <a href="/servers/">
@@ -91,10 +92,16 @@
                         <a href="/login/">
                         <paper-button class="colored custom" tabindex="4">
                             <core-icon icon="open-in-browser" style="width:2em;height:2em"></core-icon>
-                            Log in with Google
+                            Register with Google
                         </paper-button>
                         </a>
                     }
+
+                <a href="/news/atom/" title="Atom News Feed">
+                    <paper-button class="colored custom" tabindex="1">
+                        <core-icon src="/assets/appbar.rss.svg" style="width: 2em; height: 2em;"></core-icon>
+                    </paper-button>
+                </a>
                 <br/>
     @*<d-searcher></d-searcher>*@
             </div>

@@ -14,7 +14,7 @@ import plugins._
 import scala.concurrent.Future
 import scala.util.Try
 import scala.async.Async.{async, await}
-object Duelgg extends Controller {
+object Duelgg extends Controller  {
 
   val SESSION_ID = "sessionId"
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -181,8 +181,9 @@ return
   def index = stated {
     _ => implicit sess =>
       async {
+        val article = await(DataSourcePlugin.plugin.getNewsArticle)
         val duelsJsons = DuelStoragePlugin.plugin.currentStorage.getMain
-        Ok(views.html.homepage(s"""[${duelsJsons.mkString(",")}]"""))
+        Ok(views.html.homepage(s"""[${duelsJsons.mkString(",")}]""")(Html(article)))
       }
     }
 
@@ -276,6 +277,13 @@ return
         }
     }
     }
+  def drakasOnly[V](f: Request[AnyContent] => RegisteredSession => Future[Result]): Action[AnyContent] =
+  registered {implicit r => {
+    case rs@RegisteredSession(_, RegisteredUser("drakas", "william@vynar.com", _, _)) =>
+      f(r)(rs)
+    case other => Future{NotFound}
+  }}
+//  Action.async { req => f(req)(RegisteredSession(null, RegisteredUser("drakas", "william@vynar.com", "w00p|Drakas", "Drakas"))) }
 
   def mainUrl(implicit request : play.api.mvc.RequestHeader) =
     controllers.routes.Duelgg.oauth2callback().absoluteURL()
@@ -384,6 +392,119 @@ return
   }
   def questions = stated {
     r => implicit s =>
-      async { Ok(views.html.questions(s))}
+      async {  Ok(views.html.questions(Html(await(DataSourcePlugin.plugin.getQuestions))))}
+  }
+
+  def pushArticle = drakasOnly {
+    r => implicit s =>
+      async {
+        val isGood = await(verifyArticle(r.body.asText.get))
+        if ( isGood.isGood ) {
+          await(pushArticleJ(r.body.asText.get))
+          Ok("""{"good":true}""")
+        } else {
+          Ok(isGood.swap.get)
+        }
+      }
+  }
+
+  import org.scalactic._
+  import org.scalactic.Accumulation._
+  def verifyArticle(inputJson: String): Future[Unit Or String] = {
+    BasexProviderPlugin.awaitPlugin.query(<rest:query xmlns:rest="http://basex.org/rest">
+      <rest:text>
+        <![CDATA[
+declare variable $input-json as xs:string external;
+declare option output:method 'json';
+let $json-input := parse-json($input-json)
+let $failures := (
+  if ( empty($json-input?pageTitle) or $json-input?pageTitle = '' ) then (("Page title empty")) else (),
+  if ( not(matches($json-input?pageName, '^[a-z-]+$')) ) then (("Page name not well formed")) else (),
+  if ( empty($json-input?pageContent) or $json-input?pageContent = '' ) then (("Page content empty")) else ()
+)
+return if ( empty($failures) ) then (map{"good": true()}) else (map { "good": false(), "failures": array { $failures } })
+]]>
+      </rest:text>
+      <rest:variable name="input-json" value={inputJson}/>
+    </rest:query>).map{
+      r =>
+        val isGood = (r.json \ "good").as[Boolean]
+        if ( isGood ) Good(Unit) else Bad(r.body)
+    }
+  }
+  def pushArticleJ(inputJson: String): Future[Unit] = {
+    BasexProviderPlugin.awaitPlugin.query{<rest:query xmlns:rest="http://basex.org/rest">
+      <rest:text>
+        <![CDATA[
+declare variable $input-json as xs:string external;
+let $json := parse-json($input-json)
+let $new-article := <article title="{$json?pageTitle}" name="{$json?pageName}" publish-time="{
+if ( $json?publishTime castable as xs:dateTime ) then ($json?publishTime) else (current-dateTime())
+}" enabled="{$json?enabled}">{$json?pageContent}</article>
+let $existing-article := /article[@name = data($json?pageName)]
+return if ( empty($existing-article) ) then (db:add("duelgg", $new-article, "publish-articles")) else (replace node $existing-article  with $new-article)
+]]>
+      </rest:text>
+      <rest:variable name="input-json" value={inputJson}/>
+    </rest:query>
+    }.map(_ => ())
+  }
+
+  def newsAtom = Action.async {
+    r =>
+      async {
+        val data = await(DataSourcePlugin.plugin.getAtomFeed)
+        Ok(data).withHeaders("Content-Type" -> "application/atom+xml")
+      }
+  }
+
+  def showArticle(name: String) = stated {
+    r => implicit s =>
+      async {
+        await(DataSourcePlugin.plugin.readArticle(name)) match {
+          case Some(article) => Ok(views.html.main("Article!")(Html(""))(Html(article)))
+          case None => NotFound(s"Article id $name not found.")
+        }
+      }
+  }
+
+  def controlIndex = drakasOnly {
+    r => implicit s =>
+      async {
+      val r = await(BasexProviderPlugin.awaitPlugin.query{
+        <rest:query xmlns:rest="http://basex.org/rest">
+          <rest:text>
+            <![CDATA[
+declare option output:method 'json';
+let $articles :=
+  for $article in /article
+  order by $article/@publish-time descending
+  return map {
+    "name": data($article/@name),
+    "title": data($article/@title),
+    "enabled": $article/@enabled = 'true',
+    "publishTime": data($article/@publish-time),
+    "content": data($article)
+  }
+let $chartItems :=
+  for $d in /duel
+  let $date := xs:date(adjust-dateTime-to-timezone(xs:dateTime($d/@start-time), ()))
+  group by $date
+  order by $date ascending
+  return map { "time": $date, "value": count($d) }
+let $users :=
+  for $u in /registered-user
+  return map { "id": data($u/@id) }
+return map {
+  "chartItems": array { $chartItems[position() = (last() - 50) to last()] },
+  "articles": array { $articles },
+  "users": array { $users }
+}
+]]>
+          </rest:text>
+        </rest:query>
+      })
+        Ok(views.html.admin.homepage(r.body))
+      }
   }
 }
