@@ -44,6 +44,24 @@ object DuelStoragePlugin {
   object DuelStorage {
     def empty = DuelStorage(Map.empty, SortedMap.empty[Int, Duel])
   }
+  def atimed[T](f: =>T): T = {
+    val start = System.currentTimeMillis()
+    val r = f
+    val end = System.currentTimeMillis()
+    import concurrent.duration._
+    val diff = (end - start).millis
+    println(s"Took $diff to produce output ${r.getClass}: ${r.toString.take(15)}...")
+    r
+  }
+  def atimedText[T](text: String)(f: =>T): T = {
+    val start = System.currentTimeMillis()
+    val r = f
+    val end = System.currentTimeMillis()
+    import concurrent.duration._
+    val diff = (end - start).millis
+    println(s"[$text] Took $diff to produce output ${r.getClass}: ${r.toString.take(15)}...")
+    r
+  }
   case class DuelStorage(usersList: Map[String, User], duelIdToDuel: SortedMap[Int, Duel]) {
     def createSliders(input: Vector[Int]): Map[Int, Vector[Int]] = {
       if ( input.size < 9 ) {
@@ -62,7 +80,11 @@ object DuelStoragePlugin {
     val duelszMap = scala.collection.immutable.IntMap.apply(duelIdToDuel.mapValues(_.jsonData).toList :_*)
     val users = usersList.mapValues(_.nicknames.toList)
     val sortedDuelIds = duelIdToDuel.valuesIterator.toVector.sortBy(-_.dateTime).map(_.id)
-    val sortedDuelIdsPerNickname = duelIdToDuel.valuesIterator.flatMap{g => g.nicknames.map(n => n -> g.id)}.toVector.groupBy(_._1).mapValues(_.map(_._2).toVector.sortBy(sortedDuelIds.indexOf))
+    val sortedDuelIdsPerNickname = {
+      val a = duelIdToDuel.valuesIterator.flatMap{g => g.nicknames.map(n => n -> g.id)}.toVector.groupBy(_._1).mapValues(_.map(_._2).toVector.sortBy(sortedDuelIds.indexOf))
+      scala.collection.immutable.TreeMap.apply(a.toVector:_*)
+    }
+    val nicknamesSet = scala.collection.immutable.TreeSet.apply(sortedDuelIdsPerNickname.keySet.toVector :_*)
     val slidingDuels = createSliders(sortedDuelIds)
     val slidingPerUsername = {
       users.mapValues(_.flatMap(sortedDuelIdsPerNickname.get).flatten.sortBy(sortedDuelIds.indexOf).toVector).mapValues(createSliders)
@@ -80,23 +102,27 @@ object DuelStoragePlugin {
     def getUserDuelsBefore(userId: String, duelId: Int) = duelsPerUsername.get(userId).map(_.dropWhile(_ != duelId).drop(1).take(9).map(duelszMap))
     def getDuelFocus(duelId: Int) = slidingDuels.get(duelId).map(_.map(duelszMap))
     def search(term: String, beforeDuelId: Option[Int]) = {
-      val matchingUsers = for {
+      val matchingUsers = {for {
         (u, ns) <- users
         if (u containsInsensitive term) || ns.exists(_ containsInsensitive term)
-      } yield u -> ns
-      val matchingNicks = for {
-        nick <- sortedDuelIdsPerNickname.keySet
+      } yield u -> ns}
+      val matchingNicks = {for {
+        nick <- nicknamesSet
         if (nick containsInsensitive term) || matchingUsers.exists(_._2.contains(nick))
-      } yield nick
+      } yield nick}
       val userNames = matchingUsers.keySet
       val userNicks = matchingUsers.values.flatten.toSet
       val showOnlyNicks = matchingNicks diff userNicks
-      val showOnlySortedNicks = showOnlyNicks.toList.filter(sortedDuelIdsPerNickname(_).size>=10).sortBy(sortedDuelIdsPerNickname(_).size).reverse
-      val matchingDuelIds = (matchingNicks ++ userNicks).map(sortedDuelIdsPerNickname).flatten
-      val matchingDuels = beforeDuelId match {
-        case None => sortedDuelIds.filter(matchingDuelIds.contains).take(9).map(duelszMap)
-        case Some(did) => sortedDuelIds.dropWhile(_ != did).drop(1).filter(matchingDuelIds.contains).map (duelszMap).take(9)
+      val showOnlySortedNicks = {
+        showOnlyNicks.toList.filter(sortedDuelIdsPerNickname(_).size >= 10).sortBy(sortedDuelIdsPerNickname(_).size).reverse
       }
+      val matchingDuelIds = {
+        (matchingNicks ++ userNicks).map(sortedDuelIdsPerNickname).flatten
+      }
+      val matchingDuels = {beforeDuelId match {
+        case None => sortedDuelIds.filter(matchingDuelIds.contains).take(9).map(duelszMap)
+        case Some(did) => sortedDuelIds.dropWhile(_ != did).drop(1).filter(matchingDuelIds.contains).take(9).map(duelszMap)
+      }}
       (matchingUsers, showOnlySortedNicks, matchingDuels)
     }
     def duelsMissingUsers = {

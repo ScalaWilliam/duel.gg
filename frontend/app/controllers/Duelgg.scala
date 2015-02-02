@@ -132,15 +132,22 @@ return
     r => implicit sess =>
       async {
         val beforeDuel = r.queryString.get("duel-before").flatMap(_.headOption).map(_.toInt)
-        val q = r.queryString.get("q").flatMap(_.headOption).get
-        val (matchingUsers, matchingNicknames, matchingDuels) = DuelStoragePlugin.plugin.currentStorage.search(q, beforeDuel)
-        val regsJson = Json.toJson(matchingUsers.map{case (name, nicks) => Json.toJson(Map("id"->name, "name"->name, "gameNickname" -> nicks.head))})
-        val others = Json.toJson(matchingNicknames.map(n => Json.toJson(Map("nickname"-> n))))
-        val duels = s"""[${matchingDuels.mkString(", ")}]"""
-        val outJson = s"""{"registeredUsers":$regsJson,
-           |"otherNicknames": $others,
-           |"duels": $duels}""".stripMargin
+        val qO = r.queryString.get("q").flatMap(_.headOption).filter(_.length >= 3)
+        qO match {
+          case None => NotFound("Query string must be 3+ in length")
+          case Some(q) =>
+            val (matchingUsers, matchingNicknames, matchingDuels) = DuelStoragePlugin.plugin.currentStorage.search(q, beforeDuel)
+            val regsJson = Json.toJson(matchingUsers.map { case (name, nicks) => Json.toJson(Map("id" -> name, "name" -> name, "gameNickname" -> nicks.head))})
+            val others = Json.toJson(matchingNicknames.map(n => Json.toJson(Map("nickname" -> n))))
+            val duels = s"""[${matchingDuels.mkString(", ")}]"""
+            val outJson = s"""{"registeredUsers":$regsJson
+,
+"otherNicknames": $others
+,
+"duels": $duels}
+"""
         Ok(outJson)
+            }
       }
   }
 
