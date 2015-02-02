@@ -93,6 +93,35 @@ object DuelStoragePlugin {
       users.mapValues(_.flatMap(sortedDuelIdsPerNickname.get).flatten.sortBy(sortedDuelIds.indexOf).toVector)
     }
     val getMain = sortedDuelIds.take(16).map(duelszMap)
+    val userToMapModeCounts = {
+      duelsPerUsername.mapValues{duelIds =>
+
+        val modeMapPairs = duelIds.map(duelszMap).map{json =>
+          val pj = Json.parse(json)
+          ((pj \ "mode").as[String], (pj \ "map").as[String])
+        }
+
+        val bestMaps = modeMapPairs.groupBy(_._2).mapValues(_.size).toList.sortBy(-_._2)
+        val bestModes = modeMapPairs.groupBy(_._1).mapValues(_.size).toList.sortBy(-_._2)
+        val modeMapPairCounts = modeMapPairs.groupBy(identity).mapValues(_.size)
+
+        val mapsItems = for {
+          (map, totalMapCount) <- bestMaps
+        } yield Json.obj("map" -> map, "count" -> totalMapCount)
+
+        val modesItems = for {
+          (mode, modeCount) <- bestModes
+          items = for {
+            (map, totalMapCount) <- bestMaps
+          } yield modeMapPairCounts.getOrElse((mode, map), 0)
+        } yield Json.obj(
+            "mode" -> mode,
+            "count" -> modeCount,
+            "items" -> Json.toJson(items)
+          )
+        Json.obj("count" -> duelIds.size, "maps" -> mapsItems, "modes" -> Json.toJson(modesItems)).toString()
+      }
+    }
     def getMainBefore(duelId: Int) = sortedDuelIds.dropWhile(_ != duelId).drop(1).take(16).map(duelszMap)
     def getMainAfter(duelId: Int) = sortedDuelIds.takeWhile(_ != duelId).takeRight(16).map(duelszMap)
     def getNickDuels(nickname: String) = sortedDuelIdsPerNickname.get(nickname).map(_.take(9).map(duelszMap))

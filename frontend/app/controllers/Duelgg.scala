@@ -210,12 +210,13 @@ return
                 NotFound(s"Could not find duels for $nick")
             }
           case None =>
+            def stats = DuelStoragePlugin.plugin.currentStorage.userToMapModeCounts(userId)
             did match {
               case Some(duelId) =>
                 DuelStoragePlugin.plugin.currentStorage.getUserDuelsFocus(userId, duelId) match {
                   case Some(o) =>
                     val userJson = DuelStoragePlugin.plugin.currentStorage.usersList(userId).asBasicJson
-                    val json = s"""{ "user": $userJson, "duels": [${o.mkString(", ")}]}"""
+                    val json = s"""{ "user": $userJson, "stats": $stats,"duels": [${o.mkString(", ")}]}"""
                     Ok(views.html.player(json, did))
                   case None =>
                     NotFound(s"Could not find user $userId with focus $duelId")
@@ -224,7 +225,7 @@ return
                 DuelStoragePlugin.plugin.currentStorage.getUserDuels(userId) match {
                   case Some(o) =>
                     val userJson = DuelStoragePlugin.plugin.currentStorage.usersList(userId).asBasicJson
-                    val json = s"""{ "user": $userJson, "duels": [${o.mkString(", ")}]}"""
+                    val json = s"""{ "user": $userJson, "stats": $stats, "duels": [${o.mkString(", ")}]}"""
                     Ok(views.html.player(json, did))
                   case None =>
                     NotFound(s"Could not find user $userId")
