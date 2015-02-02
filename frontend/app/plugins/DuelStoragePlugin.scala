@@ -101,7 +101,7 @@ object DuelStoragePlugin {
           ((pj \ "mode").as[String], (pj \ "map").as[String])
         }
 
-        val bestMaps = modeMapPairs.groupBy(_._2).mapValues(_.size).toList.sortBy(-_._2)
+        val bestMaps = modeMapPairs.groupBy(_._2).mapValues(_.size).filter(_._2 >= 5).toList.sortBy(-_._2)
         val bestModes = modeMapPairs.groupBy(_._1).mapValues(_.size).toList.sortBy(-_._2)
         val modeMapPairCounts = modeMapPairs.groupBy(identity).mapValues(_.size)
 
