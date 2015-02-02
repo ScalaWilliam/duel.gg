@@ -26,8 +26,8 @@ class DataSourcePlugin(implicit app: Application) extends Plugin {
       <rest:text><![CDATA[
         let $lis := for $ru in /registered-user
         order by $ru/@id ascending
-        return <li><a href="/player/{data($ru/@id)}/">{data($ru/@game-nickname)}</a></li>
-        return <article id="players-list"><ol>{$lis}</ol></article>
+        return <li><a href="/player/{data($ru/@id)}/">{data($ru/@name)}</a></li>
+        return <article id="players-list"><h2>Registered Players</h2><ol>{$lis}</ol></article>
         ]]></rest:text></rest:query>).map(_.body)
   }
 

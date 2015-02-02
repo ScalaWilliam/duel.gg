@@ -23,7 +23,7 @@ object Duelgg extends Controller  {
     _ => implicit s =>
       async {
         val r = await(DataSourcePlugin.plugin.getPlayers)
-        Ok(views.html.main("Player")(Html(""))(Html(r)))
+        Ok(views.html.main("Players")(Html(""))(Html(r)))
       }
   }
   def liveStreamStatus = stated {
