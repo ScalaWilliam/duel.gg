@@ -12,9 +12,10 @@ class BasexProviderPlugin(implicit app: Application) extends Plugin {
 
   def query(xml: Elem) = {
     import scala.concurrent.ExecutionContext.Implicits.global
+    val possibleException = new Throwable
     for {
       r <- WS.url(url).withAuth(username, password, WSAuthScheme.BASIC).post(xml)
-      _ = if ( r.status != 200 ) { throw new RuntimeException(s"Expected status 200, got ${r.status}. Content: ${r.body}, query: $xml")}
+      _ = if ( r.status != 200 ) { throw new RuntimeException(s"Expected status 200, got ${r.status}. Content: ${r.body}, query: $xml", possibleException)}
     } yield r
   }
 

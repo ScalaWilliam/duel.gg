@@ -22,6 +22,7 @@ GET         /me/                         controllers.Duelgg.viewMe()
 GET         /control/                    controllers.Duelgg.controlIndex
 GET         /livestream/                 controllers.Duelgg.liveStream
 GET         /livestream/current/         controllers.Duelgg.liveStreamStatus
-GET /news/atom/ controllers.Duelgg.newsAtom
-GET         /news/:name/              controllers.Duelgg.showArticle(name: String)
+GET         /news/atom/                  controllers.Duelgg.newsAtom
+GET         /news/:name/                 controllers.Duelgg.showArticle(name: String)
 POST        /control/pushArticle/        controllers.Duelgg.pushArticle
+POST        /control/forceProfile/:id/   controllers.Admin.forceProfile(id: String)
