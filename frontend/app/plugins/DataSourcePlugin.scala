@@ -298,7 +298,10 @@ declare variable $list-of-ids as xs:string external;
   let $json := json:serialize(map:merge(($first-map, $second-map, $third-map, map { "scoreLog": array { $score-log } } )))
   let $unix-time := (xs:dateTime(data($duel/@start-time)) - xs:dateTime("1970-01-01T00:00:00-00:00")) div xs:dayTimeDuration('PT0.001S')
   let $new-node := <materialised-duel id="{data($duel/@int-id)}" at="{$unix-time}" updated-at="{current-dateTime()}" users="{($left-player, $right-player) => string-join(" ")}" nicknames="{data($duel/player/@name) => string-join(" ")}" json="{$json}"/>
-  return (delete node $existing-material, db:add(&quot;duelgg&quot;, $new-node, &quot;materialised-duels&quot;))
+  return (
+    db:add("duelgg", $new-node, "materialised-duels"),
+    delete node $existing-material
+  )
 
 ]]>
     </rest:text>

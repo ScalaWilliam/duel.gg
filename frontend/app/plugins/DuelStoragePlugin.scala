@@ -154,6 +154,16 @@ object DuelStoragePlugin {
       }}
       (matchingUsers, showOnlySortedNicks, matchingDuels)
     }
+    def duelsWhoseUsersShouldNoLongerBelong = {
+      val duelIds = for {
+        (userId, duels) <- duelsPerUsername
+        user <- usersList.get(userId).toList
+        duelId <- duels
+        duel <- duelIdToDuel.get(duelId).toList
+        if (duel.nicknames & user.nicknames).isEmpty
+      } yield duelId
+      duelIds.toSet
+    }
     def duelsMissingUsers = {
       val duelIds = for {
         (userId, duels) <- duelsPerUsername
@@ -256,7 +266,7 @@ class DuelStoragePlugin(implicit app: Application) extends Plugin {
         becomeStacked(waitingForInitialLoading)
         async {
           val firstStorage = currentStorage.withExtraUsers(await(usersR)).withExtraGames(await(queryGamesR))
-          val updateDuelIds = firstStorage.duelsMissingUsers
+          val updateDuelIds = firstStorage.duelsMissingUsers ++ firstStorage.duelsWhoseUsersShouldNoLongerBelong
           val nextStorage = if (updateDuelIds.nonEmpty) {
             log.info(s"Updating duels as user IDs out of sync: $updateDuelIds")
             await(DataSourcePlugin.plugin.materialiseGames(updateDuelIds))
