@@ -457,8 +457,8 @@ let $main-updated-time := max(
 return
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-	<title>Example Feed</title>
-	<subtitle>A subtitle.</subtitle>
+	<title>duel.gg News Feed</title>
+	<subtitle>The Sauerbraten Duel League.</subtitle>
 	<link href="http://duel.gg/news/atom/" rel="self" />
 	<link href="http://duel.gg/" />
 	<id>http://duel.gg/</id>
