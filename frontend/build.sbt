@@ -5,15 +5,15 @@ name := "frontend"
 version := "1.0-SNAPSHOT"
 enablePlugins(PlayScala, SbtWeb)
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.7"
 libraryDependencies ++= Seq(
-  "com.hazelcast"%"hazelcast"%"3.4",
-  "org.scalactic" %%"scalactic"%"2.2.1",
-  "com.maxmind.geoip2"%"geoip2"%"2.1.0",
-  "org.scala-lang.modules" %% "scala-async" % "0.9.2",
+  "com.hazelcast"%"hazelcast"%"3.4.4",
+  "org.scalactic" %%"scalactic"%"2.2.5",
+  "com.maxmind.geoip2"%"geoip2"%"2.3.1",
+  "org.scala-lang.modules" %% "scala-async" % "0.9.4",
   "org.json4s" %% "json4s-jackson" % "3.2.11",
   "org.joda" % "joda-convert" % "1.7",
-  "org.scalatest" %% "scalatest" % "2.2.1" % "test",
+  "org.scalatest" %% "scalatest" % "2.2.5" % "test",
   "commons-net" % "commons-net" % "3.3",
   ws
 )

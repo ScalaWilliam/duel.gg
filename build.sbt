@@ -8,7 +8,7 @@ ideaExcludeFolders += ".idea"
 
 ideaExcludeFolders += ".idea_modules"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.11.7"
 
 lazy val root = project.in( file(".") )
   .aggregate(service, frontend, bobby)
@@ -31,5 +31,3 @@ publishApps := {
   (publish in (bobby, Universal)).value
   s.log.info("Publishing complete")
 }
-
-

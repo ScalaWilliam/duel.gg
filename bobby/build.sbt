@@ -2,7 +2,7 @@ import com.typesafe.sbt.SbtNativePackager._
 import com.typesafe.sbt.packager.Keys._
 import com.typesafe.sbt.packager.SettingsHelper._
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.11.7"
 
 packageArchetype.java_application
 
@@ -24,13 +24,13 @@ makeDeploymentSettings(Universal, packageZipTarball in Universal, "tgz")
 
 libraryDependencies += "org.pircbotx" % "pircbotx" % "2.0.1"
 
-libraryDependencies += "com.hazelcast" % "hazelcast-client" % "3.2.5"
+libraryDependencies += "com.hazelcast" % "hazelcast-client" % "3.4.4"
 
 // packager only accepts one App inside the project. Multiple 'Apps' mess things up.
 
 libraryDependencies ++= {
-  val akkaV = "2.3.5"
-  val sprayV = "1.3.1"
+  val akkaV = "2.3.12"
+  val sprayV = "1.3.3"
   Seq(
     "io.spray"            %%  "spray-client"     % sprayV,
     "io.spray"            %%  "spray-testkit" % sprayV  % "test",
@@ -43,7 +43,7 @@ mainClass := Some("us.woop.pinger.bobby.BobbyApp")
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2"
 
-libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.0.13"
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.3"
 
 lazy val versionKey = settingKey[String]("Version key")
 
