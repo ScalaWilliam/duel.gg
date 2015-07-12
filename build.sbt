@@ -11,8 +11,8 @@ ideaExcludeFolders += ".idea_modules"
 scalaVersion := "2.11.2"
 
 lazy val root = project.in( file(".") )
-  .aggregate(serviceApp, analytics, service, frontend, data, bobby)
-  .dependsOn(analytics, service, data,frontend,  serviceApp, bobby)
+  .aggregate(service, frontend, bobby)
+  .dependsOn(service, frontend, bobby)
 
 lazy val bobby = project in file("bobby")
 
