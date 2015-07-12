@@ -54,9 +54,9 @@ object PingPongProcessor {
 import scala.concurrent.duration._
 
 object PingPongProcessorState {
-  def empty(disableHashing: Boolean) =
+  def empty =
     PingPongProcessorState(
-      disableHashing = disableHashing,
+      disableHashing = false,
       lastTime = System.currentTimeMillis(),
       hashes = Map.empty,
       inet2server = Map.empty,
@@ -80,7 +80,7 @@ case class PingPongProcessorState
     val nextState = copy(
       hashes = hashes + (server -> hash),
       inet2server = inet2server + (inetAddress -> server),
-      server2inet = server2inet + (server -> inetAddress)))
+      server2inet = server2inet + (server -> inetAddress)
     )
     (messages, nextState)
   }
@@ -108,11 +108,12 @@ case class PingPongProcessorState
 }
 
 object PingPongProcessorActor {
-  def props(disableHashing: Boolean) = Props(classOf[PingPongProcessorActor], disableHashing)
-}
-class PingPongProcessorActor(disableHashing: Boolean) extends Act with ActorLogging {
 
-  def now = System.currentTimeMillis
+  @deprecated("Only for the old system.")
+  def props(disableHashing: Boolean) = Props(classOf[PingPongProcessorActor], PingPongProcessorState.empty.copy(disableHashing = disableHashing))
+  def props(initialState: PingPongProcessorState) = Props(classOf[PingPongProcessorActor], initialState)
+}
+class PingPongProcessorActor(initialState: PingPongProcessorState) extends Act with ActorLogging {
 
   whenStarting {
     log.info("Starting raw pinger...")
@@ -125,7 +126,7 @@ class PingPongProcessorActor(disableHashing: Boolean) extends Act with ActorLogg
       log.debug("Pinger client bound to socket {}", boundTo)
       val socket = sender()
       context.parent ! Ready(boundTo)
-      become(ready(socket, boundTo, PingPongProcessorState.empty(disableHashing)))
+      become(ready(socket, boundTo, initialState))
   }
 
   val hasher = createHasher
@@ -134,7 +135,7 @@ class PingPongProcessorActor(disableHashing: Boolean) extends Act with ActorLogg
     case Ping(server) =>
       pingPongProcessorState.ping(server) match {
         case (messages, nextState) =>
-          messages.foreach { case (delay, data, target) =>
+          messages.foreach { case x@ (delay, data, target) =>
             import context.dispatcher
             context.system.scheduler.scheduleOnce(delay, send, Udp.Send(data, target))
           }
@@ -143,8 +144,9 @@ class PingPongProcessorActor(disableHashing: Boolean) extends Act with ActorLogg
 
     case receivedMessage @ Udp.Received(bytes, udpSender) =>
       pingPongProcessorState.receive(receivedMessage) match {
-        case Some(stuff) =>
+        case Some((stuff, nextState)) =>
           context.parent ! stuff
+          become(ready(send, boundTo, nextState))
         case None =>
           log.warning("Message from UDP host {} does not match an acceptable format: {}", udpSender, bytes)
       }

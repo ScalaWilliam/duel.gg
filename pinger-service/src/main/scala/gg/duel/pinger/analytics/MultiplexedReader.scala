@@ -65,6 +65,9 @@ object MultiplexedReader {
     }
     def mIteratorState: MIteratorState
   }
+  object SIteratorState {
+    def empty: SIteratorState = SInitial
+  }
   case object SInitial extends SIteratorState {
     override val mIteratorState = MInitial
   }

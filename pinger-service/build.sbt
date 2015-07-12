@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
   "com.github.scala-incubator.io" %% "scala-io-file" % "0.4.3",
   "com.hazelcast" % "hazelcast" % "3.4.4",
   "com.typesafe.akka" %% "akka-actor" % "2.3.12",
+  "com.typesafe.akka" %% "akka-agent" % "2.3.12",
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
   "com.typesafe.akka" %% "akka-contrib" % "2.3.12",
   "com.typesafe.akka" %% "akka-slf4j" % "2.3.12" exclude ("commons-logging", "commons-logging"),
