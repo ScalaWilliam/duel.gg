@@ -11,14 +11,16 @@ ideaExcludeFolders += ".idea_modules"
 scalaVersion := "2.11.7"
 
 lazy val root = project.in( file(".") )
-  .aggregate(service, frontend, bobby, ns)
-  .dependsOn(service, frontend, bobby, ns)
+  .aggregate(service, frontend, bobby, ns, nsf)
+  .dependsOn(service, frontend, bobby, ns, nsf)
 
 lazy val ns = project.dependsOn(service)
 
 lazy val bobby = project in file("bobby")
 
 lazy val service = project in file("pinger-service")
+
+lazy val nsf = project.enablePlugins(PlayScala).dependsOn(ns)
 
 lazy val frontend = (project in file("frontend") enablePlugins PlayScala)
 
