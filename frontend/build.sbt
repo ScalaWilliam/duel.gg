@@ -19,8 +19,8 @@ libraryDependencies ++= Seq(
 )
 sources in (Compile,doc) := Seq.empty
 publishArtifact in (Compile, packageDoc) := false
-includeFilter in (Assets, LessKeys.less) := "*.less"
-excludeFilter in (Assets, LessKeys.less) := "_*.less"
+//includeFilter in (Assets, LessKeys.less) := "*.less"
+//excludeFilter in (Assets, LessKeys.less) := "_*.less"
 crossPaths := false
 publishArtifact in (Compile, packageBin) := false
 publishArtifact in (Universal, packageZipTarball) := true

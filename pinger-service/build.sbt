@@ -1,4 +1,4 @@
-enablePlugins(JavaAppPackaging, LinuxPlugin, UniversalPlugin)
+//enablePlugins(JavaAppPackaging, LinuxPlugin, UniversalPlugin)
 
 organization := "gg.duel"
 
@@ -32,8 +32,8 @@ libraryDependencies ++= Seq(
   "org.scala-lang.modules" %% "scala-xml" % "1.0.2",
   "org.scalactic" %% "scalactic" % "2.2.1",
   "org.scalatest" %% "scalatest" % "2.2.1" % "test",
-  "org.basex" % "basex" % "8.0-20150120.080112-223" % "test" from "http://files.basex.org/maven/org/basex/basex/8.0-SNAPSHOT/basex-8.0-20150120.080112-223.jar",
-  "org.basex" % "basex-api" % "basex-api-8.0-20150120.080412-216" % "test" from "http://files.basex.org/maven/org/basex/basex-api/8.0-SNAPSHOT/basex-api-8.0-20150120.080412-216.jar",
+  "org.basex" % "basex" % "8.0" % "test" from "http://files.basex.org/maven/org/basex/basex/8.0-SNAPSHOT/basex-8.0-20150120.080112-223.jar",
+  "org.basex" % "basex-api" % "basex-api-8.0" % "test" from "http://files.basex.org/maven/org/basex/basex-api/8.0-SNAPSHOT/basex-api-8.0-20150120.080412-216.jar",
   "org.eclipse.jetty" % "jetty-servlet" % "8.1.16.v20140903" % "test",
   "org.eclipse.jetty" % "jetty-server" % "8.1.16.v20140903" % "test",
   "org.eclipse.jetty" % "jetty-webapp" % "8.1.16.v20140903" % "test",
@@ -48,14 +48,14 @@ mainClass in Compile := Option("gg.duel.pinger.app.WootApp")
 
 publishArtifact in (Compile, packageBin) := false
 
-publishArtifact in (Universal, packageZipTarball) := true
+//publishArtifact in (Universal, packageZipTarball) := true
 
 publishArtifact in (Compile, packageDoc) := false
 
-bashScriptConfigLocation := Some("${app_home}/../conf/jvmopts")
+//bashScriptConfigLocation := Some("${app_home}/../conf/jvmopts")
 
-ideaExcludeFolders ++= Seq(".idea", ".idea_modules")
+//ideaExcludeFolders ++= Seq(".idea", ".idea_modules")
 
-unmanagedClasspath in Runtime += baseDirectory.value / "src/universal/conf"
+//unmanagedClasspath in Runtime += baseDirectory.value / "src/universal/conf"
 
 Seq(com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings :_*)
