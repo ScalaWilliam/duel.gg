@@ -1,12 +1,4 @@
-//enablePlugins(JavaAppPackaging, LinuxPlugin, UniversalPlugin)
-
-organization := "gg.duel"
-
 name := "pinger-service"
-
-version := "2.0-SNAPSHOT"
-
-scalaVersion := "2.11.7"
 
 resolvers += "Typesafe Releases" at "https://repo.typesafe.com/typesafe/releases/"
 
@@ -41,22 +33,3 @@ libraryDependencies ++= Seq(
   "com.maxmind.geoip2"%"geoip2"%"2.3.1",
   "javax.servlet" % "javax.servlet-api" % "3.1.0" % "test"
 )
-
-// Hazelcast likes for tests :-)
-fork in Test := true
-
-mainClass in Compile := Option("gg.duel.pinger.app.WootApp")
-
-publishArtifact in (Compile, packageBin) := false
-
-//publishArtifact in (Universal, packageZipTarball) := true
-
-publishArtifact in (Compile, packageDoc) := false
-
-//bashScriptConfigLocation := Some("${app_home}/../conf/jvmopts")
-
-//ideaExcludeFolders ++= Seq(".idea", ".idea_modules")
-
-//unmanagedClasspath in Runtime += baseDirectory.value / "src/universal/conf"
-
-Seq(com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings :_*)
