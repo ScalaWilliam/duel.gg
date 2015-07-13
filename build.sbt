@@ -14,6 +14,6 @@ lazy val ns = project.dependsOn(service)
 
 lazy val service = project in file("pinger-service")
 
-lazy val nsf = project.enablePlugins(PlayScala).dependsOn(ns)
+lazy val nsf = project.enablePlugins(PlayScala).dependsOn(ns, service)
 
 Seq(com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings :_*)
