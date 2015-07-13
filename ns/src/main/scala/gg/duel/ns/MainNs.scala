@@ -17,6 +17,7 @@ case class PingerState
   servers: Set[Server],
   sIteratorState: SIteratorState
 )
+
 object PingerState {
   def empty = PingerState(
     servers = Set.empty,

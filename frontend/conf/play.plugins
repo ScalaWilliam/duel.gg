@@ -1,6 +1,0 @@
-1710:plugins.HazelcastPlugin
-1730:plugins.BasexProviderPlugin
-1750:plugins.DataSourcePlugin
-1760:plugins.DuelStoragePlugin
-1770:plugins.RegisteredUserManager
-1780:plugins.RealtimeDuelsPlugin
