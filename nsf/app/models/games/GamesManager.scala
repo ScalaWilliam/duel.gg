@@ -9,6 +9,7 @@ import models.SimpleEmbeddedDatabase
 import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 /**
  * Created on 13/07/2015.
@@ -19,8 +20,19 @@ class GamesManager @Inject()(simpleEmbeddedDatabase: SimpleEmbeddedDatabase)(imp
   val duelsMap = simpleEmbeddedDatabase.get().openMap[String, String]("duels")
 
   val ctfMap = simpleEmbeddedDatabase.get().openMap[String, String]("ctf")
-
-  val gamesA = Agent(Games.empty)
+  import collection.JavaConverters._
+  val gamesA = Agent(Games(
+    duels = {
+      duelsMap.asScala.toList
+        .flatMap{case (k, v) =>
+        Try(k -> SimpleCompletedDuel.fromPrettyJson(v)).toOption}.toMap
+    },
+  ctfs = {
+    ctfMap.asScala.toList
+      .flatMap{case (k, v) =>
+      Try(k -> SimpleCompletedCTF.fromPrettyJson(v)).toOption}.toMap
+  }
+  ))
 
   def games: Games = gamesA.get()
 
