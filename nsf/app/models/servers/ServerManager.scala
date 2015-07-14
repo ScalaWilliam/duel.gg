@@ -24,8 +24,8 @@ class ServerManager @Inject()(simpleEmbeddedDatabase: SimpleEmbeddedDatabase)
   val theMap = simpleEmbeddedDatabase.get().openMap[String, String]("servers")
 
   def getFromMap = Servers{
-    theMap.entrySet().asScala.flatMap{ e =>
-      Try(e.getKey -> Server.fromAddress(e.getKey)).toOption
+    theMap.asScala.flatMap{ case (k, v) =>
+      Try(k -> Server.fromAddress(k)).toOption
     }.toMap
   }
 
