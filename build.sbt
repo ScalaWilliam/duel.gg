@@ -2,6 +2,8 @@ organization := Common.groupId
 
 ideaExcludeFolders += ".idea"
 
+ideaExcludeFolders += "cln-processor"
+
 ideaExcludeFolders += ".idea_modules"
 
 scalaVersion := "2.11.7"

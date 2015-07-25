@@ -37,4 +37,3 @@
     (map #(% "winner"))
     set)
   )
-
