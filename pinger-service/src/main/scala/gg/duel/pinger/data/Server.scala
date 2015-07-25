@@ -15,7 +15,7 @@ object IP {
 }
 
 case class Server(ip: IP, port: Int) {
-  def getAddress = s"$ip:$port"
+  def getAddress = s"${ip.ip}:$port"
   def getInfoInetSocketAddress = new InetSocketAddress(ip.ip, port + 1)
 }
 

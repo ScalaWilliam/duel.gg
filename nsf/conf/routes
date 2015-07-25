@@ -1,0 +1,6 @@
+GET           /servers/             @controllers.Main.servers
+PUT           /server/              @controllers.Main.putServer(server)
+DELETE        /server/              @controllers.Main.deleteServer(server)
+GET           /games/               @controllers.Main.games(from: Option[String] = None, to: Option[String] = None)
+GET           /games/stream/        @controllers.Main.gamesStream(from: Option[String] = None)
+GET           /status/              @controllers.Main.currentStatus

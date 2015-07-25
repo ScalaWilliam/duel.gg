@@ -15,8 +15,9 @@ import scala.util.Random
 
 object PingPongProcessor {
 
-  case class BadHash(server: Server, time: Long, fullMessage: ByteString, expectedHash: ByteString, haveHash: ByteString)
-  case class ReceivedBytes(server: Server, time: Long, message: ByteString) {
+  sealed trait ReceiveResult
+  case class BadHash(server: Server, time: Long, fullMessage: ByteString, expectedHash: ByteString, haveHash: ByteString) extends ReceiveResult
+  case class ReceivedBytes(server: Server, time: Long, message: ByteString) extends ReceiveResult {
     def toSauerBytes = SauerBytes(server, time, message.toVector)
     def toBytes = SauerBytesBinary.toBytes(toSauerBytes)
   }
@@ -52,14 +53,67 @@ object PingPongProcessor {
 
 import scala.concurrent.duration._
 
-object PingPongProcessorActor {
-  def props(disableHashing: Boolean) = Props(classOf[PingPongProcessorActor], disableHashing)
+object PingPongProcessorState {
+  def empty =
+    PingPongProcessorState(
+      disableHashing = false,
+      lastTime = System.currentTimeMillis(),
+      hashes = Map.empty,
+      inet2server = Map.empty,
+      server2inet = Map.empty
+    )
 }
-class PingPongProcessorActor(disableHashing: Boolean) extends Act with ActorLogging {
-
+case class PingPongProcessorState
+(disableHashing: Boolean, lastTime: Long, hashes: Map[Server, ByteString], inet2server: Map[InetSocketAddress, Server], server2inet: Map[Server, InetSocketAddress]) {
   val outboundMessages = for { message <- OutboundMessages.all } yield ByteString(message.map{_.toByte}.toArray)
 
-  def now = System.currentTimeMillis
+  val hasher = createHasher
+  def ping(server: Server) = {
+    val inetAddress = server2inet.getOrElse(server, server.getInfoInetSocketAddress)
+    val hash = hasher.makeHash(server)
+    val messages = for {
+      (message, idx) <- outboundMessages.zipWithIndex
+      byteString = message ++ hash
+    } yield {
+      ((idx * 15).millis, byteString, inetAddress)
+    }
+    val nextState = copy(
+      hashes = hashes + (server -> hash),
+      inet2server = inet2server + (inetAddress -> server),
+      server2inet = server2inet + (server -> inetAddress)
+    )
+    (messages, nextState)
+  }
+
+  def receive(received: Udp.Received) = {
+    PartialFunction.condOpt(received) {
+      case receivedMessage @ Udp.Received(receivedBytes, fromWho)
+        if (receivedBytes.length > 13) && (inet2server contains fromWho) =>
+        val nextTime = System.currentTimeMillis()
+        val hostPair = inet2server(fromWho)
+        val expectedHash = hashes(hostPair)
+        val (head, tail) = receivedBytes.splitAt(3)
+        val (theirHash, message) = tail.splitAt(10)
+        val recombined = head ++ message
+        val processResult = if (disableHashing || theirHash == expectedHash) {
+          ReceivedBytes(hostPair, nextTime, recombined)
+        } else {
+          BadHash(hostPair, nextTime, receivedBytes, expectedHash, theirHash)
+        }
+        val nextState = copy(lastTime = nextTime)
+        (processResult, nextState)
+
+    }
+  }
+}
+
+object PingPongProcessorActor {
+
+  @deprecated("Only for the old system.")
+  def props(disableHashing: Boolean) = Props(classOf[PingPongProcessorActor], PingPongProcessorState.empty.copy(disableHashing = disableHashing))
+  def props(initialState: PingPongProcessorState) = Props(classOf[PingPongProcessorActor], initialState)
+}
+class PingPongProcessorActor(initialState: PingPongProcessorState) extends Act with ActorLogging {
 
   whenStarting {
     log.info("Starting raw pinger...")
@@ -72,41 +126,30 @@ class PingPongProcessorActor(disableHashing: Boolean) extends Act with ActorLogg
       log.debug("Pinger client bound to socket {}", boundTo)
       val socket = sender()
       context.parent ! Ready(boundTo)
-      become(ready(socket, boundTo, now, Map.empty, Map.empty,Map.empty))
+      become(ready(socket, boundTo, initialState))
   }
 
   val hasher = createHasher
 
-  def ready(send: ActorRef, boundTo: InetSocketAddress, lastTime: Long, hashes: Map[Server, ByteString], inet2server: Map[InetSocketAddress, Server], server2inet: Map[Server, InetSocketAddress]): Receive = {
-
+  def ready(send: ActorRef, boundTo: InetSocketAddress, pingPongProcessorState: PingPongProcessorState): Receive = {
     case Ping(server) =>
-      val inetAddress = server2inet.getOrElse(server, server.getInfoInetSocketAddress)
-      val hash = hasher.makeHash(server)
-      for {
-        (message, idx) <- outboundMessages.zipWithIndex
-        byteString = message ++ hash
-      } {
-        import context.dispatcher
-        context.system.scheduler.scheduleOnce((idx * 15).millis, send, Udp.Send(byteString, inetAddress))
+      pingPongProcessorState.ping(server) match {
+        case (messages, nextState) =>
+          messages.foreach { case x@ (delay, data, target) =>
+            import context.dispatcher
+            context.system.scheduler.scheduleOnce(delay, send, Udp.Send(data, target))
+          }
+          become(ready(send, boundTo, nextState))
       }
-      become(ready(send, boundTo, lastTime, hashes + (server -> hash), inet2server + (inetAddress -> server), server2inet + (server -> inetAddress)))
 
-    case receivedMessage @ Udp.Received(receivedBytes, fromWho) if (receivedBytes.length > 13) && (inet2server contains fromWho) =>
-      val nextTime = now
-      val hostPair = inet2server(fromWho)
-      val expectedHash = hashes(hostPair)
-      val (head, tail) = receivedBytes.splitAt(3)
-      val (theirHash, message) = tail.splitAt(10)
-      val recombined = head ++ message
-      if (disableHashing || theirHash == expectedHash) {
-        context.parent ! ReceivedBytes(hostPair, nextTime, recombined)
-      } else {
-        context.parent ! BadHash(hostPair, nextTime, receivedBytes, expectedHash, theirHash)
+    case receivedMessage @ Udp.Received(bytes, udpSender) =>
+      pingPongProcessorState.receive(receivedMessage) match {
+        case Some((stuff, nextState)) =>
+          context.parent ! stuff
+          become(ready(send, boundTo, nextState))
+        case None =>
+          log.warning("Message from UDP host {} does not match an acceptable format: {}", udpSender, bytes)
       }
-      become(ready(send, boundTo, nextTime, hashes, inet2server, server2inet))
-
-    case Udp.Received(otherBytes, fromWho) =>
-      log.warning("Message from UDP host {} does not match an acceptable format: {}", fromWho, otherBytes)
 
   }
 

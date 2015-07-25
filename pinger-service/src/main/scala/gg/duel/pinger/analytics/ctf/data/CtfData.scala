@@ -38,9 +38,25 @@ case class SimpleCompletedCTF
             <player name={player.name} partial-ip={player.ip} weapon={player.weapon}/>}
       </team>}
     </completed-ctf>
+
+  def toPrettyJson = {
+    import org.json4s._
+    import org.json4s.native.Serialization
+    import org.json4s.native.Serialization.{read, writePretty}
+    implicit val formats = Serialization.formats(NoTypeHints)
+    writePretty(this)
+  }
 }
 
 object SimpleCompletedCTF {
+
+  def fromPrettyJson(json: String): SimpleCompletedCTF = {
+    import org.json4s._
+    import org.json4s.native.Serialization
+    import org.json4s.native.Serialization.{read, writePretty}
+    implicit val formats = Serialization.formats(NoTypeHints)
+    read[SimpleCompletedCTF](json)
+  }
   def test = {
     val t = System.currentTimeMillis
     SimpleCompletedCTF(
