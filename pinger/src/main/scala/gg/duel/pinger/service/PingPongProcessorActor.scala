@@ -108,9 +108,6 @@ case class PingPongProcessorState
 }
 
 object PingPongProcessorActor {
-
-  @deprecated("Only for the old system.")
-  def props(disableHashing: Boolean) = Props(classOf[PingPongProcessorActor], PingPongProcessorState.empty.copy(disableHashing = disableHashing))
   def props(initialState: PingPongProcessorState) = Props(classOf[PingPongProcessorActor], initialState)
 }
 class PingPongProcessorActor(initialState: PingPongProcessorState) extends Act with ActorLogging {

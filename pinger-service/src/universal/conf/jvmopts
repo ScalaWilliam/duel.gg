@@ -1,3 +1,0 @@
--Dlogback.configurationFile=conf/logback.xml
--Dconfig.file=conf/application.conf
--Dhazelcast.config=conf/hazelcast.xml
