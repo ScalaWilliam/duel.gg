@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 
 import akka.actor.{PoisonPill, ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
-import gg.duel.pinger.app.ParentedProbe
+import gg.duel.pinger.service.ParentedProbe
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
 import gg.duel.pinger.data.Server
 import gg.duel.pinger.data.referencedata.SimpleUdpServer

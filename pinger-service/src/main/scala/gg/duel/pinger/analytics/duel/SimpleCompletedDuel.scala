@@ -2,28 +2,7 @@ package gg.duel.pinger.analytics.duel
 
 import scala.xml.UnprefixedAttribute
 
-case class LiveDuel
-(
-  simpleId: String,
-  duration: Int,
-  playedAt: List[Int],
-  startTimeText: String,
-  startTime: Long,
-  secondsRemaining: Int,
-  map: String,
-  mode: String,
-  server: String,
-  players: Map[String, SimplePlayerStatistics],
-  winner: Option[String], metaId: Option[String]
-  ) {
-  def asScd = SimpleCompletedDuel(simpleId, duration, playedAt, startTimeText, startTime, map, mode, server, players, winner, metaId)
-  def toJson = asScd.toJson
-  def toPrettyJson = asScd.toPrettyJson
-  def toXml = {
-    val xml = asScd.toXml.copy(label = "live-duel")
-    xml.copy(attributes = new UnprefixedAttribute("seconds-remaining", secondsRemaining.toString, xml.attributes))
-  }
-}
+
 
 object SimpleCompletedDuel {
   def fromPrettyJson(json: String): SimpleCompletedDuel = {

@@ -2,8 +2,8 @@ package gg.duel.pinger.service
 
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
-import gg.duel.pinger.app.ParentedProbe
 import gg.duel.pinger.data.Server
+import gg.duel.pinger.service.ParentedProbe
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
 import gg.duel.pinger.data.ParsedPongs.ServerInfoReply
 import gg.duel.pinger.data.Server

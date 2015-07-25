@@ -1,4 +1,4 @@
-package gg.duel.pinger.app
+package gg.duel.pinger.service
 
 import akka.actor.ActorDSL._
 import akka.actor.{ActorRef, Props}
