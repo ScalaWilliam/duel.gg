@@ -1,3 +1,6 @@
+
+.idea
+*.iml
 resources/public/js/out
 .lein-failures
 .nrepl-port
