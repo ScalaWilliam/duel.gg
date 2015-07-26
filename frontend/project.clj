@@ -1,6 +1,5 @@
-(defproject frontend "0.1.0"
-  :description "FIXME: write this!"
-  :url "http://example.com/FIXME"
+(defproject duelggfrontend "3.0"
+  :url "http://duel.gg"
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [ring/ring-core "1.4.0"]
                  [ring/ring-json "0.3.1"]
@@ -16,9 +15,12 @@
   :plugins [[lein-cljsbuild "1.0.6"]
             [lein-ring "0.9.6"]
             [lein-pdo "0.1.1"]
-            [lein-figwheel "0.3.3"]]
+          [lein-release "1.0.5"]
+  [lein-figwheel "0.3.3"]]
 
   :aliases {"up" ["pdo" "cljsbuild" "auto" "dev," "ring" "server-headless"]}
+  
+  :lein-release {:scm :git}
 
   :min-lein-version "2.5.0"
   :uberjar-name "frontend-standalone.jar"
