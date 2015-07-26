@@ -20,7 +20,7 @@
 
 (defn widget [w owner opts]
   (om/component
-   (dom/li nil (get w :simpleId))))
+   (dom/li nil (pr-str w))))
 
 (defn widget-list [{:keys [widgets]}]
   (om/component
@@ -46,13 +46,14 @@
                      (dom/h2 nil "LELLEL")
                      (om/build widget-list app)))))
 
+
 (defn om-app [app owner]
   (reify
     om/IRender
     (render [_]
             (dom/div nil
                      (om/build widget-box app
-                               {:opts {:url "/duels"
+                               {:opts {:url "/duels/"
                                        :poll-interval 2000}})))))
 
 (om/root om-app app-state

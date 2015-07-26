@@ -8,7 +8,7 @@
 
 (defroutes app-routes
            (GET "/" [] (resource-response "index.html" {:root "public"}))
-           (GET "/duels" [] (response (take 10 (duels/duels))))
+           (GET "/duels/" [] (response (duels/duels)))
            (GET "/widgets" []
              (response [{:name "Widget 1234"}
                         {:name "Widget 2"}

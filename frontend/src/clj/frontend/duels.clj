@@ -5,17 +5,15 @@
     )
   )
 
-(defn is-duel? [game] (contains? game "players"))
-
 (defn games []
   (->
-    "http://odin.duel.gg:49431/games/"
+    ;"http://odin.duel.gg:49431/games/"
+    "http://localhost:9000/games/"
     (client/get)
     (:body)
     (json/read-str)
     ))
 
-(defn duels []
-  (filter is-duel? (games))
-  )
+
+(defn duels [] (get (games) "duels"))
 
