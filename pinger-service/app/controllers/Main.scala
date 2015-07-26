@@ -3,13 +3,12 @@ package controllers
 import javax.inject._
 
 import gg.duel.pinger.data.Server
-import models.games.GamesManager
+import models.games.{Ctfs, Duels, GamesIndex, GamesManager}
 import models.pinger.PingerService
 import models.servers.ServerManager
 import play.api.libs.EventSource
-import play.api.libs.iteratee.Enumerator
-import play.api.libs.json._
-import play.api.mvc.{Action, Controller}
+import play.api.libs.iteratee.Iteratee
+import play.api.mvc.{Action, Controller, WebSocket}
 
 import scala.concurrent.ExecutionContext
 
@@ -19,6 +18,10 @@ class Main @Inject()
  pingerService: PingerService,
  serverProvider: ServerManager)
 (implicit executionContext: ExecutionContext) extends Controller {
+
+  def index = Action {
+    Ok(views.html.index())
+  }
 
   def servers = Action {
     Ok(serverProvider.servers)
@@ -34,36 +37,40 @@ class Main @Inject()
     Ok(serverId)
   }
 
-  def games(from: Option[String], to: Option[String]) = Action {
-
-    def ctfsM = gamesManager.games.ctfs.filter(g => from.isEmpty || from.exists(time => g._1 >= time)).mapValues(writesSCC.writes)
-    def duelsM = gamesManager.games.duels.filter(g => to.isEmpty || to.exists(time => g._1 <= time)).mapValues(writesSCD.writes)
-    def initial = (ctfsM ++ duelsM).toList.sortBy(_._1).map(_._2)
-
-    Ok(JsArray(initial))
+  def gamesIndex = Action {
+    Ok(GamesIndex(
+      ctfs = gamesManager.games.ctfs.valuesIterator.map(_.startTime).toList.sorted.map(_.toString),
+      duels = gamesManager.games.duels.valuesIterator.map(_.startTime).toList.sorted.map(_.toString)
+    ))
   }
 
-  def gamesStream(from: Option[String]) = Action {
+  def duels(from: Long, to: Long) = Action {
+    Ok(Duels(
+      gamesManager.games.duels.valuesIterator.filter {
+        game => game.startTime >= from && game.startTime <= to
+      }.toList.sortBy(_.startTime)
+    ))
+  }
+
+  def ctfs(from: Long, to: Long) = Action {
+    Ok(Ctfs(
+      gamesManager.games.ctfs.valuesIterator.filter {
+        game => game.startTime >= from && game.startTime <= to
+      }.toList.sortBy(_.startTime)
+    ))
+  }
+
+  def gamesStreamSse = Action {
     implicit req =>
-      from match {
-        case None =>
-          Ok.feed(pingerService.enumerator &> EventSource()).as("text/event-stream")
-        case Some(time) =>
-          def ctfsM = gamesManager.games.ctfs.filter(_._1 >= time).mapValues(_.toPrettyJson)
-          def duelsM = gamesManager.games.duels.filter(_._1 >= time).mapValues(_.toPrettyJson)
-          def initial = (ctfsM ++ duelsM).toList.sortBy(_._1).map(_._2)
-          def combo = Enumerator.enumerate(initial) andThen pingerService.enumerator
-          Ok.feed(combo &> EventSource()).as("text/event-stream")
-      }
+      Ok.feed(pingerService.enumerator &> EventSource()).as("text/event-stream")
+  }
+
+  def gamesStreamWs = WebSocket.using[String] { request =>
+    (Iteratee.isEmpty, pingerService.enumerator)
   }
 
   def currentStatus = Action {
-//    val cs = new CustomSerializer[Server](fmt => (PartialFunction.empty,
-//      { case s: Server => JString(s.getAddress) }))
-//    implicit val fmts = DefaultFormats + cs
-//    import org.json4s.jackson.Serialization._
-//    Ok(writePretty(pingerService.ourState.get()))
-    Ok(pingerService.ourState.get().toString())
+    Ok(pingerService.ourState.get().toString)
   }
 
 }

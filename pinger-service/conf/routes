@@ -1,6 +1,10 @@
-GET           /servers/             @controllers.Main.servers
-PUT           /server/              @controllers.Main.putServer(server)
-DELETE        /server/              @controllers.Main.deleteServer(server)
-GET           /games/               @controllers.Main.games(from: Option[String] = None, to: Option[String] = None)
-GET           /games/stream/        @controllers.Main.gamesStream(from: Option[String] = None)
-GET           /status/              @controllers.Main.currentStatus
+GET           /                         @controllers.Main.index
+GET           /servers/                 @controllers.Main.servers
+PUT           /server/                  @controllers.Main.putServer(server)
+DELETE        /server/                  @controllers.Main.deleteServer(server)
+GET           /games/                   @controllers.Main.gamesIndex
+GET           /duels/range/             @controllers.Main.duels(from: Long, to: Long)
+GET           /ctfs/range/              @controllers.Main.ctfs(from: Long, to: Long)
+GET           /games/stream/sse/        @controllers.Main.gamesStreamSse
+GET           /games/stream/ws/         @controllers.Main.gamesStreamWs
+GET           /status/                  @controllers.Main.currentStatus

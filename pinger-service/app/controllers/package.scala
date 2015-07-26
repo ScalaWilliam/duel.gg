@@ -1,6 +1,6 @@
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
-import models.games.Games
+import models.games.{GamesIndex, Duels, Ctfs, Games}
 import models.servers.Servers
 import play.api.http.Writeable
 import play.api.libs.json._
@@ -22,9 +22,15 @@ package object controllers {
   }
 
   implicit val writesGames = Json.writes[Games]
+  implicit val writesGamesIndex = Json.writes[GamesIndex]
+  implicit val writesCtfs = Json.writes[Ctfs]
+  implicit val writesDuels = Json.writes[Duels]
 
   implicit val httpWritesServers = implicitly[Writeable[JsValue]].map(Json.toJson(_: Servers))
 
   implicit val httpWritesGames = implicitly[Writeable[JsValue]].map(Json.toJson(_: Games))
+  implicit val httpWritesGamesIndex = implicitly[Writeable[JsValue]].map(Json.toJson(_: GamesIndex))
+  implicit val httpWritesCtfs = implicitly[Writeable[JsValue]].map(Json.toJson(_: Ctfs))
+  implicit val httpWritesDuels = implicitly[Writeable[JsValue]].map(Json.toJson(_: Duels))
 
 }

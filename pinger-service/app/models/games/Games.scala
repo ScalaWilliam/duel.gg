@@ -10,6 +10,11 @@ object Games {
   def empty = Games(duels = Map.empty, ctfs = Map.empty)
 }
 
+case class GamesIndex(duels: List[String], ctfs: List[String])
+
+case class Duels(duels: List[SimpleCompletedDuel])
+case class Ctfs(ctfs: List[SimpleCompletedCTF])
+
 
 case class Games(duels: Map[String, SimpleCompletedDuel],
                  ctfs: Map[String, SimpleCompletedCTF]
