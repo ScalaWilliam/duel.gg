@@ -7,8 +7,7 @@
 
 (defn games []
   (->
-    ;"http://odin.duel.gg:49431/games/"
-    "http://localhost:9000/games/"
+    "http://odin.duel.gg:49421/games/"
     (client/get)
     (:body)
     (json/read-str)

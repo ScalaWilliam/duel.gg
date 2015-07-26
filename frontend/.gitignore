@@ -1,7 +1,7 @@
 
 .idea
 *.iml
-resources/public/js/out
+resources/public/js
 .lein-failures
 .nrepl-port
 pom.xml
