@@ -111,8 +111,6 @@
   (do
     [:div
 
-     [:p "This is development-grade software. Don't expect it to work! :-)"]
-
      (let [recent-games (@state :recent-games)]
        (for [game recent-games]
          (cond
