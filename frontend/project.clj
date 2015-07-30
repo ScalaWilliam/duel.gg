@@ -1,4 +1,4 @@
-(defproject myproject "0.1.0-SNAPSHOT"
+(defproject frontend "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -26,11 +26,11 @@
             [lein-ring "0.9.6"]]
 
   :ring {:handler myproject.handler/app
-         :uberwar-name "myproject.war"}
+         :uberwar-name "frontend.war"}
 
   :min-lein-version "2.5.0"
 
-  :uberjar-name "myproject.jar"
+  :uberjar-name "frontend.jar"
 
   :main myproject.server
 
