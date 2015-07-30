@@ -32,3 +32,44 @@ a {
 a:hover {
   text-decoration: underline;
 }
+
+
+.bigger-duel {
+  border: thin solid mediumseagreen;
+  text-align:center;
+}
+.bigger-duel .players {
+  display: flex;
+}
+.bigger-duel .players .player {
+  flex: 1;
+}
+/*.bigger-duel .players .player*/
+
+.ctf {
+  border: thin solid indigo;
+  text-align: center;
+}
+.ctf .teams {
+  display:flex;
+}
+.ctf .teams .team {
+  flex: 1;
+}
+.ctf .team-players ul li{
+  padding:0;
+  margin:0;
+}
+.ctf .team-players ul {
+list-style-type: none;
+  padding:0;
+  margin:0;
+}
+.mini-duel {
+  text-align: center;
+  border: thin solid darkred;
+}
+.mini-duel, .ctf, .bigger-duel {
+  margin:1em;
+  padding:1em;
+}
