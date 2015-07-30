@@ -8,3 +8,5 @@ GET           /ctfs/range/              @controllers.Main.ctfs(from: Long, to: L
 GET           /games/stream/sse/        @controllers.Main.gamesStreamSse
 GET           /games/stream/ws/         @controllers.Main.gamesStreamWs
 GET           /status/                  @controllers.Main.currentStatus
+GET           /games/recent/            @controllers.Main.recent
+GET           /games/range/             @controllers.Main.range(from: Long, to: Long)

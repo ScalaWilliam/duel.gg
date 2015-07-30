@@ -27,6 +27,14 @@ class Main @Inject()
     Ok(serverProvider.servers)
   }
 
+  def range(from: Long, to: Long) = Action {
+    Ok(gamesManager.games.asCombined.range(from, to))
+  }
+
+  def recent = Action {
+    Ok(gamesManager.games.asCombined.latest(50).reverse)
+  }
+
   def putServer(serverId: String) = Action {
     serverProvider.addServer(serverId, Server.fromAddress(serverId))
     Ok(serverId)
