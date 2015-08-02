@@ -93,6 +93,8 @@
                 "/duel/until=2015-08-01T18:54:35Z/"
                 "/ctf/from=2015-08-01T18:54:35Z/?player=w00p|foxie"
                 "/duel/until=2015-08-01T18:54:35Z/?player=w00p|foxie"
+                "/duel/from=start/?player=w00p|foxie"
+                "/ctf/until=now/"
                 "/games/until=2015-08-01T18:54:35Z/?player=|RB|Honzik1&player=w00p|raffael"
                 ]]
                [:ul
