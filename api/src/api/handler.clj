@@ -177,7 +177,7 @@
   (GET "/" [] (str "Hello Worldss = " lol))
   (GET "/W/" [] (response @recent-games))
   (GET "/X/" [] (response {:foo "bar"}))
-  (GET "/:type{games|ctf|duels}/:timecat{from|until}=:tme{.*}/"
+  (GET "/:type{games|ctf|duel}/:timecat{from|until}=:tme{.*}/"
 
        {{type :type, timecat :timecat, time :tme} :params
         {player :player}                          :query-params}
