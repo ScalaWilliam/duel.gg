@@ -17,7 +17,7 @@
 
 (defn get-recent-games []
   (GET
-    "/recent/"
+    "/games/until=now/"
     {:response-format :json
      :handler         #(swap! state assoc :recent-games %)
      }
