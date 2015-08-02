@@ -30,7 +30,7 @@
   @(http/get "http://localhost:49421/games/"))
 
 (defonce recent-games
-         (atom ["X"]))
+         (atom []))
 
 (defn transform-fraglog [game]
   (clojure.walk/prewalk #(if (and (map? %1) (contains? %1 "_2")) (%1 "_2") %1) game))
