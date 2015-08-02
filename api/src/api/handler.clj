@@ -64,6 +64,17 @@
   (route/not-found "Not Found")
   )
 
+(defn wrap-cors
+  "Allow requests from all origins"
+  [handler]
+  (fn [request]
+    (let [response (handler request)]
+      (update-in response
+                 [:headers "Access-Control-Allow-Origin"]
+                 (fn [_] "*")))))
+
+
 (def app
   (-> (handler/site app-routes)
-      wrap-json-response))
+      wrap-json-response
+      wrap-cors))
