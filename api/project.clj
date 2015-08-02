@@ -10,7 +10,10 @@
                  [org.clojure/data.json "0.2.6"]
                  [clj-time "0.10.0"]
                  [ring/ring-json "0.4.0"]
-                 [jarohen/chime "0.1.6"]]
+                 [jarohen/chime "0.1.6"]
+                 [ring/ring-mock "0.2.0"]
+                 [de.bertschneider/clj-geoip "0.2"]
+                 ]
   :plugins [[lein-ring "0.9.6"]]
   :ring {:handler api.handler/app}
   )

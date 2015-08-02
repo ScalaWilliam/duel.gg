@@ -86,28 +86,21 @@
    [:p {:style {:font-size "small"}} [:a {:href "#/"} "go back to the home page"]]
    [:p "I'm providing a free game API to duel.gg users."]
    [:p "This is sufficient for all your use cases. Query as much as you like."]
-   [:p "We return 25 results at a time - sorted by descending time.
-   To query previous games, set 'until' to the last game's 'startTimeText'."]
-   [:dl
-    [:dt "List all available games"]
-    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/"}
-                 "/api/games/"]]]
-    [:dt "Games where either" [:code "w00p|foxie"] " or " [:code "|RB|Honzik1"] " or both played in"]
-    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/?player=w00p|foxie&player=|RB|Honzik1"}
-                 "/api/games/?player=w00p|foxie&player=|RB|Honzik1"]]]
-    [:dt "Games from 2015-08-01T18:54:35Z inclusive"]
-    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/?from=2015-08-01T18:54:35Z"}
-                 "/api/games/?from=2015-08-01T18:54:35Z"]]]
-    [:dt "Games until 2015-08-01T18:54:35Z inclusive"]
-    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/?until=2015-08-01T18:54:35Z"}
-                 "/api/games/?until=2015-08-01T18:54:35Z"]]]
-    [:dt "Duels"]
-    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/?type=duel"}
-                 "/api/games/?type=duel"]]]
-    [:dt "CTF games"]
-    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/?type=ctf"}
-                 "/api/games/?type=ctf"]]]
-    ]
+   [:p "We return 25 results at a time - sorted by ascending time."]
+   [:h3 "Example queries"]
+   [:div (let [queries
+               [
+                "/duel/until=2015-08-01T18:54:35Z/"
+                "/ctf/from=2015-08-01T18:54:35Z/?player=w00p|foxie"
+                "/duel/until=2015-08-01T18:54:35Z/?player=w00p|foxie"
+                "/games/until=2015-08-01T18:54:35Z/?player=|RB|Honzik1&player=w00p|raffael"
+                ]]
+               [:ul
+                (for [query queries]
+
+                  [:li [:a {:href (str "http://alfa.duel.gg/api" query)} query]]
+
+                  )])]
    [:hr]
    [:p {:style {:font-size "small"}} [:a {:href "#/"} "go back to the home page"]]
    ]

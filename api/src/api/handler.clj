@@ -14,9 +14,13 @@
     [ring.util.response :refer
      [response]]
     [chime :refer [chime-at]]
+    ;[clout.core :as clout]
     [clj-time.core :as t]
     [clj-time.periodic :refer
-     [periodic-seq]]))
+     [periodic-seq]
+     ]
+    [de.bertschneider.clj-geoip.core :refer :all]
+    ))
 
 ;(def http-uri "http://localhost:49421/games/")
 (def http-uri
@@ -28,6 +32,24 @@
 (defonce recent-games
          (atom ["X"]))
 
+(defn transform-fraglog [game]
+  (clojure.walk/prewalk #(if (and (map? %1) (contains? %1 "_2")) (%1 "_2") %1) game))
+
+(defonce mls (multi-lookup-service))
+
+(defn attach-geo-info [game]
+  (clojure.walk/prewalk
+    #(if (and (map? %1) (contains? %1 "ip"))
+      (let [modified-ip (clojure.string/replace (%1 "ip") "x" "1")
+            ip-lookup (lookup mls modified-ip)
+            cn-map (when-let [cn (:country-name ip-lookup)] {"countryName" cn})
+            cc-map (when-let [cc (:country-code ip-lookup)] {"countryCode" cc})
+            ]
+        (merge %1 cn-map cc-map))
+      %1)
+    game))
+
+
 (defn update-it []
   (http/get
     http-uri
@@ -36,7 +58,12 @@
         (println "Failed, exception is " error)
         (do
           (let [new-games (json/read-str body)]
-              (reset! recent-games new-games)
+            (reset! recent-games
+                    (map #(dissoc (dissoc %1 "simpleId") "startTime")
+                         (map attach-geo-info
+                              (map transform-fraglog
+                                   (sort-by #(% "startTime") new-games))))
+                    )
             )
           ;(println "Got it" (pr-str (json/read-str body)))
           ;(swap! recent-games (get-games))
@@ -126,17 +153,39 @@
          (= (game "type") (params "type")))
        ])))
 
+(defn game-matches? [game type timecat timeval player]
+  (let [timevalreal (f/parse (f/formatters :date-time-no-ms) timeval)]
+    (and
+      (or (= type "games") (= type (game "type")))
+      (and
+        (or
+          (and (= timecat "from") (is-after-on? game timevalreal))
+          (and (= timecat "until") (is-before-on? game timevalreal))
+          )
+        )
+      (or
+        (empty? player)
+        (nil? player)
+        (has-players? game player)
+        )
+      )
+    )
+  )
+
 (defroutes
   app-routes
   (GET "/" [] (str "Hello Worldss = " lol))
   (GET "/W/" [] (response @recent-games))
   (GET "/X/" [] (response {:foo "bar"}))
-  (GET "/games/" {params :query-params}
-    (response
-      (take 25
-            (reverse (sort-by #(% "startTime") (filter #(game-matches-params? % params) @recent-games)))
-            )
-      ))
+  (GET "/:type{games|ctf|duels}/:timecat{from|until}=:tme{.*}/"
+
+       {{type :type, timecat :timecat, time :tme} :params
+        {player :player}                          :query-params}
+    (let
+      [games (filter #(game-matches? %1 type timecat time player) @recent-games)
+       ] (response (take 25 games))
+         )
+    )
   (GET "/recent/" []
     (str "LELel" (json/read-str (:body recent-games)))
     )
