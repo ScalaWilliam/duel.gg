@@ -86,7 +86,7 @@
    [:p {:style {:font-size "small"}} [:a {:href "#/"} "go back to the home page"]]
    [:p "I'm providing a free game API to duel.gg users."]
    [:p "This is sufficient for all your use cases. Query as much as you like."]
-   [:p "We return 25 results at a time - sorted by ascending time."]
+   [:p "We return 25 results at a time - sorted by ascending time if 'from', descending if 'until'."]
    [:h3 "Example queries"]
    [:div (let [queries
                [
