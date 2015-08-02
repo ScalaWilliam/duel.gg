@@ -23,33 +23,6 @@
      }
     ))
 
-(defn get-ctf []
-  (GET
-    "http://localhost:9000/ctfs/range/?from=1437000263744&to=1437000263744"
-    {:response-format :json
-     :handler (fn [stuff]
-
-                (let [ctf (first (stuff "ctfs"))]
-                  (swap! state assoc :ctf ctf)
-                  )
-
-                )}
-    ))
-
-(defn get-duel []
-  (GET
-    "http://localhost:9000/duels/range/?from=1436823550599&to=1436823550599"
-    {:response-format :json
-     :handler         (fn [stuff]
-                        (let [duel (first (stuff "duels"))]
-                          (set-duel! duel)
-                          ;(.log js/console duel)
-                          ;(.log js/console (str @state))
-                          )
-                        )
-
-     }))
-
 (defn render-mini-duel [duel]
   (let
     [players (duel "players")
@@ -77,18 +50,18 @@
     (map (fn [[teamname,
                {players "players", flags "flags"}]]
            ^{:key teamname} [:div.team
-   [:h2.flags flags]
-   [:h3.team-name teamname]
-   [:div.team-players
-    [:ul
-    (map (fn [{name "name"}]
-           ^{:key name} [:li name]
-           ) players)
-     ]
-    ]]) (seq (ctf "teams")))
+                             [:h2.flags flags]
+                             [:h3.team-name teamname]
+                             [:div.team-players
+                              [:ul
+                               (map (fn [{name "name"}]
+                                      ^{:key name} [:li name]
+                                      ) players)
+                               ]
+                              ]]) (seq (ctf "teams")))
     ]
    ]
-)
+  )
 
 (defn render-duel [duel]
   [:div.bigger-duel
@@ -107,9 +80,46 @@
    ]
   )
 
+(defn api-detail []
+  [:section#api
+   [:h2 "duel.gg alfa API"]
+   [:p {:style {:font-size "small"}} [:a {:href "#/"} "go back to the home page"]]
+   [:p "I'm providing a free game API to duel.gg users."]
+   [:p "This is sufficient for all your use cases. Query as much as you like."]
+   [:p "We return 25 results at a time - sorted by descending time.
+   To query previous games, set 'until' to the last game's 'startTimeText'."]
+   [:dl
+    [:dt "List all available games"]
+    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/"}
+                 "/api/games/"]]]
+    [:dt "Games where either" [:code "w00p|foxie"] " or " [:code "|RB|Honzik1"] " or both played in"]
+    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/?player=w00p|foxie&player=|RB|Honzik1"}
+                 "/api/games/?player=w00p|foxie&player=|RB|Honzik1"]]]
+    [:dt "Games from 2015-08-01T18:54:35Z inclusive"]
+    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/?from=2015-08-01T18:54:35Z"}
+                 "/api/games/?from=2015-08-01T18:54:35Z"]]]
+    [:dt "Games until 2015-08-01T18:54:35Z inclusive"]
+    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/?until=2015-08-01T18:54:35Z"}
+                 "/api/games/?until=2015-08-01T18:54:35Z"]]]
+    [:dt "Duels"]
+    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/?type=duel"}
+                 "/api/games/?type=duel"]]]
+    [:dt "CTF games"]
+    [:dd [:code [:a {:href "http://alfa.duel.gg/api/games/?type=ctf"}
+                 "/api/games/?type=ctf"]]]
+    ]
+   [:hr]
+   [:p {:style {:font-size "small"}} [:a {:href "#/"} "go back to the home page"]]
+   ]
+  )
+
+(defn api-page [] (do (api-detail)))
+
 (defn home-page []
   (do
     [:div
+
+     [:p {:style {:font-weight "bold"}} "New: " [:a {:href "#/api-info"} "duel.gg alfa API"]]
 
      (let [recent-games (@state :recent-games)]
        (for [game recent-games]
@@ -123,9 +133,9 @@
      (let [duel (@state :duel)]
        (if (nil? duel) [:p "No duel shown"]
                        [:div
-                       ;[:div (render-duel duel)]
-                       [:div (render-mini-duel duel)]
-]
+                        ;[:div (render-duel duel)]
+                        [:div (render-mini-duel duel)]
+                        ]
                        )
        )
      (let [ctf (@state :ctf)
@@ -150,6 +160,9 @@
 
 (secretary/defroute "/" []
                     (session/put! :current-page #'home-page))
+
+(secretary/defroute "/api-info" []
+                    (session/put! :current-page #'api-page))
 
 (secretary/defroute "/about" []
                     (session/put! :current-page #'about-page))

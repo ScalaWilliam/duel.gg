@@ -29,7 +29,7 @@
 (defroutes routes
            (GET "/" [] home-page)
            (GET "/recent/" []
-                (client/get "http://localhost:49421/games/recent/" {:accept :json})
+             (client/get "http://alfa.duel.gg/api/games/" {:accept :json})
              )
            (resources "/")
            (not-found "Not Found"))
