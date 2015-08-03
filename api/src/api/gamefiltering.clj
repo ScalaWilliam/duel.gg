@@ -107,7 +107,19 @@
       (or
         (and (= timecat "from") (is-after-on? game timevalreal))
         (and (= timecat "until") (is-before-on? game timevalreal))
-        ))))
+        ))
+
+    (and (= timecat "at")
+         (let [
+               times-strings (clojure.string/split "a,b,c" #",")
+               times (map parse-time times-strings)
+               ]
+           (some
+             (fn [time] (t/equal? time (game-time game)))
+             times))
+         )
+
+    ))
 
 (defn game-matches-players? [game players]
   (or

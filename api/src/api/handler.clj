@@ -26,6 +26,8 @@
 
 (defonce recent-games (atom []))
 
+;(defonce first-update (update-it))
+
 (defn update-it []
   (http/get
     api.gamefiltering/all-games-uri
@@ -33,7 +35,7 @@
       (if error
         (println "Failed, exception is " error)
         (reset! recent-games (api.gamefiltering/process-games (json/read-str body)))
-    ))))
+        ))))
 
 (defonce
   updater
@@ -47,9 +49,26 @@
   app-routes
   (GET "/" [] (str "Hello Worldss"))
   (GET "/everything/" [] (response @recent-games))
+  (GET "/games/" {{game "game"} :query-params}
+    (let [game-ids (set (if (string? game) [game] game))
+          matching-games (filter
+                           #(contains? game-ids (%1 "startTimeText"))
+                           @recent-games)
+          game-map (map #(hash-map (%1 "startTimeText") %1) matching-games)
+          ]
+      (response (apply merge game-map))
+      )
+    )
+  (GET "/game/:id/" [id]
+    (let [game (first (filter #(= (%1 "startTimeText") id) @recent-games))]
+      (if
+        (nil? game)
+        (route/not-found "game not found")
+        (response game)))
+    )
   (GET "/:type{games|ctf|duel}/:timecat{from|until}=:tme{.*}/"
        {{type :type, timecat :timecat, time :tme} :params
-        {player "player"}                          :query-params}
+        {player "player"}                         :query-params}
     (let
       [
        filtered-games (filter #(api.gamefiltering/game-matches? %1 type timecat time player) @recent-games)

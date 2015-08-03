@@ -96,6 +96,8 @@
                 "/duel/from=start/?player=w00p|foxie"
                 "/ctf/until=now/"
                 "/games/until=2015-08-01T18:54:35Z/?player=|RB|Honzik1&player=w00p|raffael"
+                "/games/?game=2015-08-03T16:52:11Z&game=2015-08-03T15:42:41Z"
+                "/game/2015-08-03T16:52:11Z/"
                 ]]
                [:ul
                 (for [query queries]
