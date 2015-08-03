@@ -32,11 +32,13 @@
 
 (defonce mls (multi-lookup-service))
 
+(def lookup-ip (memoize #(lookup mls %1)))
+
 (defn attach-geo-info [game]
   (clojure.walk/prewalk
     #(if (and (map? %1) (contains? %1 "ip"))
       (let [modified-ip (clojure.string/replace (%1 "ip") "x" "1")
-            ip-lookup (lookup mls modified-ip)
+            ip-lookup (lookup-ip modified-ip)
             cn-map (when-let [cn (:country-name ip-lookup)] {"countryName" cn})
             cc-map (when-let [cc (:country-code ip-lookup)] {"countryCode" cc})
             ]

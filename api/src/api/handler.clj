@@ -34,7 +34,7 @@
     (fn [{:keys [status headers body error]}]
       (if error
         (println "Failed, exception is " error)
-        (reset! recent-games (api.gamefiltering/process-games (json/read-str body)))
+        (send-off recent-games (fn [bbody] (api.gamefiltering/process-games (json/read-str bbody))) body)
         ))))
 
 (defonce

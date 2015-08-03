@@ -2,6 +2,13 @@
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :min-lein-version "2.0.0"
+  :jvm-opts [
+             "-XX:+UnlockCommercialFeatures"
+             "-XX:+FlightRecorder"
+             "-Dcom.sun.management.jmxremote"
+             "-Dcom.sun.management.jmxremote.port=8888"
+             "-Dcom.sun.management.jmxremote.authenticate=false"
+             "-Dcom.sun.management.jmxremote.ssl=false"]
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [compojure "1.4.0"]
                  [ring "1.4.0"]
