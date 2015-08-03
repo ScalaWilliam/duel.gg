@@ -90,11 +90,11 @@
    [:h3 "Example queries"]
    [:div (let [queries
                [
-                "/duel/until=2015-08-01T18:54:35Z/"
-                "/ctf/from=2015-08-01T18:54:35Z/?player=w00p|foxie"
-                "/duel/until=2015-08-01T18:54:35Z/?player=w00p|foxie"
-                "/duel/from=start/?player=w00p|foxie"
-                "/ctf/until=now/"
+                "/duels/until=2015-08-01T18:54:35Z/"
+                "/ctfs/from=2015-08-01T18:54:35Z/?player=w00p|foxie"
+                "/duels/until=2015-08-01T18:54:35Z/?player=w00p|foxie"
+                "/duels/from=start/?player=w00p|foxie"
+                "/ctfs/until=now/"
                 "/games/until=2015-08-01T18:54:35Z/?player=|RB|Honzik1&player=w00p|raffael"
                 "/games/?game=2015-08-03T16:52:11Z&game=2015-08-03T15:42:41Z"
                 "/game/2015-08-03T16:52:11Z/"

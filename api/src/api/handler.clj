@@ -66,7 +66,7 @@
         (route/not-found "game not found")
         (response game)))
     )
-  (GET "/:type{games|ctf|duel}/:timecat{from|until}=:tme{.*}/"
+  (GET "/:type{games|ctfs|duels}/:timecat{from|until}=:tme{.*}/"
        {{type :type, timecat :timecat, time :tme} :params
         {player "player"}                         :query-params}
     (let

@@ -97,7 +97,13 @@
 (def parse-time (memoize #(f/parse (f/formatters :date-time-no-ms) %1)))
 
 (defn game-matches-type? [game type]
-  (or (= type "games") (= type (game "type"))))
+  (let [game-type (game "type")]
+    (or
+      (= type "games")
+      (= type game-type)
+      (and (= type "ctfs") (= "ctf" game-type))
+      (and (= type "duels") (= "duel" game-type))
+      )))
 
 (defn game-matches-time? [game timecat timeval]
   (or
