@@ -14,6 +14,7 @@
                  [ring "1.4.0"]
                  [ring/ring-defaults "0.1.5"]
                  [http-kit "2.1.19"]
+                 [clj-http "2.0.0"]
                  [org.clojure/data.json "0.2.6"]
                  [clj-time "0.10.0"]
                  [ring/ring-json "0.4.0"]

@@ -21,21 +21,21 @@
      ]
     [de.bertschneider.clj-geoip.core :refer :all]
     [api.gamefiltering]
+    [clj-http.client :as client]
     ))
 
 
 (defonce recent-games (atom []))
 
-;(defonce first-update (update-it))
+(defn get-games []
+  (let [r (client/get api.gamefiltering/all-games-uri {:accept :json})
+        games (json/read-str (:body r))]
+    (api.gamefiltering/process-games games)))
 
 (defn update-it []
-  (http/get
-    api.gamefiltering/all-games-uri
-    (fn [{:keys [status headers body error]}]
-      (if error
-        (println "Failed, exception is " error)
-        (send-off recent-games (fn [bbody] (api.gamefiltering/process-games (json/read-str bbody))) body)
-        ))))
+  (println "UPDATE ME?")
+  (future
+    (reset! recent-games (get-games))))
 
 (defonce
   updater
