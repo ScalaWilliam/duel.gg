@@ -45,10 +45,56 @@
       (update-it)
       )))
 
+(defn find-games [desc]
+
+  (let
+    [
+     filtered-games (filter #(api.gamefiltering/game-matches? %1 desc) @recent-games)
+     should-reverse (or (contains? desc :until) (contains? desc :to) (contains? desc :recent))
+     games (if should-reverse (reverse filtered-games) filtered-games)
+     ] (println "DESC= " desc) (take 25 games)
+       ))
+
+(defn typ [x] (if (= x "") "games" (subs x 1)))
+
 (defroutes
   app-routes
   (GET "/" [] (str "Hello Worldss"))
   (GET "/everything/" [] (response @recent-games))
+  (GET "/game/:id/" [id]
+    (let [game (first (filter #(= (%1 "startTimeText") id) @recent-games))]
+      (if
+        (nil? game)
+        (route/not-found "game not found")
+        (response game)))
+    )
+
+  (GET "/:type{ctf|duel}/games/recent/" {{type :type} :params {player "player"} :query-params}
+    (response (find-games {:recent :recent :type type :players player})))
+  (GET "/:type{ctf|duel}/games/until/:time/" {{type :type time :time} :params {player "player"} :query-params}
+    (response (find-games {:until time :type type :players player})))
+  (GET "/:type{ctf|duel}/games/to/:time/" {{type :type time :time} :params {player "player"} :query-params}
+    (response (find-games {:to time :type type :players player})))
+  (GET "/:type{ctf|duel}/games/after/:time/" {{type :type time :time} :params {player "player"} :query-params}
+    (response (find-games {:after time :type type :players player})))
+  (GET "/:type{ctf|duel}/games/from/:time/" {{type :type time :time} :params {player "player"} :query-params}
+    (response (find-games {:from time :type type :players player})))
+  (GET "/:type{ctf|duel}/games/first/" {{player "player"} :query-params}
+    (response (find-games {:first :first :type type :players player})))
+
+  (GET "/games/recent/" {{player "player"} :query-params}
+    (response (find-games {:recent :recent :players player})))
+  (GET "/games/until/:time/" {{time :time} :params {player "player"} :query-params}
+    (response (find-games {:until time :players player})))
+  (GET "/games/to/:time/" {{time :time} :params {player "player"} :query-params}
+    (response (find-games {:to time :players player})))
+  (GET "/games/after/:time/" {{time :time} :params {player "player"} :query-params}
+    (response (find-games {:after time :players player})))
+  (GET "/games/from/:time/" {{time :time} :params {player "player"} :query-params}
+    (response (find-games {:from time :players player})))
+  (GET "/games/first/" {{player "player"} :query-params}
+    (response (find-games {:first :first :players player})))
+
   (GET "/games/" {{game "game"} :query-params}
     (let [game-ids (set (if (string? game) [game] game))
           matching-games (filter
@@ -58,27 +104,6 @@
           ]
       (response (apply merge game-map))
       )
-    )
-  (GET "/game/:id/" [id]
-    (let [game (first (filter #(= (%1 "startTimeText") id) @recent-games))]
-      (if
-        (nil? game)
-        (route/not-found "game not found")
-        (response game)))
-    )
-  (GET "/:type{games|ctfs|duels}/:timecat{from|until}=:tme{.*}/"
-       {{type :type, timecat :timecat, time :tme} :params
-        {player "player"}                         :query-params}
-    (let
-      [
-       filtered-games (filter #(api.gamefiltering/game-matches? %1 type timecat time player) @recent-games)
-       sorted-games (if (= timecat "until") (reverse filtered-games) filtered-games)
-       ]
-      (response (take 25 sorted-games))
-      )
-    )
-  (GET "/recent/" []
-    (str "LELel" (json/read-str (:body recent-games)))
     )
   (route/not-found "Not Found")
   )

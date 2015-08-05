@@ -74,6 +74,11 @@
     (duel-players game)
     (ctf-players game)))
 
+(defn parse-time [time]
+  (f/parse
+    (f/formatters :date-time-no-ms)
+    time))
+
 (defn game-time [game]
   (f/parse
     (f/formatters :date-time-no-ms)
@@ -83,9 +88,15 @@
   (or (t/before? (game-time game) date)
       (t/equal? date (game-time game))))
 
+(defn is-before? [game date]
+  (t/before? (game-time game) date))
+
 (defn is-after-on? [game date]
   (or (t/after? (game-time game) date)
       (t/equal? date (game-time game))))
+
+(defn is-after? [game date]
+  (t/after? (game-time game) date))
 
 (defn has-players? [game names]
   (let [game-players (players game)
@@ -101,10 +112,11 @@
 (defn game-matches-type? [game type]
   (let [game-type (game "type")]
     (or
+      (nil? type)
       (= type "games")
       (= type game-type)
-      (and (= type "ctfs") (= "ctf" game-type))
-      (and (= type "duels") (= "duel" game-type))
+      (and (= type "ctf") (= "ctf" game-type))
+      (and (= type "duel") (= "duel" game-type))
       )))
 
 (defn game-matches-time? [game timecat timeval]
@@ -134,10 +146,31 @@
     (empty? players)
     (nil? players)
     (has-players? game players)))
+;
+;(defn game-matches? [game type timecat timeval player]
+;  (and
+;    (game-matches-type? game type)
+;    (game-matches-time? game timecat timeval)
+;    (game-matches-players? game player)
+;    ))
+;
 
-(defn game-matches? [game type timecat timeval player]
-  (and
-    (game-matches-type? game type)
-    (game-matches-time? game timecat timeval)
-    (game-matches-players? game player)
-    ))
+
+(defn game-timing-matches? [game desc]
+  (cond
+    (contains? desc :until) (is-before-on? game (parse-time (:until desc)))
+    (contains? desc :to) (is-before? game (parse-time (:to desc)))
+    (contains? desc :after) (is-after? game (parse-time (:after desc)))
+    (contains? desc :from) (is-after-on? game (parse-time (:from desc)))
+    :else true
+    )
+  )
+
+(defn game-matches? [game desc]
+  (do
+    (println desc)
+    (and
+      (game-matches-type? game (:type desc))
+      (game-timing-matches? game desc)
+      (game-matches-players? game (:players desc))))
+  )
