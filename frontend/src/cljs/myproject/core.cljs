@@ -4,6 +4,7 @@
             [secretary.core :as secretary :include-macros true]
             [goog.events :as events]
             [goog.history.EventType :as EventType]
+            [myproject.ui :as ui]
             [ajax.core :refer [GET]])
   (:import goog.History))
 
@@ -88,12 +89,18 @@
    [:p "This is sufficient for all your use cases. Query as much as you like."]
    [:p "We return 25 results at a time - sorted by ascending time if 'from', descending if 'until'."]
    [:h3 "Example queries"]
+
    [:div (let [queries
                [
-                "/duels/until=2015-08-01T18:54:35Z/"
-                "/ctfs/from=2015-08-01T18:54:35Z/?player=w00p|foxie"
-                "/duels/until=2015-08-01T18:54:35Z/?player=w00p|foxie"
-                "/duels/from=start/?player=w00p|foxie"
+                "/duel/games/recent/"
+                "/duel/games/first/"
+                "/duel/games/from/2015-08-01T18:54:35Z/"
+                "/duel/games/after/2015-08-01T18:54:35Z/"
+                "/duel/games/to/2015-08-01T18:54:35Z/"
+                "/duel/games/until/2015-08-01T18:54:35Z/"
+                "/ctf/games/from/2015-08-01T18:54:35Z/?player=w00p|foxie"
+                "/duel/games/until/2015-08-01T18:54:35Z/?player=w00p|foxie"
+                "/duel/games/?player=w00p|foxie"
                 "/ctfs/until=now/"
                 "/games/until=2015-08-01T18:54:35Z/?player=|RB|Honzik1&player=w00p|raffael"
                 "/games/?game=2015-08-03T16:52:11Z&game=2015-08-03T15:42:41Z"
@@ -102,7 +109,7 @@
                [:ul
                 (for [query queries]
 
-                  [:li [:a {:href (str "http://alfa.duel.gg/api" query)} query]]
+                  [:li [:a {:href (str "ttp://alfa.duel.gg/api" query)} query]]
 
                   )])]
    [:hr]
@@ -155,8 +162,15 @@
 ;; Routes
 (secretary/set-config! :prefix "#")
 
+(defn x-page [] [:div
+
+
+                 [:div (ui/whut @ui/modl)]
+                 ])
+
 (secretary/defroute "/" []
-                    (session/put! :current-page #'home-page))
+                    ;(session/put! :current-page #'home-page))
+                    (session/put! :current-page #'x-page))
 
 (secretary/defroute "/api-info" []
                     (session/put! :current-page #'api-page))
@@ -178,7 +192,7 @@
 ;; -------------------------
 ;; Initialize app
 (defn mount-root []
-  (get-recent-games)
+  ;(get-recent-games)
   ;(get-duel)
   ;(get-ctf)
   (reagent/render [current-page] (.getElementById js/document "app")))

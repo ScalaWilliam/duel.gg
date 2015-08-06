@@ -23,6 +23,8 @@
                  [cljs-ajax "0.3.14"]
                  [http-kit "2.1.18"]
                  [clj-http "2.0.0"]
+                 [re-com "0.5.4"]
+
                  ]
 
   :plugins [[lein-environ "1.0.0"]
