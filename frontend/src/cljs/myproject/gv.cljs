@@ -1,4 +1,6 @@
-(ns myproject.gv)
+(ns myproject.gv
+  (:require [re-com.core :refer [md-circle-icon-button md-icon-button]])
+  )
 
 (defn is-duel? [game] (= (game "type") "duel"))
 
@@ -66,17 +68,31 @@
     )
   )
 
+(defn render-player-names [names]
+  [:div.player-names
+   [:p "Player names"]
+   [:ul
+    (map (fn [name] [:li [:code name]]) names)
+    ]
+   ]
+
+  )
+
 (defn render-api-response [cc]
   [:div
-   [:h2 "Games"]
-   (let [games
-         (cond
-           (contains? cc "startTimeText") (vector cc)
-           (map? cc) (map second (seq cc))
-           :else cc
-           )]
-     (map render-game games)
+   [:hr]
+   (cond
+     (and (str (or (seq? cc) (vector? cc))) (contains? (set cc) "w00p|foxie"))
+     (render-player-names cc)
+     :else
+     (let [games
+           (cond
+             (contains? cc "startTimeText") (vector cc)
+             (map? cc) (map second (seq cc))
+             :else cc
+             )]
+       (map render-game games)
+       )
      )
-   ;[:div (pr-str cc)]]
    ]
   )

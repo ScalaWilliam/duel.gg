@@ -15,6 +15,7 @@
 
 (def state (atom {:x 2}))
 
+(defonce loaded (atom false))
 ;; -------------------------
 ;; Views
 
@@ -171,7 +172,7 @@
   (GET
     (str "http://alfa.duel.gg/api" path)
     {:response-format :json
-     :handler         #(reset! current-games %)
+     :handler         #(do (reset! loaded true) (reset! current-games %))
      }
     )
   )
@@ -182,8 +183,9 @@
                   (ui/whut @ui/modl)
 
                   [button
-                   :label "Reload"
+                   :label "Load »"
                    :on-click (fn [_] (fetch-path (ui/generated-path)))
+                   :class "btn-primary"
                    ]
                   ]
 
@@ -216,7 +218,7 @@
 ;; Initialize app
 (defn mount-root []
   ;(fetch-path "/games/to/2015-08-03T00:00:00Z/")
-  (fetch-path "/games/recent/")
+  (when (not @loaded) (fetch-path "/games/recent/"))
   ;(get-recent-games)
   ;(get-duel)
   ;(get-ctf)

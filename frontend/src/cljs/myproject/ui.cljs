@@ -18,6 +18,7 @@
    {:id :duel :label "Duels"}
    {:id :single :label "Single by ID"}
    {:id :by-id :label "Multiple by ID"}
+   {:id :player-names :label "Player names"}
    ])
 
 (def times-tabs
@@ -70,6 +71,8 @@
     [type (:type view)]
     (str
       (cond
+        (= type :player-names)
+        "/player-names/"
         (is-filtering view)
         (str
           (when (= type :duel) "/duel")
@@ -189,6 +192,7 @@
       :on-change (fn [x] (swap! modl (fn [y] (assoc-in y [:type] x))))
       ]
      (cond
+       (= (:type view) :player-names) nil
        (= (:type view) :by-id) (choose-by-ids-view view)
        (= (:type view) :single) (choose-single-view view)
        :else (filtering-games-view view)

@@ -66,7 +66,7 @@
   )
 
 (defn get-player-names []
-  (set (flatten (map get-game-players @recent-games)))
+  (sort (apply vector (set (flatten (map get-game-players @recent-games)))))
   )
 
 (defroutes
