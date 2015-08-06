@@ -5,8 +5,13 @@
             [goog.events :as events]
             [goog.history.EventType :as EventType]
             [myproject.ui :as ui]
+            [myproject.gv :as gv]
+            [re-com.core :refer [h-split]]
+            [re-com.buttons :refer [button]]
             [ajax.core :refer [GET]])
   (:import goog.History))
+
+(def current-games (atom []))
 
 (def state (atom {:x 2}))
 
@@ -162,10 +167,27 @@
 ;; Routes
 (secretary/set-config! :prefix "#")
 
+(defn fetch-path [path]
+  (GET
+    (str "http://alfa.duel.gg/api" path)
+    {:response-format :json
+     :handler         #(reset! current-games %)
+     }
+    )
+  )
+
 (defn x-page [] [:div
+                 [:div
+                  [:a {:target "_blank" :href (str "http://alfa.duel.gg/api" (ui/generated-path))} (ui/generated-path)]
+                  (ui/whut @ui/modl)
 
+                  [button
+                   :label "Reload"
+                   :on-click (fn [_] (fetch-path (ui/generated-path)))
+                   ]
+                  ]
 
-                 [:div (ui/whut @ui/modl)]
+                 [:div (gv/render-api-response @current-games)]
                  ])
 
 (secretary/defroute "/" []
@@ -189,12 +211,16 @@
         (secretary/dispatch! (.-token event))))
     (.setEnabled true)))
 
+
 ;; -------------------------
 ;; Initialize app
 (defn mount-root []
+  ;(fetch-path "/games/to/2015-08-03T00:00:00Z/")
+  (fetch-path "/games/recent/")
   ;(get-recent-games)
   ;(get-duel)
   ;(get-ctf)
+  (.initializeTouchEvents js/React true)
   (reagent/render [current-page] (.getElementById js/document "app")))
 
 (defn init! []

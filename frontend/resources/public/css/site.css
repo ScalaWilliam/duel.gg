@@ -72,3 +72,27 @@ list-style-type: none;
   margin:1em;
   padding:1em;
 }
+
+.g-teams {
+  display: flex;
+}
+
+.g-teams .g-team {
+  flex:1;
+}
+
+.d-players {
+  display:flex;
+}
+.d-player {
+  flex:1
+}
+.g-ctf, .d-duel {
+  border-bottom: thin solid darkslategray;
+  border-top: thin solid darkslategray;
+  margin-bottom:1.5em;
+}
+.g-ctf h3, .d-duel h3 {
+  margin-top:0.5em;
+  margin-bottom:0.5em;
+}

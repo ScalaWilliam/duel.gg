@@ -1,8 +1,8 @@
 (ns myproject.ui
   (:require
     [goog.date.Date]
-    [re-com.core :refer [horizontal-bar-tabs datepicker v-box h-box horizontal-tabs input-textarea
-                         input-text checkbox]]
+    [re-com.core :refer [horizontal-bar-tabs datepicker datepicker-dropdown v-box h-box horizontal-tabs input-textarea
+                         input-text checkbox h-split scroller]]
     [re-com.datepicker :refer [iso8601->date datepicker-args-desc]]
     [reagent.core :as reagent]
     [cljs-time.format :refer [formatter unparse]]
@@ -41,7 +41,6 @@
   (cljs-time.format/unparse (cljs-time.format/formatters :date-time-no-ms) d)
   )
 
-
 (defonce model1 (reagent/atom (minus (now) (days 3))))
 
 (def sample-view
@@ -70,7 +69,6 @@
   (let
     [type (:type view)]
     (str
-      "http://alfa.duel.gg/api"
       (cond
         (is-filtering view)
         (str
@@ -182,11 +180,6 @@
 
 (defn whut [view]
   [:div
-   [:p
-    [:a {:target "_blank" :href (uri-from-view view)} (uri-from-view view)]
-
-    ]
-   (pr-str view)
    [v-box
     :children
     [
@@ -203,3 +196,13 @@
      ]
     ]]
   )
+
+(defn splitted [view]
+
+  [h-split :panel-1 (whut view)
+   :panel-2
+
+   [:div "K"]
+   ])
+
+(defn generated-path [] (uri-from-view @modl))
