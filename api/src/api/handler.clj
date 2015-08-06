@@ -57,6 +57,18 @@
 
 (defn typ [x] (if (= x "") "games" (subs x 1)))
 
+(defn get-game-players [game]
+  (cond (= (game "type") "duel")
+        (keys (game "players"))
+        (= (game "type") "ctf")
+        (map #(% "name") (flatten (map #(% "players") (map second (game "teams")))))
+        )
+  )
+
+(defn get-player-names []
+  (set (flatten (map get-game-players @recent-games)))
+  )
+
 (defroutes
   app-routes
   (GET "/" [] (str "Hello Worldss"))
@@ -69,6 +81,9 @@
         (response game)))
     )
 
+  (GET "/player-names/" []
+       (response (get-player-names))
+    )
   (GET "/:type{ctf|duel}/games/recent/" {{type :type} :params {player "player"} :query-params}
     (response (find-games {:recent :recent :type type :players player})))
   (GET "/:type{ctf|duel}/games/until/:time/" {{type :type time :time} :params {player "player"} :query-params}
@@ -94,6 +109,7 @@
     (response (find-games {:from time :players player})))
   (GET "/games/first/" {{player "player"} :query-params}
     (response (find-games {:first :first :players player})))
+
 
   (GET "/games/" {{game "game"} :query-params}
     (let [game-ids (set (if (string? game) [game] game))
