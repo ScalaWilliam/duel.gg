@@ -94,7 +94,7 @@
     (response (find-games {:after time :type type :players player})))
   (GET "/:type{ctf|duel}/games/from/:time/" {{type :type time :time} :params {player "player"} :query-params}
     (response (find-games {:from time :type type :players player})))
-  (GET "/:type{ctf|duel}/games/first/" {{player "player"} :query-params}
+  (GET "/:type{ctf|duel}/games/first/" {{type :type} :params {player "player"} :query-params}
     (response (find-games {:first :first :type type :players player})))
 
   (GET "/games/recent/" {{player "player"} :query-params}
