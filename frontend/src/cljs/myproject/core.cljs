@@ -39,7 +39,7 @@
      scores (map #((second %) "frags") (seq players))
      score-header (let [[a b] scores]
                     (str a "-" b))
-     other-header (str (duel "mode") " @ " (duel "map") " • " (duel "startTimeText"))
+     other-header (str (duel "mode") " @ " (duel "map") " • " (duel "endTimeText"))
      ]
     [:div.mini-duel
      [:h2.players player-header]
@@ -52,7 +52,7 @@
 
   [:div.ctf
    [:h2 (str (ctf "mode") " @ " (ctf "map"))]
-   [:h3 (str "on " (ctf "startTimeText"))]
+   [:h3 (str "on " (ctf "endTimeText"))]
    [:div.teams
     (map (fn [[teamname,
                {players "players", flags "flags"}]]
@@ -75,7 +75,7 @@
    [:h2.mode-map
     (str (duel "mode") " @ " (duel "map"))
     ]
-   [:h3.start-time (duel "startTimeText")]
+   [:h3.start-time (duel "endTimeText")]
    [:div.players
     (map (fn [[name player]]
            [:div.player
@@ -100,8 +100,8 @@
                [
                 "/duel/games/recent/"
                 "/duel/games/first/"
-                "/duel/games/from/2015-08-01T18:54:35Z/"
-                "/duel/games/after/2015-08-01T18:54:35Z/"
+                "/duel/games/from/2015-08-01T19:04:35Z/"
+                "/duel/games/after/2015-08-01T19:04:35Z/"
                 "/duel/games/to/2015-08-01T18:54:35Z/"
                 "/duel/games/until/2015-08-01T18:54:35Z/"
                 "/ctf/games/from/2015-08-01T18:54:35Z/?player=w00p|foxie"

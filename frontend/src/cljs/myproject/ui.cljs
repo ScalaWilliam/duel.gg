@@ -49,10 +49,10 @@
    :time          :recent
    :time-2        :to
    :players       "w00p|foxie\n|RB|Honzik1"
-   :time-val      "2015-08-01T18:54:35Z"
+   :time-val      "2015-08-01T19:04:35Z"
    :fiter-players false
-   :ids           "2015-08-01T18:54:35Z\n2015-08-03T16:52:11Z\n2015-08-03T15:42:41Z"
-   :id            "2015-08-01T18:54:35Z"})
+   :ids           "2015-08-01T18:54:35Z\n2015-08-03T17:02:11Z\n2015-08-03T15:52:41Z"
+   :id            "2015-08-01T19:04:35Z"})
 
 (defonce modl (reagent/atom sample-view))
 
