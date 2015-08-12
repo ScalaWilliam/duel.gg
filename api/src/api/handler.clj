@@ -50,7 +50,7 @@
   (future
     (reset! recent-games (get-games))))
 
-(defonce x (update-it))
+;(defonce x (update-it))
 
 (defonce
   updater
