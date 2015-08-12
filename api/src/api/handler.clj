@@ -1,4 +1,5 @@
 (ns api.handler
+  (:gen-class)
   (:require
     [compojure.core :refer :all]
     [compojure.route :as route]
@@ -6,6 +7,7 @@
      [wrap-defaults site-defaults api-defaults]]
     [org.httpkit.client :as http]
     [clojure.data.json :as json]
+    [environ.core :refer [env]]
     [compojure.handler :as handler]
     [clj-time.core :as t]
     [clj-time.format :as f]
@@ -21,8 +23,19 @@
      ]
     [de.bertschneider.clj-geoip.core :refer :all]
     [api.gamefiltering]
+    [org.httpkit.server :refer [with-channel on-close on-receive send!]]
     [clj-http.client :as client]
-    ))
+
+    [ring.middleware.reload :as reload]
+    )
+  (:use [org.httpkit.server :only [run-server]])
+  )
+
+(defn ws-handler [request]
+  (with-channel request channel
+                (on-close channel (fn [status] (println "channel closed: " status)))
+                (on-receive channel (fn [data] ;; echo it back
+                                      (send! channel data)))))
 
 
 (defonce recent-games (atom []))
@@ -36,6 +49,8 @@
   (println "UPDATE ME?")
   (future
     (reset! recent-games (get-games))))
+
+(defonce x (update-it))
 
 (defonce
   updater
@@ -69,6 +84,7 @@
   (sort (apply vector (set (flatten (map get-game-players @recent-games)))))
   )
 
+
 (defroutes
   app-routes
   (GET "/" [] (str "Hello Worldss"))
@@ -80,10 +96,9 @@
         (route/not-found "game not found")
         (response game)))
     )
-
+  (GET "/ws/"[] ws-handler)
   (GET "/player-names/" []
-       (response (get-player-names))
-    )
+       (response (get-player-names)))
   (GET "/:type{ctf|duel}/games/recent/" {{type :type} :params {player "player"} :query-params}
     (response (find-games {:recent :recent :type type :players player})))
   (GET "/:type{ctf|duel}/games/until/:time/" {{type :type time :time} :params {player "player"} :query-params}
@@ -138,3 +153,13 @@
   (-> (handler/site app-routes)
       wrap-json-response
       wrap-cors))
+
+(defn in-dev? [_] true)
+
+(defn -main [& args] ;; entry point, lein run will pick up and start from here
+  (let [handler (if (in-dev? args)
+                  (reload/wrap-reload #'app) ;; only reload when dev
+                  app)
+        port (Integer/parseInt (or (env :port) "3000"))
+        ]
+    (run-server handler {:port port})))
