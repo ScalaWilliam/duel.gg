@@ -8,6 +8,7 @@
     [clojure.data.json :as json]
     [compojure.handler :as handler]
     [clj-time.core :as t]
+    [clj-time.coerce :as c]
     [clj-time.format :as f]
     [ring.middleware.json :refer
      [wrap-json-response]]
@@ -47,7 +48,7 @@
     game))
 
 (defn remove-unnecessary-fields [game]
-  (dissoc (dissoc game "simpleId") "startTime"))
+  (dissoc game "simpleId" "startTime" "endTime"))
 
 (defn enrich-game [game]
   (-> game
@@ -55,9 +56,28 @@
       attach-geo-info
       transform-fraglog))
 
+(defn game-time [game]
+  (f/parse
+    (f/formatters :date-time-no-ms)
+    (game "endTimeText")))
+
+(defn game-start-time [game]
+  (f/parse
+    (f/formatters :date-time-no-ms)
+    (game "startTimeText")))
+
+(defn add-endTime [game]
+  (let [startTime (game-start-time game)
+        endTime (t/plus startTime (t/minutes (int (game "duration"))))
+        endTimeInt (c/to-long endTime)
+        endTimeText (f/unparse (f/formatters :date-time-no-ms) endTime)
+        ]
+    (merge game {"endTime" endTimeInt "endTimeText" endTimeText})))
+
 (defn process-games [games]
   (->> games
-       (sort-by #(% "startTime"))
+       (map add-endTime)
+       (sort-by #(% "endTime"))
        (map enrich-game)))
 
 (defn ctf-players [ctf]
@@ -78,11 +98,6 @@
   (f/parse
     (f/formatters :date-time-no-ms)
     time))
-
-(defn game-time [game]
-  (f/parse
-    (f/formatters :date-time-no-ms)
-    (game "startTimeText")))
 
 (defn is-before-on? [game date]
   (or (t/before? (game-time game) date)
@@ -168,7 +183,7 @@
 
 (defn game-matches? [game desc]
   (do
-    (println desc)
+    ;(println desc)
     (and
       (game-matches-type? game (:type desc))
       (game-timing-matches? game desc)

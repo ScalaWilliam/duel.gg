@@ -74,7 +74,7 @@
   (GET "/" [] (str "Hello Worldss"))
   (GET "/everything/" [] (response @recent-games))
   (GET "/game/:id/" [id]
-    (let [game (first (filter #(= (%1 "startTimeText") id) @recent-games))]
+    (let [game (first (filter #(= (%1 "endTimeText") id) @recent-games))]
       (if
         (nil? game)
         (route/not-found "game not found")
@@ -114,9 +114,9 @@
   (GET "/games/" {{game "game"} :query-params}
     (let [game-ids (set (if (string? game) [game] game))
           matching-games (filter
-                           #(contains? game-ids (%1 "startTimeText"))
+                           #(contains? game-ids (%1 "endTimeText"))
                            @recent-games)
-          game-map (map #(hash-map (%1 "startTimeText") %1) matching-games)
+          game-map (map #(hash-map (%1 "endTimeText") %1) matching-games)
           ]
       (response (apply merge game-map))
       )
