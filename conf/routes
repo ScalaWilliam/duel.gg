@@ -1,0 +1,7 @@
+GET         /users/                        @controllers.Main.listUsers
+GET         /user/                         @controllers.Main.lookupUser(userLookup: models.lookups.UserLookup)
+GET         /user/:id/                     @controllers.Main.userById(id: models.UserId)
+POST        /user/:id/set-nickname/        @controllers.Main.setNicknameForUser(id: models.UserId)
+GET         /user/updates/ws/              @controllers.Main.userUpdatesWs
+GET         /user/updates/es/              @controllers.Main.userUpdatesEs
+POST        /register-user/                @controllers.Main.registerUser
