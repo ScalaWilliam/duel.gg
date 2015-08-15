@@ -9,20 +9,19 @@ import play.api.libs.iteratee.Concurrent
 import scala.async.Async
 import scala.concurrent.{ExecutionContext, Future}
 
-
-
 @Singleton
-class UsersRepository @Inject()()(implicit executionContext: ExecutionContext) {
+class UsersRepository @Inject()(usersDatabase: UsersDatabase)(implicit executionContext: ExecutionContext) {
 
   val (userUpdatesEnum, userUpdatesChannel) = Concurrent.broadcast[FullUser]
 
-  val usersAgent = Agent(Users(users = Map(UserId("drakas") -> FullUser.example)))
+//  val usersAgent = Agent(Users(users = Map(UserId("drakas") -> FullUser.example)))
+  val usersAgent: Agent[Users] = Agent(usersDatabase.getUsers)
 
   def users: Users = usersAgent.get()
 
   def registerUser(registerUser: RegisterUser): Future[Either[String, FullUser]] = {
-    val dateTime = now()
     def getUserById = users.users.get(UserId(registerUser.id))
+    val dateTime = now()
     val startUser = getUserById
     Async.async {
       users.withRegisterUser(registerUser, dateTime) match {
@@ -31,7 +30,8 @@ class UsersRepository @Inject()()(implicit executionContext: ExecutionContext) {
         case Right((_, newUser)) =>
           Async.await(usersAgent.alter(_.withUser(UserId(registerUser.id), newUser)))
           val endUser = getUserById
-          if ( endUser != startUser ) {
+          if (endUser != startUser) {
+            usersDatabase.putUser(newUser)
             userUpdatesChannel.push(newUser)
           }
           Right(newUser)
@@ -51,7 +51,8 @@ class UsersRepository @Inject()()(implicit executionContext: ExecutionContext) {
         case Right((_, updatedUser)) =>
           Async.await(usersAgent.alter(_.withUser(userId, updatedUser)))
           val endUser = getUserById
-          if ( startUser != endUser ) {
+          if (startUser != endUser) {
+            usersDatabase.putUser(updatedUser)
             userUpdatesChannel.push(updatedUser)
           }
           Right(updatedUser)

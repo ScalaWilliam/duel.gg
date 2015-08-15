@@ -11,10 +11,10 @@ package object controllers {
   implicit val zdt: Writes[ZonedDateTime] = new Writes[ZonedDateTime] {
     override def writes(o: ZonedDateTime): JsValue = JsString(o.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
   }
-  implicit val currentNickname = Json.writes[CurrentNickname]
+  implicit val currentNickname = Json.format[CurrentNickname]
   implicit val setNickname = Json.format[SetNickname]
   implicit val registerUserFmt = Json.format[RegisterUser]
-  implicit val previousNickname = Json.writes[PreviousNickname]
-  implicit val writeUser = Json.writes[FullUser]
+  implicit val previousNickname = Json.format[PreviousNickname]
+  implicit val writeUser = Json.format[FullUser]
 
 }
