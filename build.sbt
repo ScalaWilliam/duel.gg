@@ -1,9 +1,8 @@
-lazy val root = (project in file(".")).dependsOn(api, core).aggregate(api, core)
+lazy val root = (project in file(".")).dependsOn(playersApi, playersCore).aggregate(playersApi, playersCore)
 
-lazy val api = project.enablePlugins(PlayScala).dependsOn(core).settings(
-)
+lazy val playersApi = (project in file("players-api")).enablePlugins(PlayScala).dependsOn(playersCore)
 
-lazy val core = project.settings(
+lazy val playersCore = (project in file("players-core")).settings(
   libraryDependencies ++= Seq(
     "com.h2database" % "h2-mvstore" % "1.4.187",
     "com.typesafe.akka" %% "akka-agent" % "2.3.12",

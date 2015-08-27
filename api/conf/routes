@@ -1,6 +1,0 @@
-GET         /players/                 @controllers.Main.listPlayers
-GET         /player/:id/              @controllers.Main.getPlayer(id)
-GET         /clans/                   @controllers.Main.listClans
-GET         /clan/:id/                @controllers.Main.getClan(id)
-POST        /players/register/        @controllers.Main.registerPlayer
-POST        /clans/register/          @controllers.Main.registerClan
