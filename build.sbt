@@ -1,11 +1,12 @@
-scalaVersion := "2.11.7"
+lazy val root = (project in file(".")).dependsOn(api, core).aggregate(api, core)
 
-libraryDependencies += "com.h2database" % "h2-mvstore" % "1.4.187"
+lazy val api = project.enablePlugins(PlayScala).dependsOn(core).settings(
+)
 
-libraryDependencies += "com.typesafe.akka" %% "akka-agent" % "2.3.12"
-
-libraryDependencies += "org.scala-lang.modules" % "scala-async_2.11" % "0.9.5"
-
-enablePlugins(PlayScala)
-
-routesImport += "controllers.UserLookupBinders._"
+lazy val core = project.settings(
+  libraryDependencies ++= Seq(
+    "com.h2database" % "h2-mvstore" % "1.4.187",
+    "com.typesafe.akka" %% "akka-agent" % "2.3.12",
+    "org.scala-lang.modules" % "scala-async_2.11" % "0.9.5"
+  )
+)
