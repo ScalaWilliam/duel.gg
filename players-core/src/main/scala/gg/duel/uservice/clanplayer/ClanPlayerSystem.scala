@@ -14,6 +14,11 @@ object ClanPlayerSystem {
 
 case class ClanPlayerSystem(clans: Map[String, Clan], players: Map[String, Player]) {
 
+  def getRichPlayer(playerId: String) = players.get(playerId).map(_.withClans)
+  def getRichPlayers = players.mapValues(_.withClans)
+  def getRichClan(clanId: String) = clans.get(clanId).map(_.withPlayers)
+  def getRichClans = clans.mapValues(_.withPlayers)
+
   def withClan(clan: Clan) = copy(clans = clans.updated(clan.id, clan))
 
   def withPlayer(player: Player) = copy(players = players.updated(player.id, player))

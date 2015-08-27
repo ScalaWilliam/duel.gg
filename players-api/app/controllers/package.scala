@@ -36,7 +36,7 @@ package object controllers {
       }
     }
   }
-  implicit val playerAndClan: Writes[PlayerAndClan] = new Writes[PlayerAndClan] {
+  implicit val playerAndClanWrites: Writes[PlayerAndClan] = new Writes[PlayerAndClan] {
     override def writes(o: PlayerAndClan): JsValue = {
       (Json.toJson(o.player), o.clan) match {
         case (a: JsObject, Some(clan)) =>

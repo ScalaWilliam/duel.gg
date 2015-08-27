@@ -1,104 +1,85 @@
 package controllers
 
-import java.time.ZonedDateTime
 import javax.inject._
-import gg.duel.uservice.clan.{SetPatterns, RegisterClan, Clan}
-import gg.duel.uservice.clanplayer.ClanPlayerSystem
-import gg.duel.uservice.player.{SetNickname, RegisterPlayer, Player}
+
+import gg.duel.uservice.clan.{RegisterClan, SetPatterns}
+import gg.duel.uservice.player.{RegisterPlayer, SetNickname}
 import play.api.libs.json.Json
 import play.api.mvc._
+import services.PlayerClanManager
+
+import scala.async.Async
 import scala.concurrent.ExecutionContext
 
 /**
  * Created on 13/08/2015.
  */
 @Singleton
-class Main @Inject()()(implicit executionContext: ExecutionContext) extends Controller {
+class Main @Inject()(playerClanManager: PlayerClanManager)(implicit executionContext: ExecutionContext) extends Controller {
 
-  var ha: ClanPlayerSystem = ClanPlayerSystem.empty.withPlayer(Player.example).withClan(Clan.example)
+  def cps = playerClanManager.cps
 
   def listPlayers = Action {
-    val hu = ha
-    import hu.playerEnrich
-    Ok(Json.toJson(ha.players.mapValues(_.withClans)))
+    Ok(Json.toJson(cps.getRichPlayers))
   }
 
   def getPlayer(id: String) = Action {
-    val hu = ha
-    import hu.playerEnrich
-    ha.players.get(id) match {
-      case Some(player) => Ok(Json.toJson(player.withClans))
+    cps.getRichPlayer(id) match {
+      case Some(player) => Ok(Json.toJson(player))
       case None => NotFound
     }
   }
 
   def listClans = Action {
-    val hu = ha
-    import hu.clanEnrich
-    Ok(Json.toJson(ha.clans.mapValues(_.withPlayers)))
+    Ok(Json.toJson(cps.getRichClans))
   }
 
   def getClan(id: String) = Action {
-    val hh = ha
-    import hh.clanEnrich
-    ha.clans.get(id) match {
-      case Some(clan) => Ok(Json.toJson(clan.withPlayers))
+    cps.getRichClan(id) match {
+      case Some(clan) => Ok(Json.toJson(clan))
       case None => NotFound
     }
   }
 
-  def registerClan = Action.apply(BodyParsers.parse.json[RegisterClan]) { request =>
-    val hh = ha
-    import hh.clanEnrich
-    ha.registerClanW(request.body, ZonedDateTime.now()) match {
-      case Right((sys, clan)) =>
-        ha = sys
-        Ok(Json.toJson(clan.withPlayers))
-      case Left(reason) =>
-        BadRequest(reason)
+  def registerPlayer = Action.async(BodyParsers.parse.json[RegisterPlayer]) { request =>
+    Async.async {
+      Async.await(playerClanManager.registerPlayer(request.body, now())) match {
+        case Right(playerAndClan) =>
+          Ok(Json.toJson(playerAndClan))
+        case Left(reason) =>
+          BadRequest(reason)
+      }
     }
   }
 
-  def registerPlayer = Action.apply(BodyParsers.parse.json[RegisterPlayer]) { request =>
-    val hh = ha
-    import hh.playerEnrich
-    ha.registerPlayerW(request.body, ZonedDateTime.now()) match {
-      case Right((sys, player)) =>
-        ha = sys
-        Ok(Json.toJson(player.withClans))
-      case Left(reason) =>
-        BadRequest(reason)
+  def registerClan = Action.async(BodyParsers.parse.json[RegisterClan]) { request =>
+    Async.async {
+      Async.await(playerClanManager.registerClan(request.body, now())) match {
+        case Right(clanWithPlayers) =>
+          Ok(Json.toJson(clanWithPlayers))
+        case Left(reason) =>
+          BadRequest(reason)
+      }
     }
   }
 
-  def setPatterns(clanId: String) = Action.apply(BodyParsers.parse.json[SetPatterns]) { request =>
-    val hh = ha
-    ha.clans.get(clanId) match {
-      case None => NotFound("Clan not found")
-      case Some(clan) =>
-        import hh.clanEnrich
-        clan.setPatterns(request.body, now()) match {
-          case Left(failure) => BadRequest(failure)
-          case Right((sys, c)) =>
-            ha = sys
-            Ok(Json.toJson(c.withPlayers))
-        }
+  def setPatterns(clanId: String) = Action.async(BodyParsers.parse.json[SetPatterns]) { request =>
+    Async.async {
+      Async.await(playerClanManager.setPatterns(clanId, request.body, now())) match {
+        case None => NotFound("Clan not found")
+        case Some(Left(failure)) => BadRequest(failure)
+        case Some(Right(clanAndClanPlayers)) => Ok(Json.toJson(clanAndClanPlayers))
+      }
     }
   }
 
-  def setNickname(playerId: String) = Action.apply(BodyParsers.parse.json[SetNickname]) { request =>
-    val hh = ha
-    ha.players.get(playerId) match {
-      case None => NotFound("Player not found")
-      case Some(player) =>
-        import hh.playerEnrich
-        player.setNickname(request.body, now()) match {
-          case Left(failure) =>
-            BadRequest(failure)
-          case Right((sys, p)) =>
-            ha = sys
-            Ok(Json.toJson(p.withClans))
-        }
+  def setNickname(playerId: String) = Action.async(BodyParsers.parse.json[SetNickname]) { request =>
+    Async.async {
+      Async.await(playerClanManager.setNickname(playerId, request.body, now())) match {
+        case None => NotFound("Player not found")
+        case Some(Left(failure)) => BadRequest(failure)
+        case Some(Right(playerWithClan)) => Ok(Json.toJson(playerWithClan))
+      }
     }
   }
 

@@ -1,8 +1,8 @@
-GET         /players/                         @controllers.Main.listPlayers
-GET         /player/:id/                      @controllers.Main.getPlayer(id)
-GET         /clans/                           @controllers.Main.listClans
-GET         /clan/:id/                        @controllers.Main.getClan(id)
-POST        /players/register/                @controllers.Main.registerPlayer
-POST        /clans/register/                  @controllers.Main.registerClan
+GET         /players/                        @controllers.Main.listPlayers
+GET         /player/:id/                     @controllers.Main.getPlayer(id)
+GET         /clans/                          @controllers.Main.listClans
+GET         /clan/:id/                       @controllers.Main.getClan(id)
+POST        /players/register/               @controllers.Main.registerPlayer
+POST        /clans/register/                 @controllers.Main.registerClan
 POST        /player/:id/set-nickname/        @controllers.Main.setNickname(id)
-POST        /clan/:id/set-patterns/           @controllers.Main.setPatterns(id)
+POST        /clan/:id/set-patterns/          @controllers.Main.setPatterns(id)
