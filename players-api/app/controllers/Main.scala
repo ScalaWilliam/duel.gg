@@ -6,16 +6,27 @@ import gg.duel.uservice.clan.{RegisterClan, SetPatterns}
 import gg.duel.uservice.player.{RegisterPlayer, SetNickname}
 import play.api.libs.json.Json
 import play.api.mvc._
-import services.PlayerClanManager
+import services.{AuthenticationService, PlayerClanManager}
 
 import scala.async.Async
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 
 /**
  * Created on 13/08/2015.
  */
 @Singleton
-class Main @Inject()(playerClanManager: PlayerClanManager)(implicit executionContext: ExecutionContext) extends Controller {
+class Main @Inject()(playerClanManager: PlayerClanManager,
+                     authenticationService: AuthenticationService
+                      )(implicit executionContext: ExecutionContext) extends Controller {
+
+  def WriteCheckAction = new ActionBuilder[Request] {
+    override def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]): Future[Result] = {
+      request.getQueryString("api-key") match {
+        case Some(apiKey) if authenticationService.authenticates(apiKey) => block(request)
+        case _ => Future.successful(Unauthorized("A valid API key is required."))
+      }
+    }
+  }
 
   def cps = playerClanManager.cps
 
@@ -41,7 +52,7 @@ class Main @Inject()(playerClanManager: PlayerClanManager)(implicit executionCon
     }
   }
 
-  def registerPlayer = Action.async(BodyParsers.parse.json[RegisterPlayer]) { request =>
+  def registerPlayer = WriteCheckAction.async(BodyParsers.parse.json[RegisterPlayer]) { request =>
     Async.async {
       Async.await(playerClanManager.registerPlayer(request.body, now())) match {
         case Right(playerAndClan) =>
@@ -52,7 +63,7 @@ class Main @Inject()(playerClanManager: PlayerClanManager)(implicit executionCon
     }
   }
 
-  def registerClan = Action.async(BodyParsers.parse.json[RegisterClan]) { request =>
+  def registerClan = WriteCheckAction.async(BodyParsers.parse.json[RegisterClan]) { request =>
     Async.async {
       Async.await(playerClanManager.registerClan(request.body, now())) match {
         case Right(clanWithPlayers) =>
@@ -63,7 +74,7 @@ class Main @Inject()(playerClanManager: PlayerClanManager)(implicit executionCon
     }
   }
 
-  def setPatterns(clanId: String) = Action.async(BodyParsers.parse.json[SetPatterns]) { request =>
+  def setPatterns(clanId: String) = WriteCheckAction.async(BodyParsers.parse.json[SetPatterns]) { request =>
     Async.async {
       Async.await(playerClanManager.setPatterns(clanId, request.body, now())) match {
         case None => NotFound("Clan not found")
@@ -73,7 +84,7 @@ class Main @Inject()(playerClanManager: PlayerClanManager)(implicit executionCon
     }
   }
 
-  def setNickname(playerId: String) = Action.async(BodyParsers.parse.json[SetNickname]) { request =>
+  def setNickname(playerId: String) = WriteCheckAction.async(BodyParsers.parse.json[SetNickname]) { request =>
     Async.async {
       Async.await(playerClanManager.setNickname(playerId, request.body, now())) match {
         case None => NotFound("Player not found")
