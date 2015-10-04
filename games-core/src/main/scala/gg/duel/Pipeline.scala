@@ -38,14 +38,7 @@ object Pipeline extends App {
   
   val enrichedStr = enricher.enrichJsonGame(sampleJsonGame)
   println(enrichedStr)
-
-  case class OurGame(`type`: String, endTimeText: ZonedDateTime, players: Map[String, OurPlayer], teams: Option[Map[String, OurTeam]], clanwar: Option[Set[String]])
-  case class OurPlayer(name: String, user: Option[String], clan: Option[String])
-  case class OurTeam(name: String, clan: Option[String])
-
-  implicit val ourPlayerReads = Json.reads[OurPlayer]
-  implicit val ourTeamReads = Json.reads[OurTeam]
-  implicit val ourGameReads = Json.reads[OurGame]
+  import gg.duel.indexing._
   val theGame = Json.fromJson[OurGame](Json.parse(enrichedStr))
   println(theGame)
 }

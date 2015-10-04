@@ -11,8 +11,20 @@ lazy val playersCore = (project in file("players-core")).settings(
 )
 
 lazy val gamesCore = (project in file("games-core")).settings(
-  libraryDependencies += "gcc" % "gcc" % "1.0.0-SNAPSHOT",
-  libraryDependencies += json
+  libraryDependencies ++= Seq(
+    "gcc" % "gcc" % "1.0.0-SNAPSHOT",
+    json
+  )
 )
 
 lazy val gamesApi = (project in file("games-api")).enablePlugins(PlayScala).dependsOn(gamesCore)
+  .settings(
+    routesImport += "binders._",
+    libraryDependencies ++= Seq(
+      ws,
+      "com.typesafe.akka" %% "akka-actor" % "2.4.0",
+      "com.typesafe.akka" %% "akka-slf4j" % "2.4.0",
+      "com.typesafe.akka" %% "akka-agent" % "2.4.0",
+      "org.scala-lang.modules" %% "scala-async" % "0.9.5"
+    )
+  )

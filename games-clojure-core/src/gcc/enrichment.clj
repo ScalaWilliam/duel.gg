@@ -5,7 +5,7 @@
     [clj-time.format :as f]
     [de.bertschneider.clj-geoip.core :refer :all]
     [gcc.game :refer :all]
-    ))
+    [clojure.data.json :as json]))
 
 (defonce mls (multi-lookup-service))
 
@@ -23,7 +23,7 @@
   (clojure.walk/prewalk
     #(if (and (map? %1) (contains? %1 "ip"))
       (let [r (fn %1)] (if (nil? r) %1 r)
-        )
+                       )
       %1)
     game))
 
@@ -76,10 +76,11 @@
            :constructors {[gcc.enrichment.PlayerLookup] []}
            :methods [
                      [enrichJsonGame [String] String]
+                     [enrichJsonGames [String] String]
                      ])
 
 (defn attach-team-clan [team]
-  (when-let [clan (team-clan team)] (merge team {"clan" clan})))
+  (if-let [clan (team-clan team)] (merge team {"clan" clan}) team))
 
 (defn with-team-clans [game]
   (walk-teams game attach-team-clan))
@@ -93,12 +94,12 @@
   (walk-game-players game (partial with-player-clan player-lookup)))
 
 (defn with-game-clan-info [game]
-  (let [clans (remove nil? (map (comp #(get % "clan") second ) (game "teams")))
+  (let [clans (remove nil? (map (comp #(get % "clan") second) (game "teams")))
         exactly-two-clans (and (seq? clans) (= (count clans) 2))
         ] (if exactly-two-clans
             (merge game {"clanwar" clans})
-    game)
-  ))
+            game)
+          ))
 
 (defn enrich-game [game player-lookup]
   (->
@@ -113,6 +114,17 @@
     with-game-clan-info
     )
   )
+
+(defn enricher-enrichJsonGames [this json-games]
+  (let
+    [json-games-map (json/read-str json-games)
+     ;_ (println "KKK" (pr-str json-games-map))
+     mapped-games (into {} (for [[k v] json-games-map] [k (enrich-game v (.state this))]))
+     ]
+    (json/write-str mapped-games)
+    )
+  )
+
 
 (defn enricher-enrichJsonGame [this json-game]
   (->
