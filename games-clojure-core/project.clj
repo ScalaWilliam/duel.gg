@@ -8,5 +8,5 @@
                  [clj-time "0.10.0"]
                  ]
 
-  :profiles {:precomp {:aot [gcc.enrichment]}}
+  :profiles {:precomp {:aot [gcc.enrichment gcc.game]}}
   )

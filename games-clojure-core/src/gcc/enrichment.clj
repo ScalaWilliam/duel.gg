@@ -1,152 +1,123 @@
 (ns gcc.enrichment
   (:require
-    [clojure.data.json :as json]
     [clj-time.core :as t]
     [clj-time.coerce :as c]
     [clj-time.format :as f]
     [de.bertschneider.clj-geoip.core :refer :all]
+    [gcc.game :refer :all]
     ))
-
-(definterface ProvidesCountry
-  (^String getCountryCode [^String ip])
-  (^String getCountryName [^String ip]))
-
-(definterface GetsPlayerInfo
-  (^String getUsername [^String nickname ^org.joda.time.DateTime startTime ^String countryCode])
-  (^String getClan [^String nickname ^org.joda.time.DateTime startTime ^String countryCode])
-  )
-
-(definterface GameEnricher
-  (parseGame [gameJson])
-  (withTransformedLog [game])
-  (withGeoInfo [game ^gcc.enrichment.ProvidesCountry countryProvider])
-  (withPlayerInfo [game ^gcc.enrichment.GetsPlayerInfo playerProvider])
-  (withoutUnnecessaryFields [game])
-  (getGameEndTime [game])
-  (getGameStartTime [game])
-  (withEndTime [game])
-  (transformFraglog [game])
-  (fullyEnriched [game ^gcc.enrichment.ProvidesCountry countryProvider ^gcc.enrichment.GetsPlayerInfo playerProvider])
-  (toJson [game])
-  (^java.util.Collection getPlayerNames [game])
-  )
-
-(gen-class
-  :name gcc.enrichment.GameEnricherImpl
-  :implements [gcc.enrichment.GameEnricher]
-  :prefix "gei-"
-  )
-
-(defn gei-withPlayerInfo [_ game ^gcc.enrichment.GetsPlayerInfo pp]
-  (clojure.walk/prewalk
-    #(if (and (map? %1) (contains? %1 "ip"))
-
-      (let
-        [startTime (f/parse
-                     (f/formatters :date-time-no-ms)
-                     (game "startTimeText"))
-         name (%1 "name")
-         countryCode (%1 "countryCode")
-         username-map (when-let [username (.getUsername pp name startTime countryCode)] {"user" username})
-         clan-map (when-let [clan (.getClan pp name startTime countryCode)] {"clan" clan})
-         ]
-        (merge %1 username-map clan-map)
-        )
-
-
-      %1) game)
-  )
-
-(defn gei-toJson [_ game]
-  (json/write-str game)
-  )
-
-(defn gei-parseGame [_ gameJson]
-  (json/read-str gameJson))
-
-(defn gei-withTransformedLog [_ game]
-  (clojure.walk/prewalk
-    #(if (and (map? %1) (contains? %1 "_2")) (%1 "_2") %1) game))
-
-(defn gei-withGeoInfo [_ game pc]
-  (clojure.walk/prewalk
-    #(if (and (map? %1) (contains? %1 "ip"))
-      (let [modified-ip (clojure.string/replace (%1 "ip") "x" "1")
-            cn-map (when-let [cn (.getCountryName pc modified-ip)] {"countryName" cn})
-            cc-map (when-let [cc (.getCountryCode pc modified-ip)] {"countryCode" cc})
-            ]
-        (merge %1 cn-map cc-map))
-      %1)
-    game))
-
-(defn gei-withoutUnnecessaryFields [_ game]
-  (dissoc game "simpleId" "startTime" "endTime"))
-
-(defn gei-getGameEndTime [game]
-  (f/parse
-    (f/formatters :date-time-no-ms)
-    (game "endTimeText")))
-
-(defn gei-getGameStartTime [_ game]
-  (f/parse
-    (f/formatters :date-time-no-ms)
-    (game "startTimeText")))
-
-(defn gei-withEndTime [t game]
-  (let [startTime (gei-getGameStartTime t game)
-        endTime (t/plus startTime (t/minutes (int (game "duration"))))
-        endTimeInt (c/to-long endTime)
-        endTimeText (f/unparse (f/formatters :date-time-no-ms) endTime)
-        ]
-    (merge game {"endTime" endTimeInt "endTimeText" endTimeText})))
-
-(defn ctf-players [ctf]
-  (set (map #(% "name")
-            (mapcat
-              #(%1 "players")
-              (vals (ctf "teams"))))))
-
-(defn duel-players [duel]
-  (set (keys (duel "players"))))
-
-(defn players [game]
-  (clojure.set/union
-    (duel-players game)
-    (ctf-players game)))
-
-(defn gei-getPlayerNames [_ game] (players game))
-
-(defn parse-time [time]
-  (f/parse
-    (f/formatters :date-time-no-ms)
-    time))
-
-(gen-class
-  :name gcc.enrichment.ProvidesCountryImpl
-  :implements [gcc.enrichment.ProvidesCountry]
-  :prefix "pc-")
 
 (defonce mls (multi-lookup-service))
 
 (def lookup-ip (memoize #(lookup mls %1)))
 
-(defn pc-getCountryCode [_ ip] (:country-code (lookup-ip ip)))
-(defn pc-getCountryName [_ ip] (:country-name (lookup-ip ip)))
+(defn player-with-geo-info [player]
+  (let [modified-ip (clojure.string/replace (player "ip") "x" "1")
+        cn-map (when-let [cn (:country-name (lookup-ip modified-ip))] {"countryName" cn})
+        cc-map (when-let [cc (:country-code (lookup-ip modified-ip))] {"countryCode" cc})
+        ]
+    (merge player cn-map cc-map))
+  )
 
+(defn walk-players [game fn]
+  (clojure.walk/prewalk
+    #(if (and (map? %1) (contains? %1 "ip"))
+      (let [r (fn %1)] (if (nil? r) %1 r)
+        )
+      %1)
+    game))
 
+(defn walk-game-players [game fn]
+  (clojure.walk/prewalk
+    #(if (and (map? %1) (contains? %1 "ip"))
+      (let [r (fn game %1)] (if (nil? r) %1 r))
+      %1)
+    game)
+  )
 
-(defn gei-fullyEnriched [t game ^gcc.enrichment.ProvidesCountry countryProvider ^gcc.enrichment.GetsPlayerInfo playerProvider]
-  (gei-withoutUnnecessaryFields
-    t
-    (gei-withPlayerInfo
-      t
-      (gei-withGeoInfo
-        t
-        (gei-withEndTime
-          t
-          (gei-withTransformedLog
-            t game)
-          ) countryProvider)
-      playerProvider)
+(defn with-geo-info [game]
+  (walk-players game player-with-geo-info))
+
+(defn walk-teams [game fn]
+  (clojure.walk/prewalk
+    #(if (and (map? %1) (contains? %1 "players") (contains? %1 "name")) (fn %1) %1)
+    game)
+  )
+
+(defn transform-score-log [game]
+  (clojure.walk/prewalk
+    #(if (and (map? %1) (contains? %1 "_2")) (%1 "_2") %1) game))
+
+(defn without-redundant-fields [game]
+  (dissoc game "simpleId" "startTime" "endTime"))
+
+(defn with-end-time [game]
+  (let [endTime (t/plus (start-time game) (t/minutes (duration game)))
+        endTimeInt (c/to-long endTime)
+        endTimeText (f/unparse (f/formatters :date-time-no-ms) endTime)
+        ]
+    (merge game {"endTime" endTimeInt "endTimeText" endTimeText})))
+
+(definterface PlayerLookup
+  (^String lookupUserId [^String nickname ^org.joda.time.DateTime atTime])
+  (^String lookupClanId [^String nickname ^org.joda.time.DateTime atTime])
+  )
+
+(defn with-player-user [player-lookup game player]
+  (when-let [player-user-id (.lookupUserId player-lookup (player "name") (start-time game))] (merge player {"user" player-user-id})))
+
+(defn with-player-clan [player-lookup game player]
+  (when-let [player-clan-id (.lookupClanId player-lookup (player "name") (start-time game))] (merge player {"clan" player-clan-id})))
+
+(gen-class :name gcc.enrichment.Enricher
+           :init init
+           :prefix "enricher-"
+           :state state
+           :constructors {[gcc.enrichment.PlayerLookup] []}
+           :methods [
+                     [enrichJsonGame [String] String]
+                     ])
+
+(defn attach-team-clan [team]
+  (when-let [clan (team-clan team)] (merge team {"clan" clan})))
+
+(defn with-team-clans [game]
+  (walk-teams game attach-team-clan))
+
+(defn enricher-init [player-lookup] [[] player-lookup])
+
+(defn with-player-users [game player-lookup]
+  (walk-game-players game (partial with-player-user player-lookup)))
+
+(defn with-player-clans [game player-lookup]
+  (walk-game-players game (partial with-player-clan player-lookup)))
+
+(defn with-game-clan-info [game]
+  (let [clans (remove nil? (map (comp #(get % "clan") second ) (game "teams")))
+        exactly-two-clans (and (seq? clans) (= (count clans) 2))
+        ] (if exactly-two-clans
+            (merge game {"clanwar" clans})
+    game)
+  ))
+
+(defn enrich-game [game player-lookup]
+  (->
+    game
+    transform-score-log
+    without-redundant-fields
+    with-end-time
+    with-geo-info
+    (with-player-users player-lookup)
+    (with-player-clans player-lookup)
+    with-team-clans
+    with-game-clan-info
     )
   )
+
+(defn enricher-enrichJsonGame [this json-game]
+  (->
+    json-game
+    parse-game
+    (enrich-game (.state this))
+    game-to-json
+    ))

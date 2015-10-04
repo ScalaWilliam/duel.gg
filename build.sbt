@@ -11,7 +11,8 @@ lazy val playersCore = (project in file("players-core")).settings(
 )
 
 lazy val gamesCore = (project in file("games-core")).settings(
-  libraryDependencies += "gcc" % "gcc" % "1.0.0-SNAPSHOT"
+  libraryDependencies += "gcc" % "gcc" % "1.0.0-SNAPSHOT",
+  libraryDependencies += json
 )
 
 lazy val gamesApi = (project in file("games-api")).enablePlugins(PlayScala).dependsOn(gamesCore)
