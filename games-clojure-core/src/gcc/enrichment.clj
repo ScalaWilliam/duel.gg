@@ -69,23 +69,11 @@
 (defn with-player-clan [player-lookup game player]
   (when-let [player-clan-id (.lookupClanId player-lookup (player "name") (start-time game))] (merge player {"clan" player-clan-id})))
 
-(gen-class :name gcc.enrichment.Enricher
-           :init init
-           :prefix "enricher-"
-           :state state
-           :constructors {[gcc.enrichment.PlayerLookup] []}
-           :methods [
-                     [enrichJsonGame [String] String]
-                     [enrichJsonGames [String] String]
-                     ])
-
 (defn attach-team-clan [team]
   (if-let [clan (team-clan team)] (merge team {"clan" clan}) team))
 
 (defn with-team-clans [game]
   (walk-teams game attach-team-clan))
-
-(defn enricher-init [player-lookup] [[] player-lookup])
 
 (defn with-player-users [game player-lookup]
   (walk-game-players game (partial with-player-user player-lookup)))
@@ -115,6 +103,19 @@
     )
   )
 
+
+(gen-class :name gcc.enrichment.Enricher
+           :init init
+           :prefix "enricher-"
+           :state state
+           :constructors {[gcc.enrichment.PlayerLookup] []}
+           :methods [
+                     [enrichJsonGame [String] String]
+                     [enrichJsonGames [String] String]
+                     ])
+
+(defn enricher-init [player-lookup] [[] player-lookup])
+
 (defn enricher-enrichJsonGames [this json-games]
   (let
     [json-games-map (json/read-str json-games)
@@ -124,7 +125,6 @@
     (json/write-str mapped-games)
     )
   )
-
 
 (defn enricher-enrichJsonGame [this json-game]
   (->
