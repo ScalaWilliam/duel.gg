@@ -4,8 +4,8 @@ lazy val playersApi = (project in file("players-api")).enablePlugins(PlayScala).
 
 lazy val playersCore = (project in file("players-core")).settings(
   libraryDependencies ++= Seq(
-    "com.h2database" % "h2-mvstore" % "1.4.187",
-    "com.typesafe.akka" %% "akka-agent" % "2.3.12",
+    "com.h2database" % "h2-mvstore" % "1.4.189",
+    "com.typesafe.akka" %% "akka-agent" % "2.4.0",
     "org.scala-lang.modules" %% "scala-async" % "0.9.5"
   )
 )
