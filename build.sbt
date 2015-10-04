@@ -6,6 +6,12 @@ lazy val playersCore = (project in file("players-core")).settings(
   libraryDependencies ++= Seq(
     "com.h2database" % "h2-mvstore" % "1.4.187",
     "com.typesafe.akka" %% "akka-agent" % "2.3.12",
-    "org.scala-lang.modules" % "scala-async_2.11" % "0.9.5"
+    "org.scala-lang.modules" %% "scala-async" % "0.9.5"
   )
 )
+
+lazy val gamesCore = (project in file("games-core")).settings(
+  libraryDependencies += "gcc" % "gcc" % "1.0.0-SNAPSHOT"
+)
+
+lazy val gamesApi = (project in file("games-api")).enablePlugins(PlayScala).dependsOn(gamesCore)

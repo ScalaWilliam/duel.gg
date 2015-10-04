@@ -46,3 +46,16 @@ Publicly accessible endpoints are:
 
 ## games-api
 It reads from a private game API and combines results with those of players-api.
+
+# Compilation
+
+First download GeoIP data into the 'resources' directory: https://github.com/bertschneider/clj-geoip/blob/master/scripts/UpdateGeoIpFiles.sh
+
+Then Install the Clojure project and compile the Scala:
+```bash
+$ cd games-clojure-core
+$ lein with-profile precomp install
+$ cd ..
+$ sbt dist
+```
+
