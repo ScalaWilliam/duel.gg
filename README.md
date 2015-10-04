@@ -40,9 +40,9 @@ Publicly accessible endpoints are:
 |Endpoint | Function|
 |-----|------|
 | http://alfa.duel.gg/api/players/players/ | list all players |
-| http://alfa.duel.gg/api/player/drakas/ | show player by ID |
-| http://alfa.duel.gg/api/clans/ | list all clans |
-| http://alfa.duel.gg/api/clan/woop/ | show clan by ID |
+| http://alfa.duel.gg/api/players/player/drakas/ | show player by ID |
+| http://alfa.duel.gg/api/players/clans/ | list all clans |
+| http://alfa.duel.gg/api/players/clan/woop/ | show clan by ID |
 
 ## games-api
 It reads from a private game API and combines results with those of players-api.
