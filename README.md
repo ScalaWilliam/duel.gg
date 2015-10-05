@@ -2,15 +2,16 @@
 
 [![Join the chat at https://gitter.im/ScalaWilliam/duelgg](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ScalaWilliam/duelgg?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-I am developing the next generation of open-sources [duel.gg](http://duel.gg). It is currently all hosted underneath [alfa.duel.gg](http://alfa.duel.gg) with updates slowly going through to the mainline.
-
-Build your own apps on top of this: all the public endpoints will be available for anyone to use and will be accessible via AJAX without cross-origin restrictions.
+I am developing the open sourced next generation of [duel.gg](http://duel.gg). It is currently all hosted underneath [alfa.duel.gg](http://alfa.duel.gg) with updates slowly going through to the mainline.
 
 ## Technology choices
-* ClojureScript for front-end with Reagent: live reload and superior to JavaScript.
-* Scala for back-end with Play: strong typing, rich ecosystem and robustness.
+* __Scala__ for back-end with Play: strong typing, rich ecosystem and robustness.
+* __Clojure__ for data transformations: dynamic, low resistance map traversal.
+* __ClojureScript__ for front-end with Reagent: live reload and superior to JavaScript.
 
 ## Aims, objectives, expectations
+
+
 I realised there is simply too much work for me to take on. I would like to see people use the duel.gg APIs for ad-hoc projects which would be easy to build, such as:
 
 * "Drakas's recent games" embed built with pure JavaScript.
@@ -20,6 +21,9 @@ I realised there is simply too much work for me to take on. I would like to see 
 * Duel leagues
 * CTF leagues
 * Clan leagues
+
+Build your own apps on top of this: all the public endpoints will be available for anyone to use and will be accessible via AJAX without cross-origin restrictions.
+
 
 ## players-api
 
@@ -46,3 +50,16 @@ Publicly accessible endpoints are:
 
 ## games-api
 It reads from a private game API and combines results with those of players-api.
+
+# Compilation
+
+First download GeoIP data into the 'resources' directory: https://github.com/bertschneider/clj-geoip/blob/master/scripts/UpdateGeoIpFiles.sh
+
+Then Install the Clojure project and compile the Scala:
+```bash
+$ cd games-clojure-core
+$ lein with-profile precomp install
+$ cd ..
+$ sbt dist
+```
+

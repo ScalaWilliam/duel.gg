@@ -1,0 +1,6 @@
+GET        /games/                      @controllers.Main.gamesByIds(game: gg.duel.query.MultipleByIdQuery)
+GET        /games/*condition            @controllers.Main.games(condition: gg.duel.query.TimingCondition)
+GET        /ctf/games/*condition        @controllers.Main.ctfGames(condition: gg.duel.query.TimingCondition)
+GET        /clanwars/*condition         @controllers.Main.clanwars(condition: gg.duel.query.TimingCondition)
+GET        /duels/*condition            @controllers.Main.duels(condition: gg.duel.query.TimingCondition  )
+GET        /game/:id/                   @controllers.Main.gameById(id: gg.duel.query.GameId)
