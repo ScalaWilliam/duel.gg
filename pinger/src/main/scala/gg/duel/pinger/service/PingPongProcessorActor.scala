@@ -7,8 +7,8 @@ import akka.actor.{Props, ActorLogging, ActorRef}
 import akka.io
 import akka.io.Udp
 import akka.util.ByteString
-import gg.duel.pinger.data.journal.{SauerBytesBinary, SauerBytes}
 import gg.duel.pinger.data.Server
+import gg.duel.pinger.data.journal.SauerBytes
 import gg.duel.pinger.service.PingPongProcessor._
 
 import scala.util.Random
@@ -18,12 +18,11 @@ object PingPongProcessor {
   sealed trait ReceiveResult
   case class BadHash(server: Server, time: Long, fullMessage: ByteString, expectedHash: ByteString, haveHash: ByteString) extends ReceiveResult
   case class ReceivedBytes(server: Server, time: Long, message: ByteString) extends ReceiveResult {
-    def toSauerBytes = SauerBytes(server, time, message.toVector)
-    def toBytes = SauerBytesBinary.toBytes(toSauerBytes)
+    def toSauerBytes = SauerBytes(server, time, message)
   }
   object ReceivedBytes {
     def fromSauerBytes(sauerBytes: SauerBytes) = 
-      ReceivedBytes(sauerBytes.server, sauerBytes.time, ByteString(sauerBytes.message.toArray))
+      ReceivedBytes(sauerBytes.server, sauerBytes.time, sauerBytes.message)
   }
   case class Ping(server: Server)
   case class Ready(on: InetSocketAddress)
