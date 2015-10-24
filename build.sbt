@@ -1,4 +1,4 @@
-lazy val pinger = project.settings(
+lazy val pingerCore = (project in file("pinger-core")).settings(
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.3",
     "com.typesafe.akka" %% "akka-actor" % "2.4.0",
@@ -15,15 +15,15 @@ lazy val pinger = project.settings(
   )
 )
 
-lazy val pingerService = (project in file("pinger-service")).enablePlugins(PlayScala).dependsOn(pinger)
+lazy val pingerService = (project in file("pinger-service")).enablePlugins(PlayScala).dependsOn(pingerCore)
 .settings(libraryDependencies ++= Seq("org.scala-lang.modules" %% "scala-async" % "0.9.5",
   "com.h2database" % "h2" % "1.4.190", filters)).settings(includeGitStamp)
 
 Seq(com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings :_*)
 
 lazy val root = (project in file("."))
-  .dependsOn(pinger, pingerService)
-  .aggregate(pinger, pingerService)
+  .dependsOn(pingerCore, pingerService)
+  .aggregate(pingerCore, pingerService)
 
 lazy val playersCore = (project in file("players-core")).settings(
   libraryDependencies ++= Seq(
