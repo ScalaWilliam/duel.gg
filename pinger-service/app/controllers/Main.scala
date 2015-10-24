@@ -25,7 +25,7 @@ class Main @Inject()
   }
 
   private def allGamesEnum = Enumerator.enumerate(
-    traversable = gamesManager.games.asCombined.games.map(_.fold(scd =>
+    traversable = gamesManager.games.asCombined.games.sortBy(_.fold(_.startTime, _.startTime)).map(_.fold(scd =>
       Event(
         id = Option(scd.startTimeText),
         name = Option("duel"),
