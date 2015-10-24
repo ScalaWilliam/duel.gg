@@ -41,6 +41,7 @@ class UpstreamGames @Inject()(configuration: Configuration, applicationLifecycle
 
   allClient.createStream{
     Flow.apply[ServerSentEvent]
+      .map{ x => println(x.id); x }
       .fold(Option.empty[ServerSentEvent]){
         (o, e) =>
           if ( o.isEmpty ) println("Started: ", System.currentTimeMillis() / 1000)
