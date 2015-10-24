@@ -46,13 +46,17 @@ object StubGenerator {
     ).toList
   }
 
+  val drakasUkIp = "23.235.33.x"
+  val artBosniaIp = "80.65.161.x"
+  val brownieGermanyIp = "185.5.80.x"
+
   // minimum viable sequence to produce a completed duel!
-  lazy val validSequence = Seq(
+  val validSequence = Seq(
     0 * 60 -> csr(2, 3, 600 - (0 * 60), "academy"),
     // state above 3, meaning spectator, for example
-    1 * 60 -> pei("w00p|Drakas", 2, "123"),
-    1 * 60 -> pei("w00p|Art", 2, "123"),
-    1 * 60 -> pei("w00p|brownie", 2, "123").copy(state = 4),
+    1 * 60 -> pei("w00p|Drakas", 2, ip = drakasUkIp),
+    1 * 60 -> pei("w00p|Art", 2, ip = artBosniaIp),
+    1 * 60 -> pei("w00p|brownie", 2, ip = brownieGermanyIp).copy(state = 4),
     1 * 60 -> csr(2, 3, 600 - (1 * 60), "academy"),
     2 * 60 -> csr(4, 3, 600 - (2 * 60), "academy"),
     3 * 60 -> csr(6, 3, 600 - (3 * 60), "academy"),
@@ -63,11 +67,11 @@ object StubGenerator {
     8 * 60 -> csr(2, 3, 600 - (8 * 60), "academy"),
     9 * 60 -> csr(2, 3, 600 - (9 * 60), "academy"),
     10* 60 -> csr(2, 3, 600 - (10* 60), "academy"),
-    10* 60 -> pei("w00p|Drakas", 40, "123"),
-    10* 60 -> pei("w00p|Art", 30, "123"),
+    10* 60 -> pei("w00p|Drakas", 40, ip = drakasUkIp),
+    10* 60 -> pei("w00p|Art", 30, ip = artBosniaIp),
     4 * 60 -> csr(2, 2, 500, "tartech")
   )
 
-  lazy val validSequenceCompletedDuel = timedStates(validSequence :_*).last.asInstanceOf[ZFoundDuel].completedDuel
+  val validSequenceCompletedDuel = timedStates(validSequence :_*).last.asInstanceOf[ZFoundDuel].completedDuel
   
 }

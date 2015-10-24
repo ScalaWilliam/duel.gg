@@ -25,6 +25,8 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
 
   val enricher = new Enricher(playerLookup)
 
+//  enricher.enrichJsonGame()
+
   def games(condition: TimingCondition) = TODO
 
   def ctfGames(condition: TimingCondition) = TODO

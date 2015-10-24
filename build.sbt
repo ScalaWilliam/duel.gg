@@ -1,3 +1,23 @@
+lazy val root = (project in file("."))
+  .dependsOn(pingerCore, pingerService)
+  .aggregate(pingerCore, pingerService)
+
+
+lazy val api = (project in file("api")).enablePlugins(PlayScala).dependsOn(gamesCore, playersCore)
+  .settings(
+    routesImport += "binders._",
+    resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
+    libraryDependencies ++= Seq(
+      ws,
+      "com.typesafe.akka" %% "akka-actor" % "2.4.0",
+      "com.typesafe.akka" %% "akka-slf4j" % "2.4.0",
+      "com.typesafe.akka" %% "akka-agent" % "2.4.0",
+      "org.scala-lang.modules" %% "scala-async" % "0.9.5",
+      "de.heikoseeberger" %% "akka-sse" % "1.1.0",
+      "org.scalatest" %% "scalatest" % "2.2.5" % "test"
+    )).settings(includeGitStamp).dependsOn(pingerCore % "test->test")
+
+
 lazy val pingerCore = (project in file("pinger-core")).settings(
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.3",
@@ -19,12 +39,6 @@ lazy val pingerService = (project in file("pinger-service")).enablePlugins(PlayS
 .settings(libraryDependencies ++= Seq("org.scala-lang.modules" %% "scala-async" % "0.9.5",
   "com.h2database" % "h2" % "1.4.190", filters)).settings(includeGitStamp)
 
-Seq(com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings :_*)
-
-lazy val root = (project in file("."))
-  .dependsOn(pingerCore, pingerService)
-  .aggregate(pingerCore, pingerService)
-
 lazy val playersCore = (project in file("players-core")).settings(
   libraryDependencies ++= Seq(
     "com.h2database" % "h2-mvstore" % "1.4.190",
@@ -39,16 +53,3 @@ lazy val gamesCore = (project in file("games-core")).settings(
     json
   )
 )
-
-lazy val api = (project in file("api")).enablePlugins(PlayScala).dependsOn(gamesCore, playersCore)
-  .settings(
-    routesImport += "binders._",
-    resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
-    libraryDependencies ++= Seq(
-      ws,
-      "com.typesafe.akka" %% "akka-actor" % "2.4.0",
-      "com.typesafe.akka" %% "akka-slf4j" % "2.4.0",
-      "com.typesafe.akka" %% "akka-agent" % "2.4.0",
-      "org.scala-lang.modules" %% "scala-async" % "0.9.5",
-      "de.heikoseeberger" %% "akka-sse" % "1.1.0"
-    )).settings(includeGitStamp)
