@@ -1,8 +1,8 @@
 import java.time.ZonedDateTime
 
-import gg.duel.uservice.clan._
-import gg.duel.uservice.clanplayer.{PlayerAndClan, ClanPlayer, ClanAndClanPlayers}
-import gg.duel.uservice.player._
+import gg.duel.uservice.clan.{SetPatterns, CurrentPatterns, PreviousPatterns, RegisterClan}
+import gg.duel.uservice.clanplayer.{PlayerAndClan, ClanAndClanPlayers}
+import gg.duel.uservice.player.{SetNickname, CurrentNickname, PreviousNickname, RegisterPlayer}
 import play.api.libs.json._
 
 /**
@@ -17,13 +17,16 @@ package object controllers {
 
   implicit val previousPatternsWrites: Writes[PreviousPatterns] = Json.writes[PreviousPatterns]
   implicit val currentPatternsWrites = Json.writes[CurrentPatterns]
-  implicit val clanWrites = Json.writes[Clan]
 
+  implicit val clanPlayerWrites = Json.writes[ClanPlayer]
+  implicit val clanWrites = Json.writes[gg.duel.uservice.clan.Clan]
+
+  implicit val playerNicknameWrites = Json.writes[PlayerNickname]
   implicit val previousNicknameWrites = Json.writes[PreviousNickname]
   implicit val currentNicknameWrites = Json.writes[CurrentNickname]
   implicit val playerWrites = Json.writes[Player]
-
-  implicit val clanPlayerWrites = Json.writes[ClanPlayer]
+  implicit val pplayerWrites = Json.writes[gg.duel.uservice.player.Player]
+  implicit val cplayerWrites = Json.writes[gg.duel.uservice.clanplayer.ClanPlayer]
 
   implicit val setPatternsReads = Json.reads[SetPatterns]
   implicit val setNicknameReads = Json.reads[SetNickname]

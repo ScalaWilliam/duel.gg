@@ -100,7 +100,7 @@ trait QueryInterface {
 }
 
 @Singleton
-class Main @Inject()(upstreamGames: UpstreamGames)(implicit executionContext: ExecutionContext, wsClient: WSClient) extends Controller {
+class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext: ExecutionContext, wsClient: WSClient) extends Controller {
 
   def index = TODO
 

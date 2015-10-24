@@ -22,10 +22,8 @@ lazy val pingerService = (project in file("pinger-service")).enablePlugins(PlayS
 Seq(com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings :_*)
 
 lazy val root = (project in file("."))
-  .dependsOn(playersApi, playersCore, pinger, pingerService)
-  .aggregate(playersApi, playersCore, pinger, pingerService)
-
-lazy val playersApi = (project in file("players-api")).enablePlugins(PlayScala).dependsOn(playersCore)
+  .dependsOn(pinger, pingerService)
+  .aggregate(pinger, pingerService)
 
 lazy val playersCore = (project in file("players-core")).settings(
   libraryDependencies ++= Seq(
@@ -42,7 +40,7 @@ lazy val gamesCore = (project in file("games-core")).settings(
   )
 )
 
-lazy val gamesApi = (project in file("games-api")).enablePlugins(PlayScala).dependsOn(gamesCore)
+lazy val api = (project in file("api")).enablePlugins(PlayScala).dependsOn(gamesCore, playersCore)
   .settings(
     routesImport += "binders._",
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),

@@ -1,4 +1,4 @@
-package services
+package modules
 
 /**
  * Created on 27/08/2015.
@@ -6,14 +6,15 @@ package services
 
 import javax.inject._
 
-import gg.duel.uservice.clan.{PreviousPatterns, CurrentPatterns, Clan}
-import gg.duel.uservice.player.{PreviousNickname, CurrentNickname, Player}
+import gg.duel.uservice.clan.{Clan, CurrentPatterns, PreviousPatterns}
+import gg.duel.uservice.player.{Player, CurrentNickname, PreviousNickname}
 import org.h2.mvstore.MVStore
 import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.Json
+import collection.JavaConverters._
 
-import scala.concurrent.{Future, ExecutionContext, blocking}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 
 @Singleton
 class PlayerClanPersistence @Inject()(configuration: Configuration, applicationLifecycle: ApplicationLifecycle)(implicit executionContext: ExecutionContext) {
@@ -29,8 +30,6 @@ class PlayerClanPersistence @Inject()(configuration: Configuration, applicationL
 
   val clansMap = database.openMap[String, String]("clans")
   val playersMap = database.openMap[String, String]("players")
-
-  import scala.collection.JavaConverters._
   def getClans = clansMap.asScala.toMap.mapValues(v => Json.fromJson[Clan](Json.parse(v)).get)
   def getPlayers = playersMap.asScala.toMap.mapValues(v => Json.fromJson[Player](Json.parse(v)).get)
 

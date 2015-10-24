@@ -2,20 +2,20 @@ package controllers
 
 import javax.inject._
 
-import gg.duel.uservice.clan.{RegisterClan, SetPatterns}
-import gg.duel.uservice.player.{RegisterPlayer, SetNickname}
+import gg.duel.uservice.clan.{SetPatterns, RegisterClan}
+import gg.duel.uservice.player.{SetNickname, RegisterPlayer}
+import modules.{PlayerClanManager, AuthenticationService}
 import play.api.libs.json.Json
 import play.api.mvc._
-import services.{AuthenticationService, PlayerClanManager}
 
 import scala.async.Async
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * Created on 13/08/2015.
  */
 @Singleton
-class Main @Inject()(playerClanManager: PlayerClanManager,
+class PlayersApi @Inject()(playerClanManager: PlayerClanManager,
                      authenticationService: AuthenticationService
                       )(implicit executionContext: ExecutionContext) extends Controller {
 
