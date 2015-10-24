@@ -4,4 +4,4 @@ GET        /ctf/games/*condition        @controllers.Main.ctfGames(condition: gg
 GET        /clanwars/*condition         @controllers.Main.clanwars(condition: gg.duel.query.TimingCondition)
 GET        /duels/*condition            @controllers.Main.duels(condition: gg.duel.query.TimingCondition  )
 GET        /game/:id/                   @controllers.Main.gameById(id: gg.duel.query.GameId)
-GET /ggs/ @controllers.Main.ggs
+GET        /version/        controllers.Version.getVersion

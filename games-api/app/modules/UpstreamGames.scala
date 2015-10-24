@@ -8,13 +8,14 @@ import akka.stream.scaladsl.{FlattenStrategy, Flow, Source}
 import akka.stream.stage.{Context, PushStage, SyncDirective, TerminationDirective}
 import de.heikoseeberger.akkasse.ServerSentEvent
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object UpstreamGames {
 
   type HttpConnection = Flow[HttpRequest, HttpResponse, Future[OutgoingConnection]]
 
-  def getPermanentStream(httpConnection: HttpConnection)(httpRequest: HttpRequest)(implicit actorMaterializer: ActorMaterializer): Source[ServerSentEvent, Unit] =
+  def getPermanentStream(httpConnection: HttpConnection)(httpRequest: HttpRequest)(implicit actorMaterializer: ActorMaterializer, executionContext: ExecutionContext): Source[ServerSentEvent, Unit] = {
+    import de.heikoseeberger.akkasse.EventStreamUnmarshalling._
     Source.repeat {
       Source.single(httpRequest)
         .via(httpConnection)
@@ -23,6 +24,7 @@ object UpstreamGames {
         .flatten(FlattenStrategy.concat)
         .transform(() => finishOnFailure)
     }.flatten(FlattenStrategy.concat)
+  }
 
   def finishOnFailure[T] = new PushStage[T, T] {
     override def onPush(element: T, ctx: Context[T]): SyncDirective = {
