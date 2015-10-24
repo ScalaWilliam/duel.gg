@@ -1,40 +1,40 @@
 package modules
 
-import akka.http.scaladsl.Http.OutgoingConnection
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{FlattenStrategy, Flow, Source}
-import akka.stream.stage.{Context, PushStage, SyncDirective, TerminationDirective}
-import de.heikoseeberger.akkasse.ServerSentEvent
+import java.net.URI
+import javax.inject._
+
+import akka.actor.ActorSystem
+import akka.stream._
+import akka.stream.scaladsl._
+import modules.sse.{EmptyCancellableServerSentEventClient, SimpleCancellableServerSentEventClient}
+import play.api.inject.ApplicationLifecycle
+import play.api.{Configuration, Logger}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
-object UpstreamGames {
+@Singleton
+class UpstreamGames @Inject()(configuration: Configuration, applicationLifecycle: ApplicationLifecycle)
+                             (implicit actorSystem: ActorSystem,
+                              executionContext: ExecutionContext) {
 
-  type HttpConnection = Flow[HttpRequest, HttpResponse, Future[OutgoingConnection]]
+  implicit val actorMaterializer = ActorMaterializer()
 
-  def getPermanentStream(httpConnection: HttpConnection)(httpRequest: HttpRequest)(implicit actorMaterializer: ActorMaterializer, executionContext: ExecutionContext): Source[ServerSentEvent, Unit] = {
-    import de.heikoseeberger.akkasse.EventStreamUnmarshalling._
-    Source.repeat {
-      Source.single(httpRequest)
-        .via(httpConnection)
-        .transform(() => finishOnFailure)
-        .mapAsync(1)(Unmarshal(_).to[Source[ServerSentEvent, Any]])
-        .flatten(FlattenStrategy.concat)
-        .transform(() => finishOnFailure)
-    }.flatten(FlattenStrategy.concat)
+  val configPath = "gg.duel.pinger-service.all-and-new-url"
+
+  val client = configuration.getString(configPath)
+    .flatMap { uri => Try(new URI(uri)).toOption } match {
+    case Some(uri) =>
+      Logger.info(s"Using uri $uri")
+      new SimpleCancellableServerSentEventClient(uri)
+    case None =>
+      Logger.error(s"Configuration setting at path '$configPath' invalid: ${configuration.getString(configPath)}")
+      new EmptyCancellableServerSentEventClient()
   }
 
-  def finishOnFailure[T] = new PushStage[T, T] {
-    override def onPush(element: T, ctx: Context[T]): SyncDirective = {
-      ctx.push(element)
-    }
+  client.createStream(Sink.foreach(println))
 
-    override def onUpstreamFailure(cause: Throwable, ctx: Context[T]): TerminationDirective = {
-      ctx.finish()
-    }
-  }
-
+  applicationLifecycle.addStopHook(() => Future.successful(client.shutdown()))
 
 }
+
