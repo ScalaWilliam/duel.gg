@@ -52,11 +52,19 @@ class PingerService @Inject()
             ourState.send(currentState)
             currentState match {
               case SFoundGame(_, CompletedGame(Left(duel), _)) =>
-                gamesManager.addDuel(duel)
-                channel.push(duel.toPrettyJson)
+                val updatedDuel = serverProvider.servers.servers.collectFirst {
+                  case (serverName, server) if server.getAddress == duel.server =>
+                    duel.copy(server = serverName)
+                }.getOrElse(duel)
+                gamesManager.addDuel(updatedDuel)
+                channel.push(updatedDuel.toPrettyJson)
               case SFoundGame(_, CompletedGame(Right(ctf), _)) =>
-                gamesManager.addCtf(ctf)
-                channel.push(ctf.toPrettyJson)
+                val updatedCtf = serverProvider.servers.servers.collectFirst {
+                  case (serverName, server) if server.getAddress == ctf.server =>
+                    ctf.copy(server = serverName)
+                }.getOrElse(ctf)
+                gamesManager.addCtf(updatedCtf)
+                channel.push(updatedCtf.toPrettyJson)
               case _ =>
             }
         }
