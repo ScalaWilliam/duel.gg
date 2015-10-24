@@ -6,6 +6,7 @@ import akka.agent.Agent
 import gcc.enrichment.{Enricher, PlayerLookup}
 import gg.duel.indexing.OurGame
 import gg.duel.query._
+import modules.UpstreamGames
 import org.joda.time.DateTime
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -99,7 +100,9 @@ trait QueryInterface {
 }
 
 @Singleton
-class Main @Inject()()(implicit executionContext: ExecutionContext, wsClient: WSClient) extends Controller {
+class Main @Inject()(upstreamGames: UpstreamGames)(implicit executionContext: ExecutionContext, wsClient: WSClient) extends Controller {
+
+  def index = TODO
 
   val agt = Agent(Games.empty)
 
