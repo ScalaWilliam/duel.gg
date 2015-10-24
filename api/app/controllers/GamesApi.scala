@@ -9,6 +9,7 @@ import gcc.enrichment.{Enricher, PlayerLookup}
 import gg.duel.query._
 import modules.UpstreamGames
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Controller}
 
@@ -33,6 +34,7 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
   
   upstreamGames.allClient.createStream(Flow.apply[ServerSentEvent].take(5).mapConcat {
     sse =>
+      Logger.info(s"Processing SSE game = $sse")
       sse.id.map { id => 
       SimpleGame(
         id = id,

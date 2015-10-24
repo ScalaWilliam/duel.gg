@@ -17,7 +17,6 @@ lazy val api = (project in file("api")).enablePlugins(PlayScala).dependsOn(games
       "org.scalatest" %% "scalatest" % "2.2.5" % "test"
     )).settings(includeGitStamp).dependsOn(pingerCore % "test->test").settings(dontDocument)
 
-
 lazy val pingerCore = (project in file("pinger-core")).settings(
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.3",

@@ -7,6 +7,7 @@ import akka.stream.scaladsl.{Flow, FlattenStrategy, Source}
 import akka.stream.stage.{TerminationDirective, SyncDirective, Context, PushStage}
 import akka.stream.{ActorMaterializer, Graph, SinkShape}
 import de.heikoseeberger.akkasse.{EventStreamUnmarshalling, ServerSentEvent}
+import play.api.Logger
 
 import scala.concurrent.{Future, ExecutionContext, Promise}
 
@@ -23,6 +24,7 @@ object CancellableServerSentEventClient {
   def createPermanentStream(httpConnection: HttpConnection, httpRequest: HttpRequest)
                         (implicit actorMaterializer: ActorMaterializer,
                          executionContext: ExecutionContext): Source[ServerSentEvent, Unit] = {
+    Logger.info("Creating permanent stream...")
     import EventStreamUnmarshalling._
     Source.repeat {
       Source.single(httpRequest)

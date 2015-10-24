@@ -53,6 +53,7 @@ class UpstreamGames @Inject()(configuration: Configuration, applicationLifecycle
   applicationLifecycle.addStopHook(() => Future.successful{
     allClient.shutdown()
     newClient.shutdown()
+    allAndNewClient.shutdown()
   })
 
 }
