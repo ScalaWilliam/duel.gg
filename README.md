@@ -33,6 +33,7 @@ This is the core external API that everybody will consume. Following endpoints a
 
 |Endpoint | Function|
 |-----|------|
+| http://alfa.duel.gg/api/new-games/ | __EventSource / Server-Sent Events__ - automatic push of new games coming through.|
 | http://alfa.duel.gg/api/games/recent/ | recent games |
 | http://alfa.duel.gg/api/games/first/ | first games |
 | http://alfa.duel.gg/api/games/until/2015-10-24T18:37:40Z/ | games started until that time |
