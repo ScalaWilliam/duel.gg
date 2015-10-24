@@ -41,8 +41,6 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
       )}.toList
   }.to(Sink.foreach { game => games.sendOff(_ + (game.id -> game)) }))
 
-//  enricher.enrichJsonGame()
-
   def games(condition: TimingCondition) = TODO
 
   def allGames = Action {
