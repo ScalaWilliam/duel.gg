@@ -35,12 +35,15 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
   upstreamGames.allClient.createStream(Flow.apply[ServerSentEvent].take(5).mapConcat {
     sse =>
       Logger.info(s"Processing SSE game = $sse")
-      sse.id.map { id => 
-      SimpleGame(
-        id = id,
-        gameJson = sse.data,
-        enhancedJson = enricher.enrichJsonGame(sse.data)
-      )}.toList
+      sse.id.map { id =>
+        val rsg = SimpleGame(
+          id = id,
+          gameJson = sse.data,
+          enhancedJson = enricher.enrichJsonGame(sse.data)
+        )
+        Logger.info(s"Finished processing SSE game = $sse")
+        rsg
+      }.toList
   }.to(Sink.foreach { game => games.sendOff(_ + (game.id -> game)) }))
 
   def games(condition: TimingCondition) = TODO
