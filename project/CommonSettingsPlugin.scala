@@ -16,5 +16,10 @@ object CommonSettingsPlugin extends AutoPlugin {
   )
   object autoImport {
     val includeGitStamp = com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings
+    val dontDocument = Seq(
+      publishArtifact in (Compile, packageDoc) := false,
+      publishArtifact in packageDoc := false,
+      sources in (Compile, doc) := Seq.empty
+    )
   }
 }

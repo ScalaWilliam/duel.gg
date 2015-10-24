@@ -15,7 +15,7 @@ lazy val api = (project in file("api")).enablePlugins(PlayScala).dependsOn(games
       "org.scala-lang.modules" %% "scala-async" % "0.9.5",
       "de.heikoseeberger" %% "akka-sse" % "1.1.0",
       "org.scalatest" %% "scalatest" % "2.2.5" % "test"
-    )).settings(includeGitStamp).dependsOn(pingerCore % "test->test")
+    )).settings(includeGitStamp).dependsOn(pingerCore % "test->test").settings(dontDocument)
 
 
 lazy val pingerCore = (project in file("pinger-core")).settings(
@@ -37,7 +37,7 @@ lazy val pingerCore = (project in file("pinger-core")).settings(
 
 lazy val pingerService = (project in file("pinger-service")).enablePlugins(PlayScala).dependsOn(pingerCore)
 .settings(libraryDependencies ++= Seq("org.scala-lang.modules" %% "scala-async" % "0.9.5",
-  "com.h2database" % "h2" % "1.4.190", filters)).settings(includeGitStamp)
+  "com.h2database" % "h2" % "1.4.190", filters)).settings(includeGitStamp).settings(dontDocument)
 
 lazy val playersCore = (project in file("players-core")).settings(
   libraryDependencies ++= Seq(
