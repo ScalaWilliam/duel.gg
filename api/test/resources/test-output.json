@@ -1,0 +1,43 @@
+{
+  "map": "academy",
+  "server": "123.2.2.22:2134",
+  "endTimeText": "1970-01-01T03:35:12Z",
+  "playedAt": [
+    1,
+    11
+  ],
+  "startTimeText": "1970-01-01T03:25:12Z",
+  "players": {
+    "w00p|Drakas": {
+      "countryCode": "US",
+      "frags": 40,
+      "clan": "woop",
+      "user": "drakas",
+      "countryName": "United States",
+      "weapon": "shotgun",
+      "name": "w00p|Drakas",
+      "ip": "23.235.33.x",
+      "fragLog": [
+        40
+      ],
+      "accuracy": 25
+    },
+    "w00p|Art": {
+      "countryCode": "BA",
+      "frags": 30,
+      "clan": "woop",
+      "countryName": "Bosnia and Herzegovina",
+      "weapon": "shotgun",
+      "name": "w00p|Art",
+      "ip": "80.65.161.x",
+      "fragLog": [
+        30
+      ],
+      "accuracy": 25
+    }
+  },
+  "mode": "instagib",
+  "winner": "w00p|Drakas",
+  "duration": 10,
+  "endTime": 12912000
+}

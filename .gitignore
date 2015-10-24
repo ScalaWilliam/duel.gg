@@ -1,3 +1,4 @@
+api/resources
 *.db
 /data/
 sb-*.log
