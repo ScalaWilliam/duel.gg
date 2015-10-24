@@ -52,6 +52,10 @@
   (keep #(get % "user") (tree-seq coll? seq game))
   )
 
+(defn clans [game]
+  (keep #(get % "clan") (tree-seq coll? seq game))
+  )
+
 (defn team-clan [team]
   (let [player-clans (map #(get % "clan") (get team "players"))
         clans-set (set player-clans)]
@@ -59,14 +63,27 @@
       (and (= 1 (count clans-set))) (first clans-set)))
   )
 
-(defn game-type [game] (game "type"))
+(defn game-type [game]
+  (cond
+    (contains? game "teams") "ctf"
+    (contains? game "players") "duel"))
 
 (defn is-ctf? [game] (= "ctf" (game-type game)))
 
-(defn is-clanwar? [game]
-  (map #(get % "teams"))
-  (and (is-ctf? game) (every?  )
-       ))
-
-
 (defn is-duel? [game] (= "duel" (game-type game)))
+
+
+(gen-class :name gcc.game.GameReader
+           :prefix "reader-"
+           :methods [
+                     [getPlayers [String] java.util.Collection]
+                     [getClans [String] java.util.Collection]
+                     [getUsers [String] java.util.Collection]
+                     ])
+
+(defn reader-getPlayers [_ game-string]
+  (players (json/read-str game-string)))
+(defn reader-getClans [_ game-string]
+  (clans (json/read-str game-string)))
+(defn reader-getUsers [_ game-string]
+  (users (json/read-str game-string)))

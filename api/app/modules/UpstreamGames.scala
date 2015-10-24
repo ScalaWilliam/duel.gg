@@ -38,17 +38,6 @@ class UpstreamGames @Inject()(configuration: Configuration, applicationLifecycle
   val allAndNewClient = buildStreamClient("/games/all-and-new/")
   val newClient = buildStreamClient("/games/new/")
 
-  /*
-  allClient.createStream{
-    Flow.apply[ServerSentEvent]
-      .fold(Option.empty[ServerSentEvent]){
-        (o, e) =>
-          if ( o.isEmpty ) println("Started: ", System.currentTimeMillis() / 1000)
-          Option(e)
-      }.to(Sink.foreach(x => println(s"DONE: $x", System.currentTimeMillis() / 1000)))
-  }
-  */
-
   applicationLifecycle.addStopHook(() => Future.successful{
     allClient.shutdown()
     newClient.shutdown()

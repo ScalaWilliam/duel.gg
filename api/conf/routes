@@ -1,10 +1,10 @@
 GET / @controllers.GamesApi.index
 GET        /games/                      @controllers.GamesApi.gamesByIds(game: gg.duel.query.MultipleByIdQuery)
-GET        /games/*condition            @controllers.GamesApi.games(condition: gg.duel.query.TimingCondition)
-GET        /ctf/games/*condition        @controllers.GamesApi.ctfGames(condition: gg.duel.query.TimingCondition)
-GET        /clanwars/*condition         @controllers.GamesApi.clanwars(condition: gg.duel.query.TimingCondition)
-GET        /duels/*condition            @controllers.GamesApi.duels(condition: gg.duel.query.TimingCondition  )
+GET        /games/*condition            @controllers.GamesApi.games(condition: gg.duel.query.TimingCondition, playerCondition: controllers.PlayerCondition)
+GET        /ctf/games/*condition        @controllers.GamesApi.ctfGames(condition: gg.duel.query.TimingCondition, playerCondition: controllers.PlayerCondition)
+GET        /duels/*condition            @controllers.GamesApi.duels(condition: gg.duel.query.TimingCondition, playerCondition: controllers.PlayerCondition)
 GET        /game/:id/                   @controllers.GamesApi.gameById(id: gg.duel.query.GameId)
+GET        /new-games/                @controllers.GamesApi.newGames
 GET        /version/        controllers.Version.getVersion
 
 GET         /players/                        @controllers.PlayersApi.listPlayers
@@ -15,4 +15,3 @@ POST        /players/register/               @controllers.PlayersApi.registerPla
 POST        /clans/register/                 @controllers.PlayersApi.registerClan
 POST        /player/:id/set-nickname/        @controllers.PlayersApi.setNickname(id)
 POST        /clan/:id/set-patterns/          @controllers.PlayersApi.setPatterns(id)
-

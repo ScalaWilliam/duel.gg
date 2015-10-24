@@ -1,4 +1,5 @@
 api/resources
+/resources
 *.db
 /data/
 sb-*.log

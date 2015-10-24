@@ -89,9 +89,13 @@
             game)
           ))
 
+(defn with-type [game]
+  (merge game (when-let [type (game-type game)] {"type" type})))
+
 (defn enrich-game [game player-lookup]
   (->
     game
+    with-type
     transform-score-log
     without-redundant-fields
     with-end-time
