@@ -1,14 +1,29 @@
 import java.time.ZonedDateTime
 
-import gg.duel.uservice.clan.{SetPatterns, CurrentPatterns, PreviousPatterns, RegisterClan}
-import gg.duel.uservice.clanplayer.{PlayerAndClan, ClanAndClanPlayers}
-import gg.duel.uservice.player.{SetNickname, CurrentNickname, PreviousNickname, RegisterPlayer}
+import gg.duel.uservice.clan.{CurrentPatterns, PreviousPatterns, RegisterClan, SetPatterns}
+import gg.duel.uservice.clanplayer.{ClanPlayer, ClanAndClanPlayers, PlayerAndClan}
+import gg.duel.uservice.player.{CurrentNickname, PreviousNickname, RegisterPlayer, SetNickname}
+import modules.AuthenticationService
 import play.api.libs.json._
+import play.api.mvc.{ActionBuilder, Request, Result, Results}
+
+import scala.concurrent.Future
 
 /**
  * Created on 27/08/2015.
  */
 package object controllers {
+
+
+  def WriteCheckAction(implicit authenticationService: AuthenticationService): ActionBuilder[Request] =
+    new ActionBuilder[Request] with Results {
+      override def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]): Future[Result] = {
+        request.getQueryString("api-key") match {
+          case Some(apiKey) if authenticationService.authenticates(apiKey) => block(request)
+          case _ => Future.successful(Unauthorized("A valid API key is required."))
+        }
+      }
+    }
 
   def now(): ZonedDateTime = ZonedDateTime.now()
 
@@ -18,13 +33,10 @@ package object controllers {
   implicit val previousPatternsWrites: Writes[PreviousPatterns] = Json.writes[PreviousPatterns]
   implicit val currentPatternsWrites = Json.writes[CurrentPatterns]
 
-  implicit val clanPlayerWrites = Json.writes[ClanPlayer]
   implicit val clanWrites = Json.writes[gg.duel.uservice.clan.Clan]
 
-  implicit val playerNicknameWrites = Json.writes[PlayerNickname]
   implicit val previousNicknameWrites = Json.writes[PreviousNickname]
   implicit val currentNicknameWrites = Json.writes[CurrentNickname]
-  implicit val playerWrites = Json.writes[Player]
   implicit val pplayerWrites = Json.writes[gg.duel.uservice.player.Player]
   implicit val cplayerWrites = Json.writes[gg.duel.uservice.clanplayer.ClanPlayer]
 

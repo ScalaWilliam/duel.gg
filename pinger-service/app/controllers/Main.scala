@@ -39,7 +39,8 @@ class Main @Inject()
 
   def allGames = Action {
     implicit req =>
-      Ok.feed(content = allGamesEnum).as("text/event-stream")
+      val endToken = Event(data = "end", id = Option("end"), name = Option("end"))
+      Ok.feed(content = allGamesEnum.andThen(Enumerator.apply(endToken))).as("text/event-stream")
   }
 
   def allGamesAndNew = Action {

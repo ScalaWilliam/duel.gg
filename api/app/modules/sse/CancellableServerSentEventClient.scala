@@ -1,15 +1,14 @@
 package modules.sse
 
-import java.net.URI
-
-import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.Http.OutgoingConnection
+import akka.http.scaladsl.model.{HttpResponse, HttpRequest}
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.scaladsl.{FlattenStrategy, Source}
+import akka.stream.scaladsl.{Flow, FlattenStrategy, Source}
 import akka.stream.stage.{TerminationDirective, SyncDirective, Context, PushStage}
 import akka.stream.{ActorMaterializer, Graph, SinkShape}
 import de.heikoseeberger.akkasse.{EventStreamUnmarshalling, ServerSentEvent}
 
-import scala.concurrent.{ExecutionContext, Promise}
+import scala.concurrent.{Future, ExecutionContext, Promise}
 
 trait CancellableServerSentEventClient {
   def createStream[T](sink: Graph[SinkShape[ServerSentEvent], T]): Promise[Unit]
@@ -18,7 +17,9 @@ trait CancellableServerSentEventClient {
 }
 
 object CancellableServerSentEventClient {
-  
+
+  type HttpConnection = Flow[HttpRequest, HttpResponse, Future[OutgoingConnection]]
+
   def createPermanentStream(httpConnection: HttpConnection, httpRequest: HttpRequest)
                         (implicit actorMaterializer: ActorMaterializer,
                          executionContext: ExecutionContext): Source[ServerSentEvent, Unit] = {

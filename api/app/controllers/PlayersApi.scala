@@ -2,31 +2,22 @@ package controllers
 
 import javax.inject._
 
-import gg.duel.uservice.clan.{SetPatterns, RegisterClan}
-import gg.duel.uservice.player.{SetNickname, RegisterPlayer}
-import modules.{PlayerClanManager, AuthenticationService}
+import gg.duel.uservice.clan.{RegisterClan, SetPatterns}
+import gg.duel.uservice.player.{RegisterPlayer, SetNickname}
+import modules.{AuthenticationService, PlayerClanManager}
 import play.api.libs.json.Json
 import play.api.mvc._
 
 import scala.async.Async
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 /**
  * Created on 13/08/2015.
  */
 @Singleton
-class PlayersApi @Inject()(playerClanManager: PlayerClanManager,
-                     authenticationService: AuthenticationService
-                      )(implicit executionContext: ExecutionContext) extends Controller {
+class PlayersApi @Inject()(playerClanManager: PlayerClanManager
+                            )(implicit executionContext: ExecutionContext, authenticationService: AuthenticationService) extends Controller {
 
-  def WriteCheckAction = new ActionBuilder[Request] {
-    override def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]): Future[Result] = {
-      request.getQueryString("api-key") match {
-        case Some(apiKey) if authenticationService.authenticates(apiKey) => block(request)
-        case _ => Future.successful(Unauthorized("A valid API key is required."))
-      }
-    }
-  }
 
   def cps = playerClanManager.cps
 
