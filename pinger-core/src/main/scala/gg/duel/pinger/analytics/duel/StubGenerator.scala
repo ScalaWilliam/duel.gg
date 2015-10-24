@@ -46,7 +46,7 @@ object StubGenerator {
     ).toList
   }
 
-  val drakasUkIp = "23.235.33.x"
+  val drakasUkIp = "185.31.19.x"
   val artBosniaIp = "80.65.161.x"
   val brownieGermanyIp = "185.5.80.x"
 

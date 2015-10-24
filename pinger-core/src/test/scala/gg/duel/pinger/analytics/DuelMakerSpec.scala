@@ -161,7 +161,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
       simpleDuel.server shouldBe "123.2.2.22:2134"
 
       val drakas = simpleDuel.players("w00p|Drakas")
-      drakas.ip shouldBe "123"
+      drakas.ip shouldBe StubGenerator.drakasUkIp
       drakas.frags shouldBe 40
       drakas.accuracy shouldBe 25
       drakas.name shouldBe "w00p|Drakas"
@@ -172,7 +172,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
       art.frags shouldBe 30
       art.accuracy shouldBe 25
       art.name shouldBe "w00p|Art"
-      art.ip shouldBe "123"
+      art.ip shouldBe StubGenerator.artBosniaIp
       art.fragLog should contain only (2 -> 2, 10 -> 30)
       art.weapon shouldBe "shotgun"
     }
