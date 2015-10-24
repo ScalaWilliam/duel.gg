@@ -2,11 +2,8 @@ GET           /                         @controllers.Main.index
 GET           /servers/                 @controllers.Main.servers
 PUT           /server/                  @controllers.Main.putServer(server)
 DELETE        /server/                  @controllers.Main.deleteServer(server)
-GET           /games/                   @controllers.Main.gamesIndex
-GET           /duels/range/             @controllers.Main.duels(from: Long, to: Long)
-GET           /ctfs/range/              @controllers.Main.ctfs(from: Long, to: Long)
-GET           /games/stream/sse/        @controllers.Main.gamesStreamSse
-GET           /games/stream/ws/         @controllers.Main.gamesStreamWs
 GET           /status/                  @controllers.Main.currentStatus
 GET           /games/recent/            @controllers.Main.recent
-GET           /games/range/             @controllers.Main.range(from: Long, to: Long)
+GET        /games/all/                @controllers.Main.allGames
+GET        /games/all-and-new/        @controllers.Main.allGamesAndNew
+GET        /games/new/                @controllers.Main.newGames
