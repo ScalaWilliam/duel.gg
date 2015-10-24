@@ -73,7 +73,10 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
     case ParsedMessage(s, time, PartialPlayerExtInfo(ino)) if ino.state <= 3 && isRunning =>
       duelAccumulation.playerStatistics.find(ps => ps.playerId.ip == ino.ip && ps.playerId.name.endsWith(ino.name)) match {
         case Some(playerAccummulation) =>
-          next.apply(ParsedMessage(s, time, ino.copy(name = playerAccummulation.playerId.name)))
+          next.apply(ParsedMessage(
+            time = time,
+            message = ino.copy(name = playerAccummulation.playerId.name))
+          )
         case None =>
           // we'll let it pass through, but it might cause the game to fail silently
           Good(this)
@@ -154,29 +157,6 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
         Math.abs(logItem.remaining.seconds - timeRemaining.seconds) <= 5 &&
           logItem.playerId == playerId))
     if (bv) Good(Unit) else Bad(One(s"Players seem to have disappeared"))
-  }
-
-  def liveDuel: LiveDuel Or Every[ErrorMessage] = {
-    for {
-      twoPlayers <- twoPlayersOr
-      startedSeconds <- startedSecondsOr
-      bothPlayersStarted <- allPlayersStartedOr(startedSeconds )
-      _ <- allPlayersStillHere
-      durationMinutes = saidDurationMinutes
-      isADuelGame <- if ( Set("ffa", "instagib", "efficiency") contains gameHeader.mode ) Good(true) else Bad(One(s"Found mode ${gameHeader.mode} in game, rejecting."))
-      players = formPlayers(twoPlayers)
-    } yield LiveDuel(
-      simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
-      duration = durationMinutes,
-      playedAt = duelAccumulation.playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).toSet.toList.sorted,
-      startTimeText = gameHeader.startTimeText,
-      startTime = gameHeader.startTime,
-      map = gameHeader.map,
-      mode = gameHeader.mode,
-      server = gameHeader.server,
-      players = players.toMap, winner = None, metaId = None,
-      secondsRemaining = timeRemaining.seconds
-    )
   }
 
   def saidDurationMinutes = {

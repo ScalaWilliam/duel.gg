@@ -1,11 +1,8 @@
 package gg.duel.pinger.analytics.duel
 
-import gg.duel.pinger.analytics.MultiplexedReader
-import gg.duel.pinger.analytics.MultiplexedReader.MIteratorState
 import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZFoundDuel, ZIteratorState}
 import gg.duel.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import gg.duel.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
-import gg.duel.pinger.data.Server
 
 object StubGenerator {
 
@@ -20,31 +17,23 @@ object StubGenerator {
   }
 
   def states(items: Any*): List[ZIteratorState] = {
-    val server = Server("123.2.2.22", 2134)
     val time = 12312412L
     StreamedSimpleDuelMaker.parsedToState(
-      items.zipWithIndex.map{case (item, n) => ParsedMessage(server, time + n, item)}.toIterator
+      items.zipWithIndex.map{case (item, n) => ParsedMessage(time + n, item)}.toIterator
     ).toList
   }
 
   def timedStates(items: (Int, Any)*): List[ZIteratorState] = {
-    val server = Server("123.2.2.22", 2134)
     val time = 12312412L
     StreamedSimpleDuelMaker.parsedToState(
-      items.map(_.swap).map{case (item, n) => ParsedMessage(server, time + n * 1000, item)}.toIterator
+      items.map(_.swap).map{case (item, n) => ParsedMessage(time + n * 1000, item)}.toIterator
     ).toList
   }
 
-  def itemsToList(server: Server = Server("123.2.2.22", 2134), time:Long = 123123123L)(items: (Int, Any)*): List[ParsedMessage] = {
-    items.map(_.swap).map{case (item, n) => ParsedMessage(server, time + n * 1000, item)}.toList
+  def itemsToList(time:Long = 123123123L)(items: (Int, Any)*): List[ParsedMessage] = {
+    items.map(_.swap).map{case (item, n) => ParsedMessage(time + n * 1000, item)}.toList
   }
 
-
-  def timedMultiplexedStates(items: List[ParsedMessage]): List[MIteratorState] = {
-    MultiplexedReader.multiplexParsedMessagesStates(
-      items.toIterator
-    ).toList
-  }
 
   // minimum viable sequence to produce a completed duel!
   lazy val validSequence = Seq(

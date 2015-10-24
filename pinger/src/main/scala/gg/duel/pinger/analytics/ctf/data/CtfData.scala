@@ -16,28 +16,10 @@ case class SimplePlayer(name: String, ip: String, weapon: String)
 case class SimpleTeamScore(name: String, flags: Int, flagLog: List[(Int, Int)], players: List[SimplePlayer])
 
 case class SimpleCompletedCTF
-(simpleId: String, teamsize: Int, duration: Int, playedAt: List[Int],
+(teamsize: Int, duration: Int, playedAt: List[Int],
  startTimeText: String, startTime: Long, map: String, mode: String,
- server: String, teams: Map[String, SimpleTeamScore],
- winner: Option[String], metaId: Option[String]) {
-  def toXml =
-    <completed-ctf
-    team-size={teamsize.toString}
-    simple-id={simpleId}
-    duration={duration.toString}
-    start-time-raw={startTime.toString}
-    start-time={startTimeText}
-    map={map} mode={mode}
-    server={server} winner={winner.orNull}
-    meta-id={metaId.orNull}>
-      {for {(team, scores) <- teams}
-    yield <team name={team} flags={scores.flags.toString}>
-        <flag-log>
-          {for {(time, flags) <- scores.flagLog.sortBy(_._1)} yield <flags at={time.toString}>{flags}</flags>}
-        </flag-log>{for {player <- scores.players} yield
-            <player name={player.name} partial-ip={player.ip} weapon={player.weapon}/>}
-      </team>}
-    </completed-ctf>
+ teams: Map[String, SimpleTeamScore],
+ winner: Option[String], metaId: Option[String])  {
 
   def toPrettyJson = {
     import org.json4s._
@@ -61,14 +43,12 @@ object SimpleCompletedCTF {
     val t = System.currentTimeMillis
     SimpleCompletedCTF(
       teamsize = 2,
-      simpleId = "yay",
       duration = 5,
       playedAt = List(1, 2, 3, 4, 5),
       startTimeText = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.forID("UTC")).print(t),
       startTime = t,
       map = "reissen",
       mode = "efficiency ctf",
-      server = "localhost:123",
       winner = Option("evil"),
       teams = Map(
         "evil" -> SimpleTeamScore(name = "evil", 5, flagLog = List(1 -> 1, 2 -> 2, 3 -> 4, 4 -> 4, 5 -> 5), players = List(SimplePlayer(name = "Drakas", ip = "85.214.61.x", weapon = "rifle"))),

@@ -1,22 +1,24 @@
 package gg.duel.pinger.data.journal
 
 import java.nio.{ByteBuffer, ByteOrder}
-import akka.util.{ByteString, ByteStringBuilder}
-import org.joda.time.format.ISODateTimeFormat
-import gg.duel.pinger.data.Server
 
-case class SauerBytes(server: Server, time: Long, message: ByteString) {
+import akka.util.{ByteString, ByteStringBuilder}
+import gg.duel.pinger.service.{Server, SocketedServer}
+import org.joda.time.format.ISODateTimeFormat
+
+case class SauerBytes(socketedServer: SocketedServer, time: Long, message: ByteString) {
   def stringTime = ISODateTimeFormat.dateTimeNoMillis().print(time)
-  override def toString = s"SauerBytes($server, $stringTime, $message)"
+
+  override def toString = s"SauerBytes($socketedServer, $stringTime, $message)"
 
   def serialize: ByteString = {
     implicit val byteOrdering = ByteOrder.BIG_ENDIAN
-    val ipBytes = server.ip.ip.split('.').map(_.toInt.toByte)
-    assert(ipBytes.length == 4, s"ipBytes must be of size 4. Input = $server")
+    val ipBytes = socketedServer.ip.split('.').map(_.toInt.toByte)
+    assert(ipBytes.length == 4, s"ipBytes must be of size 4. Input = $socketedServer")
     new ByteStringBuilder()
       .putLong(time)
       .putBytes(ipBytes)
-      .putInt(server.port)
+      .putInt(socketedServer.port)
       .append(message)
       .result()
   }
@@ -47,11 +49,13 @@ object SauerBytes {
         .map(_ => byteBuffer.get())
         .toArray
 
-    Option{SauerBytes(
-      server = Server(ip, port),
-      time = time,
-      message = ByteString(receivedBytes)
-    )}
+    Server(address = s"$ip:$port").socketedServer.map { server =>
+      SauerBytes(
+        socketedServer = server,
+        time = time,
+        message = ByteString(receivedBytes)
+      )
+    }
   }
 
 }

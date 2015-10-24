@@ -13,14 +13,14 @@ object CTFGame {
 
   def beginCTFParsing(parsedMessage: ParsedMessage): CtfState Or Every[ErrorMessage] = {
     parsedMessage match {
-      case ParsedMessage(s, time, message: ConvertedServerInfoReply) =>
-        beginCtfCSIR(s, time, message)
+      case ParsedMessage(time, message: ConvertedServerInfoReply) =>
+        beginCtfCSIR(time, message)
       case other =>
         Bad(One(s"Input not a ConvertedServerInfoReply, found ${other.message.getClass.getName} = ${other.message}"))
     }
   }
 
-  def beginCtfCSIR(server: Server, startTime: Long, message: ConvertedServerInfoReply): CtfState Or Every[ErrorMessage] = {
+  def beginCtfCSIR(startTime: Long, message: ConvertedServerInfoReply): CtfState Or Every[ErrorMessage] = {
 
     // todo wut, no mastermode? wtf!
 
@@ -38,7 +38,12 @@ object CTFGame {
       else Bad(One(s"Time remaining not enough: ${message.remain} (expected 550+ seconds)"))
 
     withGood(clients, ctfModeName, hasEnoughTime) { (_, modeName, _) =>
-      val gameHeader = GameHeader(startTime, message, s"${server.ip.ip}:${server.port}", modeName, message.mapname)
+      val gameHeader = GameHeader(
+        startTime = startTime,
+        startMessage = message,
+        mode = modeName,
+        message = message.mapname
+      )
       val ctfAccumulation = CtfAccumulation(List.empty, List.empty)
       TransitionalCtf(
         gameHeader = gameHeader,

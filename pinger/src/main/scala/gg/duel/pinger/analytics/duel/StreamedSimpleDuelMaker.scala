@@ -12,6 +12,9 @@ object StreamedSimpleDuelMaker {
     def next: Processor
     def lastMessage: Option[ParsedMessage]
   }
+  object ZIteratorState {
+    def initial: ZIteratorState = ZOutOfGameState
+  }
   trait GoesToOutOfState {
     this: ZIteratorState =>
     override def next = ZOutOfGameState.next
