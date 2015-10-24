@@ -15,3 +15,5 @@ POST        /players/register/               @controllers.PlayersApi.registerPla
 POST        /clans/register/                 @controllers.PlayersApi.registerClan
 POST        /player/:id/set-nickname/        @controllers.PlayersApi.setNickname(id)
 POST        /clan/:id/set-patterns/          @controllers.PlayersApi.setPatterns(id)
+
+GET        /first-five-games/        @controllers.GamesApi.allGames

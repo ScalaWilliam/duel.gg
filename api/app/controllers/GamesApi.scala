@@ -2,12 +2,15 @@ package controllers
 
 import javax.inject._
 
+import akka.agent.Agent
+import akka.stream.scaladsl.{Flow, Sink}
+import de.heikoseeberger.akkasse.ServerSentEvent
 import gcc.enrichment.{Enricher, PlayerLookup}
 import gg.duel.query._
 import modules.UpstreamGames
 import org.joda.time.DateTime
 import play.api.libs.ws.WSClient
-import play.api.mvc.Controller
+import play.api.mvc.{Action, Controller}
 
 import scala.concurrent.ExecutionContext
 import scala.language.implicitConversions
@@ -18,16 +21,37 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
   def index = TODO
 
   val playerLookup = new PlayerLookup {
-    override def lookupUserId(nickname: String, atTime: DateTime): String = ???
-
-    override def lookupClanId(nickname: String, atTime: DateTime): String = ???
+    override def lookupUserId(nickname: String, atTime: DateTime): String = null
+    override def lookupClanId(nickname: String, atTime: DateTime): String = null
   }
+  
+  case class SimpleGame(id: String, gameJson: String, enhancedJson: String)
+  
+  val games = Agent(Map.empty[String, SimpleGame])
 
   val enricher = new Enricher(playerLookup)
+  
+  upstreamGames.allClient.createStream(Flow.apply[ServerSentEvent].take(5).mapConcat {
+    sse =>
+      sse.id.map { id => 
+      SimpleGame(
+        id = id,
+        gameJson = sse.data,
+        enhancedJson = enricher.enrichJsonGame(sse.data)
+      )}.toList
+  }.to(Sink.foreach { game => games.sendOff(_ + (game.id -> game)) }))
 
 //  enricher.enrichJsonGame()
 
   def games(condition: TimingCondition) = TODO
+
+  def allGames = Action {
+    Ok(games.get().values.map(_.enhancedJson).mkString(
+      start = "[",
+      sep = ",\n",
+      end = "]"
+    )).as("application/json")
+  }
 
   def ctfGames(condition: TimingCondition) = TODO
 
