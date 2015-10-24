@@ -39,7 +39,7 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
         val rsg = SimpleGame(
           id = id,
           gameJson = sse.data,
-          enhancedJson = enricher.enrichJsonGame(sse.data)
+          enhancedJson = sse.data //enricher.enrichJsonGame(sse.data)
         )
         Logger.info(s"Finished processing SSE game = $sse")
         rsg

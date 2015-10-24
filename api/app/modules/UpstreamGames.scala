@@ -5,8 +5,6 @@ import javax.inject._
 
 import akka.actor.ActorSystem
 import akka.stream._
-import akka.stream.scaladsl._
-import de.heikoseeberger.akkasse.ServerSentEvent
 import modules.sse.{CancellableServerSentEventClient, EmptyCancellableServerSentEventClient, SimpleCancellableServerSentEventClient}
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Logger}
@@ -26,6 +24,7 @@ class UpstreamGames @Inject()(configuration: Configuration, applicationLifecycle
   private def buildStreamClient(endpointName: String): CancellableServerSentEventClient = {
     configuration.getString(configPath)
       .flatMap { uri => Try(new URI(s"$uri$endpointName")).toOption } match {
+//      case _ => new EmptyCancellableServerSentEventClient()
       case Some(uri) =>
         Logger.info(s"Using uri $uri")
         new SimpleCancellableServerSentEventClient(uri)
