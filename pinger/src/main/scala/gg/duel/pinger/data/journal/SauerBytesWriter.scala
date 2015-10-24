@@ -3,7 +3,7 @@ package gg.duel.pinger.data.journal
 import java.io.InputStream
 import java.nio.{ByteBuffer, ByteOrder}
 
-import akka.util.ByteStringBuilder
+import akka.util.{ByteString, ByteStringBuilder}
 
 trait SauerBytesWriter {
    def write(sauerBytes: SauerBytes): Unit
@@ -15,10 +15,9 @@ object SauerBytesWriter {
    def createInjectedWriter(writeFn: Array[Byte] => Unit): SauerBytes => Unit =
    {sauerBytes =>
 
-         val sauerBinary =
-           SauerBytesBinary
-             .toBytes(sauerBytes)
-             .take(Short.MaxValue)
+
+
+         val sauerBinary = sauerBytes.serialize.take(Short.MaxValue)
 
          implicit val byteOrdering = ByteOrder.BIG_ENDIAN
 
@@ -29,7 +28,7 @@ object SauerBytesWriter {
              .toArray
 
          writeFn(lengthBinary)
-         writeFn(sauerBinary)
+         writeFn(sauerBinary.toArray)
      }
 
    /**
@@ -46,7 +45,8 @@ object SauerBytesWriter {
        length = ByteBuffer.wrap(lengthBytes).order(ByteOrder.BIG_ENDIAN).getShort
        data <- get(length)
        if data.length == length
-     } yield SauerBytesBinary.fromBytes(data)
+       sauerBytes <- SauerBytes.fromBytes(ByteString(data))
+     } yield sauerBytes
    }
 
    def inputStreamNumBytes(inputStream: InputStream): Int => Option[Array[Byte]] = {

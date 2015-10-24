@@ -11,6 +11,7 @@ import gg.duel.pinger.service.{PingPongProcessorActor, PingPongProcessorState}
 import models.games.GamesManager
 import models.servers.ServerManager
 import play.api.inject.ApplicationLifecycle
+import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Concurrent
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,7 +30,7 @@ class PingerService @Inject()
   
   val ourState = Agent(SIteratorState.empty)
 
-  val (enumerator, channel) = Concurrent.broadcast[String]
+  val (enumerator, channel) = Concurrent.broadcast[Event]
 
   val conactor = actor(name = "wut")(new Act {
 
@@ -57,14 +58,23 @@ class PingerService @Inject()
                     duel.copy(server = serverName)
                 }.getOrElse(duel)
                 gamesManager.addDuel(updatedDuel)
-                channel.push(updatedDuel.toPrettyJson)
+                channel.push(Event(
+                  data = updatedDuel.toJson,
+                  id = Option(updatedDuel.startTimeText),
+                  name = Option("duel")
+                )
+                )
               case SFoundGame(_, CompletedGame(Right(ctf), _)) =>
                 val updatedCtf = serverProvider.servers.servers.collectFirst {
                   case (serverName, server) if server.getAddress == ctf.server =>
                     ctf.copy(server = serverName)
                 }.getOrElse(ctf)
                 gamesManager.addCtf(updatedCtf)
-                channel.push(updatedCtf.toPrettyJson)
+                channel.push(Event(
+                  data = updatedCtf.toJson,
+                  id = Option(updatedCtf.startTimeText),
+                  name = Option("ctf")
+                ))
               case _ =>
             }
         }

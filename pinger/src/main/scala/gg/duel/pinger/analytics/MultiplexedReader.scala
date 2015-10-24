@@ -41,7 +41,7 @@ object MultiplexedReader {
 
   case class MFoundGame(serverStates: Map[Server, ZIteratorState], completedGame: CompletedGame, lastUpdatedState: Option[(Server, ZIteratorState)]) extends MIteratorState
   def sauerBytesToParsedMessages(sauerBytes: SauerBytes): List[ParsedMessage] = {
-    val byteString = ByteString(sauerBytes.message.toArray)
+    val byteString = sauerBytes.message
     for {
       parsedObjects <- Try(Extractor.extract(byteString)).toOption.toList
       parsedObject <- parsedObjects
