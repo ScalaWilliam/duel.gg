@@ -9,14 +9,14 @@
   "startTimeText": "1970-01-01T03:25:12Z",
   "players": {
     "w00p|Drakas": {
-      "countryCode": "US",
+      "countryCode": "GB",
       "frags": 40,
       "clan": "woop",
       "user": "drakas",
-      "countryName": "United States",
+      "countryName": "United Kingdom",
       "weapon": "shotgun",
       "name": "w00p|Drakas",
-      "ip": "23.235.33.x",
+      "ip": "213.171.195.x",
       "fragLog": [
         40
       ],
