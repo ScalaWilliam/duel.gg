@@ -44,9 +44,9 @@ class UpstreamGames @Inject()(configuration: Configuration, applicationLifecycle
       .map{ x => Logger.info(s"${x.id}"); x }
       .fold(Option.empty[ServerSentEvent]){
         (o, e) =>
-          if ( o.isEmpty ) Logger.info(s"Started: {System.currentTimeMillis() / 1000}")
+          if ( o.isEmpty ) Logger.info(s"Started: ${System.currentTimeMillis() / 1000}")
           Option(e)
-      }.to(Sink.foreach(x => Logger.info(s"DONE: $x {System.currentTimeMillis() / 1000}")))
+      }.to(Sink.foreach(x => Logger.info(s"DONE: $x ${System.currentTimeMillis() / 1000}")))
   }
 
   applicationLifecycle.addStopHook(() => Future.successful{
