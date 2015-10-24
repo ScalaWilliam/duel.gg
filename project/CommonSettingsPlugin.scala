@@ -14,4 +14,7 @@ object CommonSettingsPlugin extends AutoPlugin {
     ),
     resolvers += Resolver.mavenLocal
   )
+  object autoImport {
+    val includeGitStamp = com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings
+  }
 }

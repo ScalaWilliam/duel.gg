@@ -6,3 +6,4 @@ POST        /players/register/               @controllers.Main.registerPlayer
 POST        /clans/register/                 @controllers.Main.registerClan
 POST        /player/:id/set-nickname/        @controllers.Main.setNickname(id)
 POST        /clan/:id/set-patterns/          @controllers.Main.setPatterns(id)
+GET        /version/        controllers.Version.getVersion

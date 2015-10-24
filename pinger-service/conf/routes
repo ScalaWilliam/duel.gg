@@ -7,3 +7,4 @@ GET           /games/recent/            @controllers.Main.recent
 GET        /games/all/                @controllers.Main.allGames
 GET        /games/all-and-new/        @controllers.Main.allGamesAndNew
 GET        /games/new/                @controllers.Main.newGames
+GET        /version/        controllers.Version.getVersion
