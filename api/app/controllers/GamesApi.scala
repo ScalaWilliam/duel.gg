@@ -9,6 +9,7 @@ import gcc.enrichment.{Enricher, PlayerLookup}
 import gg.duel.query._
 import modules.UpstreamGames
 import org.joda.time.DateTime
+import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Controller}
 
@@ -25,32 +26,47 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
     override def lookupClanId(nickname: String, atTime: DateTime): String = null
   }
   
-  case class SimpleGame(id: String, gameJson: String, enhancedJson: String)
+  case class Games
+  (games: Map[String, SimpleGame]) {
+    def withNewGame(simpleGame: SimpleGame): Games = {
+      copy(games = games + (simpleGame.id -> simpleGame))
+    }
+  }
+  object Games {
+    def empty: Games = Games(
+      games = Map.empty
+    )
+  }
   
-  val games = Agent(Map.empty[String, SimpleGame])
+  case class SimpleGame(id: String, gameJson: String, enhancedJson: String, enhancedNativeJson: JsValue)
+  
+  val gamesAgt = Agent(Games.empty)
 
   val enricher = new Enricher(playerLookup)
   
-  upstreamGames.allClient.createStream(Flow.apply[ServerSentEvent].take(5).mapConcat {
+  upstreamGames.allAndNewClient.createStream(Flow.apply[ServerSentEvent].mapConcat {
     sse =>
       sse.id.map { id =>
+        val richJson = enricher.enrichJsonGame(sse.data)
+        val richNativeJson = Json.parse(richJson)
         val rsg = SimpleGame(
           id = id,
           gameJson = sse.data,
-          enhancedJson = enricher.enrichJsonGame(sse.data)
+          enhancedJson = richJson,
+          enhancedNativeJson = richNativeJson
         )
         rsg
       }.toList
-  }.to(Sink.foreach { game => games.sendOff(_ + (game.id -> game)) }))
+  }.to(Sink.foreach { game => gamesAgt.sendOff(_.withNewGame(game))}))
 
-  def games(condition: TimingCondition) = TODO
-
-  def allGames = Action {
-    Ok(games.get().values.map(_.enhancedJson).mkString(
-      start = "[",
-      sep = ",\n",
-      end = "]"
-    )).as("application/json")
+  def games(condition: TimingCondition) = Action {
+    condition match {
+      case Recent =>
+        Ok(JsArray(gamesAgt.get().games.values.toVector.sortBy(_.id).takeRight(25).map(_.enhancedNativeJson)))
+      case First =>
+        Ok(JsArray(gamesAgt.get().games.values.toVector.sortBy(_.id).take(25).map(_.enhancedNativeJson)))
+      case _ => NotFound("Not implemented yet")
+    }
   }
 
   def ctfGames(condition: TimingCondition) = TODO
