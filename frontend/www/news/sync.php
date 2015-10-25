@@ -9,8 +9,7 @@ file_put_contents("tumblr.rss.xml", file_get_contents("http://duelgg.tumblr.com/
 file_put_contents("tumblr.api-read.xml", file_get_contents("http://duelgg.tumblr.com/api/read"));
 
 header("Content-Type: application/xml");
-?>
-<XML>
-    <RSS><?php echo file_get_contents("tumblr.rss.xml"); ?></RSS>
-    <FEED><?php echo file_get_contents("tumblr.api-read.xml"); ?></FEED>
-</XML>
+$dom = dom_import_simplexml(simplexml_load_string("<XML/>"));
+$dom->appendChild($dom->ownerDocument->importNode(dom_import_simplexml(simplexml_load_file("tumblr.rss.xml")), true));
+$dom->appendChild($dom->ownerDocument->importNode(dom_import_simplexml(simplexml_load_file("tumblr.api-read.xml")), true));
+echo $dom->ownerDocument->saveXML();
