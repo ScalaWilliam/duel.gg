@@ -1,15 +1,15 @@
 package controllers
 
-import java.time.{ZonedDateTime, LocalDateTime}
+import java.time.{LocalDateTime, ZonedDateTime}
 import javax.inject._
-import play.api.data._
-import play.api.data.Forms._
 
 import com.maxmind.geoip.LookupService
 import controllers.authentication.{AuthenticationUser, CookieParser, GoogleToken, SignedParser}
 import gg.duel.uservice.player.RegisterPlayer
-import modules.PlayerClanManager
-import play.api.{Logger, Configuration}
+import modules.{AuthenticationService, PlayerClanManager}
+import play.api.Configuration
+import play.api.data.Forms._
+import play.api.data._
 import play.api.libs.Jsonp
 import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
@@ -20,7 +20,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AuthenticationApi @Inject()(wSClient: WSClient, configuration: Configuration,
-                                  playerClanManager: PlayerClanManager)(implicit executionContext: ExecutionContext) extends Controller {
+                                  playerClanManager: PlayerClanManager)(implicit executionContext: ExecutionContext,
+  authenticationService: AuthenticationService
+  ) extends Controller {
   lazy val cp = CookieParser(salt = salt)
   val defaultExpiryDays = configuration.getInt("gg.duel.api.auth.default-expiry-days").get
   val expirySoonDays = configuration.getInt("gg.duel.api.auth.expiry-soon-days").get
@@ -37,7 +39,7 @@ class AuthenticationApi @Inject()(wSClient: WSClient, configuration: Configurati
     )(UserRegistration.apply)(UserRegistration.unapply)
   )
 
-  def register = Action.async { implicit req =>
+  def register = WriteCheckAction.async { implicit req =>
     Async.async {
       userRegistrationForm.bindFromRequest().value match {
         case None => BadRequest("Could not find a good form")

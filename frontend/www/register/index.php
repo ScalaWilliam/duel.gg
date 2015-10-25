@@ -1,5 +1,4 @@
 <?php
-$_SERVER['API_API_KEY'] = "test";
 if (!isset($_SERVER['API_API_KEY'])) {
     die("Not ready to register");
 }
@@ -10,7 +9,7 @@ $authenticated = json_decode(base64_decode(hex2bin($json)));
 if (isset($_POST['id'], $_POST['nickname']) && !isset($authenticated->id) && is_string($_POST['id']) && is_string($_POST['nickname'])) {
     $id = $_POST['id'];
     $nickname = $_POST['id'];
-    $url = 'http://localhost:9001/web/register/?auth_token=' . $_SERVER['API_API_KEY'];
+    $url = 'http://api.duel.gg/web/register/?api-key=' . $_SERVER['API_API_KEY'];
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_POST, true);
     $post_items = array('id' => $id, 'nickname' => $nickname, 'authToken' => $auth_cookie);
