@@ -6,6 +6,7 @@ GET        /duels/*condition            @controllers.GamesApi.duels(condition: g
 GET        /game/:id/                   @controllers.GamesApi.gameById(id: gg.duel.query.GameId)
 GET        /new-games/                @controllers.GamesApi.newGames
 GET        /version/        controllers.Version.getVersion
+GET        /nicknames/        @controllers.GamesApi.getNicknames
 
 GET         /players/                        @controllers.PlayersApi.listPlayers
 GET         /player/:id/                     @controllers.PlayersApi.getPlayer(id)
