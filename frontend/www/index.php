@@ -1,5 +1,5 @@
 <?php
-require("render.php");
+require("render.inc.php");
 ?>
 
         <div id="download-ac-button">
@@ -64,7 +64,7 @@ require("render.php");
                 </div>
 
                 <?php
-                require_once("render_game.php");
+                require_once("render_game.inc.php");
                 foreach($recentduels as $duel) {
                     render_duel($duel);
                 }

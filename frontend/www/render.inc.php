@@ -19,6 +19,6 @@ $split_text_node = $domdoc->createTextNode($split_text);
 $content_node->parentNode->replaceChild($split_text_node, $content_node);
 
 list($head, $foot) = explode($split_text, $domdoc->saveHTML());
-if ( !isset($skip_head) ) {
+if ( !isset($skip_head) || $skip_head === false ) {
     echo $head;
 }

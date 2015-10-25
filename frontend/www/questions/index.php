@@ -1,4 +1,4 @@
-<?php require("../render.php"); ?>
+<?php require("../render.inc.php"); ?>
 <div id="content" style="width:60em;margin-left:auto;margin-right:auto;">
 
 <article id="questions">

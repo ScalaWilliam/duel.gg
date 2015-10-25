@@ -1,4 +1,4 @@
-<?php require("../render.php") ?>
+<?php require("../render.inc.php") ?>
 <div id="content">
             <div id="first">
                 <style scoped>
@@ -31,7 +31,7 @@
                 </div>
 
                 <?php
-                require_once("../render_game.php");
+                require_once("../render_game.inc.php");
                 foreach($recentduels as $duel) {
                     render_duel($duel);
                 }
