@@ -14,7 +14,8 @@ lazy val api = (project in file("api")).enablePlugins(PlayScala).dependsOn(games
       "com.typesafe.akka" %% "akka-agent" % "2.4.0",
       "org.scala-lang.modules" %% "scala-async" % "0.9.5",
       "de.heikoseeberger" %% "akka-sse" % "1.1.0",
-      "org.scalatest" %% "scalatest" % "2.2.5" % "test"
+      "org.scalatest" %% "scalatest" % "2.2.5" % "test",
+      filters
     )).settings(includeGitStamp).dependsOn(pingerCore % "test->test").settings(dontDocument)
 
 lazy val pingerCore = (project in file("pinger-core")).settings(
