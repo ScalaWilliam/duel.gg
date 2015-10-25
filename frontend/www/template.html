@@ -34,15 +34,22 @@
             var uri = 'http://api.duel.gg/check-authentication/?google-id-token='+ encodeURIComponent(id_token);
 //            var uri = 'http://localhost:9001/check-authentication/?google-id-token='+ encodeURIComponent(id_token);
             var xhr = new XMLHttpRequest();
+            xhr.withCredentials = true;
             xhr.onreadystatechange = function() {
                 if (xhr.readyState == 4 && xhr.status == 200) {
-                    window.loginState = JSON.parse(xhr.responseText);
-                    console.log("Logged in, ", window.loginState);
+                    var event = new Event('login');
+                    event.detail = JSON.parse(xhr.responseText);
+                    window.dispatchEvent(event);
                 }
             };
             xhr.open("GET", uri, true);
             xhr.send();
         }
+        window.addEventListener("login", function (x, y) {
+            if (!("id" in x.detail)) {
+//                alert("You are not registered! Please follow..");
+            }
+        })
         </script>
 
         <div id="download-ac-button">

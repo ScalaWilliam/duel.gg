@@ -51,9 +51,9 @@ class AuthenticationApi @Inject()(wSClient: WSClient, configuration: Configurati
         case Some(auth) => {
           request.getQueryString("callback") match {
             case Some(cb) =>
-              Ok(Jsonp(padding = cb, json = auth.toJson))
+              Ok(Jsonp(padding = cb, json = auth.toJsonAndCompact(salt = salt)))
             case None =>
-              Ok(auth.toJson)
+              Ok(auth.toJsonAndCompact(salt = salt))
           }
         } withCookies {
           auth.asCookie(cookieName = cookieName, salt = salt)
