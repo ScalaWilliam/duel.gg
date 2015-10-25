@@ -18,3 +18,4 @@ POST        /player/:id/set-nickname/        @controllers.PlayersApi.setNickname
 POST        /clan/:id/set-patterns/          @controllers.PlayersApi.setPatterns(id)
 
 GET /check-authentication/ @controllers.AuthenticationApi.checkAuthentication
+POST /web/register/ @controllers.AuthenticationApi.register

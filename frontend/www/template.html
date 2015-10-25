@@ -28,6 +28,7 @@
         </ol>
     </div>
     <div id="main">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-alpha1/jquery.min.js"></script>
         <script type="text/javascript">
         function onSignIn(googleUser) {
             var id_token = googleUser.getAuthResponse().id_token;
@@ -37,19 +38,16 @@
             xhr.withCredentials = true;
             xhr.onreadystatechange = function() {
                 if (xhr.readyState == 4 && xhr.status == 200) {
-                    var event = new Event('login');
-                    event.detail = JSON.parse(xhr.responseText);
-                    window.dispatchEvent(event);
+                    var jsonResponse = JSON.parse(xhr.responseText);
+                    if (jsonResponse.signed) {
+                        $.cookie("auth", jsonResponse.signed);
+                    }
+                    $(window).trigger("login", jsonResponse);
                 }
             };
             xhr.open("GET", uri, true);
             xhr.send();
         }
-        window.addEventListener("login", function (x, y) {
-            if (!("id" in x.detail)) {
-//                alert("You are not registered! Please follow..");
-            }
-        })
         </script>
 
         <div id="download-ac-button">
