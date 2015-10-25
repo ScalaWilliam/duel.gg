@@ -1,7 +1,7 @@
 <?php
 
-//if ( !isset($_SERVER['SYNC_KEY']) ) die("no SYNC_KEY set");
-//if ( $_GET['sync-key'] !== $_SERVER['SYNC_KEY'] ) die("provided sync key is invalid");
+if ( !isset($_SERVER['SYNC_KEY']) ) die("no SYNC_KEY set");
+if ( $_GET['sync-key'] !== $_SERVER['SYNC_KEY'] ) die("provided sync key is invalid");
 
 file_put_contents("tumblr.rss.xml", file_get_contents("http://duelgg.tumblr.com/rss"));
 file_put_contents("tumblr.api-read.xml", file_get_contents("http://duelgg.tumblr.com/api/read"));
