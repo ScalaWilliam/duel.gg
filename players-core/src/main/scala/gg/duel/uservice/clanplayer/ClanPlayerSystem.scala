@@ -106,9 +106,16 @@ case class ClanPlayerSystem(clans: Map[String, Clan], players: Map[String, Playe
           case Some(conflictingUserId) =>
             Left(s"Conflict: another user has already used your nickname, his ID is: $conflictingUserId")
           case None =>
-            val newPlayer = registerPlayer.toPlayer(currentTime)
-            val newSystem = copy(players = players + (registerPlayer.id -> newPlayer))
-            Right(newSystem -> newPlayer)
+            players.collectFirst {
+              case (id, player) if player.google == registerPlayer.google => id
+            } match {
+              case Some(id) =>
+                Left(s"User $id is already using the same Google address as you")
+              case None =>
+                val newPlayer = registerPlayer.toPlayer(currentTime)
+                val newSystem = copy(players = players + (registerPlayer.id -> newPlayer))
+                Right(newSystem -> newPlayer)
+            }
         }
     }
   }
