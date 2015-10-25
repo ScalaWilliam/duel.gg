@@ -24,7 +24,6 @@ class UpstreamGames @Inject()(configuration: Configuration, applicationLifecycle
   private def buildStreamClient(endpointName: String): CancellableServerSentEventClient = {
     configuration.getString(configPath)
       .flatMap { uri => Try(new URI(s"$uri$endpointName")).toOption } match {
-//      case _ => new EmptyCancellableServerSentEventClient()
       case Some(uri) =>
         Logger.info(s"Using uri $uri")
         new SimpleCancellableServerSentEventClient(uri)
