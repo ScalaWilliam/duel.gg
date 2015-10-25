@@ -19,14 +19,6 @@ function list_articles() {
     return $articles;
 }
 
-function get_basex_article($article_id) {
-    $article_query = '<rest:query xmlns:rest="http://basex.org/rest"><rest:text></rest:text><rest:variable name="article-name" value=""/></rest:query>';
-    $article_query = simplexml_load_string($article_query);
-    $article_query->text = file_get_contents(__DIR__ . "/view_item.xq");
-    $article_query->variable['value'] = $article_id;
-    return basex_query($article_query->asXML());
-}
-
 function get_tumblr_article($article_id) {
     $api = simplexml_load_file("tumblr.api-read.xml");
     $rss = simplexml_load_file("tumblr.rss.xml");
