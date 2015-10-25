@@ -5,7 +5,7 @@ curl_setopt($ch, CURLOPT_USERPWD, "admin:admin");
 curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
 curl_setopt($ch, CURLOPT_POST, 1);
 $atomxq = file_get_contents("atom.xq");
-$template = '<rest:query xmlns:rest="http://basex.org/rest"><rest:text>"HEY"</rest:text></rest:query>';
+$template = '<rest:query xmlns:rest="http://basex.org/rest"><rest:text></rest:text></rest:query>';
 $simplexml = simplexml_load_string($template);
 $simplexml->text = $atomxq;
 $xml = $simplexml->asXML();
