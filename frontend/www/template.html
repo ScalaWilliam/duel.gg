@@ -31,7 +31,8 @@
         <script type="text/javascript">
         function onSignIn(googleUser) {
             var id_token = googleUser.getAuthResponse().id_token;
-            var uri = 'http://api.duel.gg/check-authentication/?google-id-token='+ encodeURIComponent(id_token);
+//            var uri = 'http://api.duel.gg/check-authentication/?google-id-token='+ encodeURIComponent(id_token);
+            var uri = 'http://localhost:9001/check-authentication/?google-id-token='+ encodeURIComponent(id_token);
             var xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function() {
                 if (xhr.readyState == 4 && xhr.status == 200) {

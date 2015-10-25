@@ -3,6 +3,7 @@ package controllers
 import java.time.LocalDateTime
 import javax.inject._
 
+import com.maxmind.geoip.LookupService
 import controllers.authentication.{AuthenticationUser, CookieParser, GoogleToken}
 import play.api.Configuration
 import play.api.libs.Jsonp
@@ -20,6 +21,8 @@ class AuthenticationApi @Inject()(wSClient: WSClient, configuration: Configurati
   val cookieName = configuration.getString("gg.duel.api.auth.cookie-name").get
   val aud = configuration.getString("gg.duel.api.auth.aud").get
   val salt = configuration.getString("gg.duel.api.auth.salt").get
+  val lookupService = new LookupService("resources/GeoLiteCityv6.dat")
+  lookupService
 
   def validateGoogle(requestHeader: RequestHeader): Future[Option[AuthenticationUser]] = {
     Async.async {
@@ -32,6 +35,8 @@ class AuthenticationApi @Inject()(wSClient: WSClient, configuration: Configurati
             case GoogleToken.fromJson(googleToken) if googleToken.isValid(expectedAud = aud) =>
               AuthenticationUser(
                 google = googleToken.email,
+                countryCode = Option(lookupService.getLocationV6(requestHeader.remoteAddress))
+                  .flatMap(location => Option(location.countryCode)),
                 id = Option.empty,
                 expires = LocalDateTime.now().plusDays(7)
               )

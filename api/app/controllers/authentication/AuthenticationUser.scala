@@ -8,7 +8,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Cookie
 
 
-case class AuthenticationUser(google: String, id: Option[String], expires: LocalDateTime) {
+case class AuthenticationUser(google: String, countryCode: Option[String], id: Option[String], expires: LocalDateTime) {
   def isExpired = expires.isAfter(LocalDateTime.now())
   def expiresSoon(days: Int) = expires.isAfter(LocalDateTime.now().plusDays(days))
   def newExpiry(defaultExpiryDays: Int) = copy(expires = LocalDateTime.now().plusDays(defaultExpiryDays))
