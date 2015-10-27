@@ -13,6 +13,7 @@ import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.ExecutionContext
+import scala.util.control.NonFatal
 
 @Singleton
 class ReadJournalledService @Inject()(journallingService: JournallingService)
@@ -36,6 +37,11 @@ class ReadJournalledService @Inject()(journallingService: JournallingService)
         val reader = new JournalReader(journalFile)
         val newGames =
           try reader.getGames
+          catch {
+            case NonFatal(e) =>
+              Logger.error(s"Could not process games for $journalFile due to $e", e)
+              Vector.empty
+          }
           finally reader.close()
         parsedGamesAgent.send(_ ++ newGames)
         Logger.info(s"Finished reading journal file $journalFile, found ${newGames.size}")

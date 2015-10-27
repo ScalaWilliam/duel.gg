@@ -7,6 +7,7 @@ import java.nio.ByteBuffer
  * Created by William on 27/10/2015.
  */
 class SauerByteInputStreamReader(inputStream: InputStream) extends SauerByteReader {
+  
   override def get(num: Int): Option[Array[Byte]] = {
     try {
       if (num == 0) return None
@@ -20,4 +21,5 @@ class SauerByteInputStreamReader(inputStream: InputStream) extends SauerByteRead
       case _: EOFException => None
     }
   }
+
 }

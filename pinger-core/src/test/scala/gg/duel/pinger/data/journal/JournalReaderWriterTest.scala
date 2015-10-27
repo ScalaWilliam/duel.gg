@@ -1,7 +1,7 @@
 package gg.duel.pinger.data.journal
 
 import java.io.{BufferedInputStream, FileInputStream, FileOutputStream, File}
-import java.util.zip.{GZIPInputStream, GZIPOutputStream}
+import java.util.zip.{DeflaterInputStream, GZIPInputStream, GZIPOutputStream}
 
 import gg.duel.pinger.data.Server
 import org.scalatest.{Matchers, WordSpec}
@@ -61,7 +61,7 @@ class JournalReaderWriterTest extends WordSpec with Matchers {
       val tmp = Array.fill(10001)(0.toByte)
       reader.read(tmp, 0, 10001)
       tmp.toList shouldBe stuff.toList
-
     }
   }
+
 }
