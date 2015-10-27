@@ -1,12 +1,15 @@
 package controllers
 
+import java.util.Base64
 import javax.inject._
+import gg.duel.pinger.data.journal.{SauerBytesBinary, SauerBytes}
 import modules.{GamesManager, ServerManager}
+import org.apache.commons.codec.binary.Hex
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.{JsArray, Json}
 import play.api.mvc.{Action, Controller}
-import services.{LoadJournalledIntoCore, PingerService, ReadJournalledService, JournallingService}
+import services._
 
 import scala.async.Async
 import scala.concurrent.ExecutionContext
@@ -18,11 +21,25 @@ class Main @Inject()
  serverProvider: ServerManager,
  journallingService: JournallingService,
  readJournalledService: ReadJournalledService,
-  loadJournalledIntoCore: LoadJournalledIntoCore)
+ loadJournalledIntoCore: LoadJournalledIntoCore,
+ serveLiveSauerBytesService: ServeLiveSauerBytesService)
 (implicit executionContext: ExecutionContext) extends Controller {
 
   def index = Action {
     Ok(views.html.index())
+  }
+
+  def sauerBytesStream = Action {
+    Ok.feed(
+      content = serveLiveSauerBytesService.enumerator.map { sauerBytes =>
+        Hex.encodeHexString {
+          Base64.getEncoder.encode {
+            SauerBytesBinary
+              .toBytes(sauerBytes)
+              .take(Short.MaxValue)
+          }
+        }
+      }).as("application/x-sauer-bytes")
   }
 
   private def allGamesEnum = Enumerator.enumerate(

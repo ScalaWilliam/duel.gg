@@ -24,7 +24,7 @@ class ServerManager @Inject()()(implicit
   val serversA: Agent[Servers] = Agent(Servers.empty)
   val updateServers = {
     import concurrent.duration._
-    actorSystem.scheduler.schedule(0.seconds, 5.minutes) {
+    actorSystem.scheduler.schedule(0.seconds, 1.minute) {
       serversA.send(
         newValue = Servers(
           servers = MasterserverClient.default.getServers.map { case (h, p) =>
