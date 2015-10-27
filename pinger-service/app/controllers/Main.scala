@@ -8,7 +8,7 @@ import models.servers.ServerManager
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Enumerator
 import play.api.mvc.{Action, Controller}
-import services.JournallingService
+import services.{ReadJournalledService, JournallingService}
 
 import scala.concurrent.ExecutionContext
 
@@ -17,7 +17,8 @@ class Main @Inject()
 (gamesManager: GamesManager,
  pingerService: PingerService,
  serverProvider: ServerManager,
-  journallingService: JournallingService)
+  journallingService: JournallingService,
+  readJournalledService: ReadJournalledService)
 (implicit executionContext: ExecutionContext) extends Controller {
 
   def index = Action {
