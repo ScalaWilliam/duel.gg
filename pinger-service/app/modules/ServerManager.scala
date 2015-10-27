@@ -1,4 +1,4 @@
-package models.servers
+package modules
 
 import javax.inject._
 
@@ -6,6 +6,7 @@ import akka.actor.ActorSystem
 import akka.agent.Agent
 import gg.duel.pinger.data.Server
 import gg.duel.pinger.masterserver.MasterserverClient
+import models.servers.Servers
 import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -12,7 +12,7 @@ import gg.duel.pinger.data.journal.{JournalReader, SauerBytesWriter}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Promise, ExecutionContext}
 import scala.util.control.NonFatal
 
 @Singleton
@@ -28,6 +28,10 @@ class ReadJournalledService @Inject()(journallingService: JournallingService)
     .sorted
 
   val parsedGamesAgent = Agent(Vector.empty[Game])
+
+  private val parsedGamesPromise = Promise[Vector[Game]]()
+
+  val parsedGamesFuture = parsedGamesPromise.future
 
   val runProcess = new Runnable {
     override def run(): Unit = {
@@ -48,11 +52,12 @@ class ReadJournalledService @Inject()(journallingService: JournallingService)
       }
       Thread.sleep(100)
       Logger.info(s"Read ${parsedGamesAgent.get().size} games in total.")
+      parsedGamesPromise.success(parsedGamesAgent.get())
     }
   }
 
 
-  val readJournalThread = new Thread(runProcess, "read-journal")
+  private val readJournalThread = new Thread(runProcess, "read-journal")
 
   readJournalThread.start()
 
