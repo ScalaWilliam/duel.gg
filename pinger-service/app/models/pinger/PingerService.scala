@@ -3,9 +3,10 @@ package models.pinger
 import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorDSL._
-import akka.actor.{Kill, PoisonPill, ActorSystem}
+import akka.actor.{ActorSystem, Kill}
 import akka.agent.Agent
 import gg.duel.pinger.analytics.MultiplexedReader.{CompletedGame, SFoundGame, SIteratorState}
+import gg.duel.pinger.masterserver.MasterserverClient
 import gg.duel.pinger.service.PingPongProcessor.{Ping, Ready, ReceivedBytes}
 import gg.duel.pinger.service.{PingPongProcessorActor, PingPongProcessorState}
 import models.games.GamesManager
@@ -31,6 +32,7 @@ class PingerService @Inject()
   val ourState = Agent(SIteratorState.empty)
 
   val (enumerator, channel) = Concurrent.broadcast[Event]
+
 
   val conactor = actor(name = "wut")(new Act {
 

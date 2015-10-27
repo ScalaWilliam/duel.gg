@@ -1,11 +1,8 @@
 GET           /                         @controllers.Main.index
 GET           /servers/                 @controllers.Main.servers
-PUT           /server/                  @controllers.Main.putServer(server)
-DELETE        /server/                  @controllers.Main.deleteServer(server)
 GET           /status/                  @controllers.Main.currentStatus
 GET           /games/recent/            @controllers.Main.recent
 GET        /games/all/                @controllers.Main.allGames
-#GET        /games/                @controllers.Main.allGames2
 GET        /games/all-and-new/        @controllers.Main.allGamesAndNew
 GET        /games/new/                @controllers.Main.newGames
 GET        /version/        controllers.Version.getVersion
