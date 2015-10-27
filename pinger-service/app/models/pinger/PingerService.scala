@@ -51,6 +51,7 @@ class PingerService @Inject()
           case 'Ping =>
             serverProvider.servers.servers.values.foreach(pingPong ! Ping(_))
           case r: ReceivedBytes =>
+            context.system.eventStream.publish(r.toSauerBytes)
             currentState = currentState.next(r.toSauerBytes)
             ourState.send(currentState)
             currentState match {
