@@ -1,21 +1,22 @@
 package gg.duel.pinger.data.journal
 
 import java.io.{FileOutputStream, File}
-import java.util.zip.{Deflater, DeflaterOutputStream}
+import java.util.zip.{GZIPOutputStream, Deflater, DeflaterOutputStream}
 
 class JournalWriter(target: File) {
-  def write(sauerBytes: SauerBytes): Unit = push.apply(sauerBytes)
+
+  def write(sauerBytes: SauerBytes): Unit = {
+    sauerBytesWriter.writeSauerBytes(sauerBytes)
+  }
 
   val theFile = new FileOutputStream(target)
 
-  val compressedFile = new DeflaterOutputStream(theFile, new Deflater(Deflater.BEST_COMPRESSION), true)
+  val compressedFile = new GZIPOutputStream(theFile, true)
 
-  val push = SauerBytesWriter.createInjectedWriter{ bytes =>
-    compressedFile.write(bytes)
-    compressedFile.flush()
-    theFile.flush()
-  }
+  val sauerBytesWriter = new SauerBytesOutputStreamWriter(compressedFile)
+
   def close(): Unit = {
+    compressedFile.finish()
     compressedFile.close()
     theFile.close()
   }

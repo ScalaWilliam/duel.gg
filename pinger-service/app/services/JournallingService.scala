@@ -18,7 +18,7 @@ executionContext: ExecutionContext) {
 
   import akka.actor.ActorDSL._
 
-  val targetFilename = s"${LocalDateTime.now().withNano(0).toString.replaceAllLiterally(":","")}.sblog"
+  val targetFilename = s"${LocalDateTime.now().withNano(0).toString.replaceAllLiterally(":","")}.sblog.gz"
 
   val targetFile = new File(targetFilename)
 
@@ -37,6 +37,7 @@ executionContext: ExecutionContext) {
 
   applicationLifecycle.addStopHook(() => Future {
     myActor ! Kill
+    jw.close()
   })
 
 }

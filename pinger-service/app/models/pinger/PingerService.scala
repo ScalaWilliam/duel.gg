@@ -33,7 +33,6 @@ class PingerService @Inject()
 
   val (enumerator, channel) = Concurrent.broadcast[Event]
 
-
   val conactor = actor(name = "wut")(new Act {
 
     val pingPong = context.actorOf(

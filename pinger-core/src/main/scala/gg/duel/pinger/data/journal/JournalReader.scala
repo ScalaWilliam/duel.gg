@@ -1,7 +1,7 @@
 package gg.duel.pinger.data.journal
 
-import java.io.{File, FileInputStream}
-import java.util.zip.{Deflater, DeflaterInputStream}
+import java.io.{BufferedInputStream, File, FileInputStream}
+import java.util.zip.{GZIPInputStream, InflaterInputStream, Deflater, DeflaterInputStream}
 
 import gg.duel.pinger.analytics.MultiplexedReader.{CompletedGame, SFoundGame, SIteratorState}
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
@@ -15,7 +15,8 @@ object JournalReader {
 class JournalReader(file: File) {
 
   val fis = new FileInputStream(file)
-  val is = new DeflaterInputStream(fis, new Deflater(Deflater.BEST_COMPRESSION))
+  val gis = new GZIPInputStream(fis)
+  val is = new BufferedInputStream(gis)
 
   def getGames: Vector[Game] = {
     getSauerBytes
@@ -34,15 +35,11 @@ class JournalReader(file: File) {
 
   def close(): Unit = {
     is.close()
+    gis.close()
     fis.close()
   }
 
-
-  def getSauerBytes: Iterator[SauerBytes] =
-    Iterator.continually(
-      elem = SauerBytesWriter.readSauerBytes(
-        get = SauerBytesWriter.inputStreamNumBytes(is)
-      )
-    ).takeWhile(_.isDefined)
-      .flatten
+  def getSauerBytes: Iterator[SauerBytes] = {
+    new SauerByteInputStreamReader(is).toIterator
+  }
 }

@@ -11,24 +11,24 @@ object ReaderApp extends App {
 
   val fah = new File("***REMOVED***/Projects/37/ladder.sauer/data/sb-sb-20140929-0656-e0ff18ed.log")
 
-  val is = new FileInputStream(fah)
-  val get = SauerBytesWriter.inputStreamNumBytes(is)
-
-  def findReadablePosition(): Long = {
-    val originalPosition = is.getChannel.position()
-    val sauerBytesRead = Try(SauerBytesWriter.readSauerBytes(get).map(MultiplexedReader.sauerBytesToParsedMessages).toList.flatten).toOption.toList.flatten
-    val newPosition = is.getChannel.position()
-    if ( sauerBytesRead.isEmpty ) {
-      is.getChannel.position(originalPosition + 1)
-      findReadablePosition()
-    } else {
-      originalPosition
-    }
-  }
-
-  def snapToNextReadablePosition(): Unit = {
-    is.getChannel.position(findReadablePosition())
-  }
+//  val is = new FileInputStream(fah)
+//  val get = SauerBytesWriter.inputStreamNumBytes(is)
+//
+//  def findReadablePosition(): Long = {
+//    val originalPosition = is.getChannel.position()
+//    val sauerBytesRead = Try(SauerBytesWriter.readSauerBytes(get).map(MultiplexedReader.sauerBytesToParsedMessages).toList.flatten).toOption.toList.flatten
+//    val newPosition = is.getChannel.position()
+//    if ( sauerBytesRead.isEmpty ) {
+//      is.getChannel.position(originalPosition + 1)
+//      findReadablePosition()
+//    } else {
+//      originalPosition
+//    }
+//  }
+//
+//  def snapToNextReadablePosition(): Unit = {
+//    is.getChannel.position(findReadablePosition())
+//  }
 
 //  val positionAtFifth = (sauerBytes)
 //  is.skip(4973401493L)

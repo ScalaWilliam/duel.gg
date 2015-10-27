@@ -21,8 +21,8 @@ class ReadJournalledService @Inject()(journallingService: JournallingService)
 
   import JournalReader._
   val journalFiles = new File(".").listFiles()
+    .filter(_.getName.endsWith(".sblog.gz"))
     .filter(_.getName != journallingService.targetFilename)
-    .filter(_.getName.endsWith(".sblog"))
     .toList
     .sorted
 
