@@ -1,15 +1,11 @@
 package gg.duel.pinger.data
 
-import org.scalatest.{Inspectors, WordSpecLike, Matchers}
-import org.scalatest.matchers.{Matcher, MatchResult}
 import akka.util.ByteString
+import gg.duel.pinger.data.ParsedPongs.{HopmodUptime, PlayerCns, PlayerExtInfo, ServerInfoReply, Uptime, _}
+import org.scalatest.matchers.{MatchResult, Matcher}
+import org.scalatest.{Inspectors, Matchers, WordSpecLike}
+
 import scala.util.Try
-import ParsedPongs._
-import ParsedPongs.Uptime
-import ParsedPongs.PlayerCns
-import ParsedPongs.ServerInfoReply
-import ParsedPongs.PlayerExtInfo
-import ParsedPongs.HopmodUptime
 
 class MappingParsingTest extends WordSpecLike with Matchers with Inspectors {
 

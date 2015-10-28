@@ -1,8 +1,5 @@
 package gg.duel.pinger.analytics.duel
 
-import gg.duel.pinger.analytics.MultiplexedReader.{SProcessing, MProcessing, SIteratorState}
-import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.ZInDuelState
-import gg.duel.pinger.data.Server
 
 /**
  * Created on 25/07/2015.
@@ -26,13 +23,14 @@ case class LiveDuel
   def toPrettyJson = asScd.toPrettyJson
 }
 object LiveDuel {
-  def processState(atServer: Server, sIteratorState: SIteratorState): Option[(Server, LiveDuel)] = {
-    for {
-      SProcessing(MProcessing(serverStates, _)) <- Option(sIteratorState)
-      ZInDuelState(_, td: TransitionalBetterDuel) <- serverStates.get(atServer)
-      liveDuel <- td.liveDuel.toOption
-    } yield (atServer, liveDuel)
-  }
+  // todo later
+//  def processState(atServer: Server, sIteratorState: SIteratorState): Option[(Server, LiveDuel)] = {
+//    for {
+//      SProcessing(MProcessing(serverStates, _)) <- Option(sIteratorState)
+//      ZInDuelState(_, td: TransitionalBetterDuel) <- serverStates.get(atServer)
+//      liveDuel <- td.liveDuel.toOption
+//    } yield (atServer, liveDuel)
+//  }
 
   /**
    * Clean up:  case CleanupOld =>

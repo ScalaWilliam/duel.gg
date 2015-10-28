@@ -1,8 +1,8 @@
 package gg.duel.pinger.data
 
 import akka.util.ByteString
-import PongParser._
-import gg.duel.pinger.data.ParsedPongs.Conversions.{ConvertHopmodUptime, ConvertServerInfoReply, ConvertTeamScore, ConvertThomasExt}
+import gg.duel.pinger.data.ParsedPongs.Conversions.{ConvertHopmodUptime, ConvertServerInfoReply, ConvertTeamScore}
+import gg.duel.pinger.data.PongParser._
 
 object Extractor {
 

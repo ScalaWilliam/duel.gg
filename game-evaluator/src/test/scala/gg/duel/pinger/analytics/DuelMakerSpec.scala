@@ -1,6 +1,6 @@
 package gg.duel.pinger.analytics
 
-import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZRejectedGameState, ZIteratorState, ZFoundDuel, ZRejectedDuelState}
+import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZFoundDuel, ZIteratorState, ZRejectedDuelState, ZRejectedGameState}
 import gg.duel.pinger.analytics.duel.StubGenerator
 import org.scalatest.{Matchers, WordSpec}
 

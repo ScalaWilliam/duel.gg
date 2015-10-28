@@ -6,7 +6,7 @@ class MasterserverClientTest extends WordSpec with Matchers {
 
   "MasterserverClient" should {
     "list some servers" in {
-      MasterserverClient.default.getServers should contain ("92.222.216.113" -> 10000)
+      MasterserverClient.default.getServers should contain ("46.101.249.112" -> 20000)
     }
   }
   "Parser" should {

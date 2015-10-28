@@ -1,8 +1,8 @@
-package gg.duel.pinger.analytics.duel
+package gg.duel.pinger
 
 import java.io.{File, FileInputStream}
+
 import gg.duel.pinger.analytics.MultiplexedReader
-import MultiplexedReader.{SFoundGame, SIteratorState, SInitial}
 import gg.duel.pinger.data.journal.SauerBytesWriter
 
 import scala.util.Try

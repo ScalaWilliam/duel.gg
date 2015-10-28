@@ -1,9 +1,10 @@
 package gg.duel.pinger.data.journal
 
 import java.nio.{ByteBuffer, ByteOrder}
+
 import akka.util.{ByteString, ByteStringBuilder}
-import org.joda.time.format.ISODateTimeFormat
 import gg.duel.pinger.data.Server
+import org.joda.time.format.ISODateTimeFormat
 
 case class SauerBytes(server: Server, time: Long, message: Vector[Byte]) {
   def stringTime = ISODateTimeFormat.dateTimeNoMillis().print(time)

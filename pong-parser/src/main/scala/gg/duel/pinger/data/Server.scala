@@ -1,6 +1,6 @@
 package gg.duel.pinger.data
 
-import java.net.{InetSocketAddress, InetAddress}
+import java.net.{InetAddress, InetSocketAddress}
 
 import org.apache.commons.validator.routines.InetAddressValidator
 
