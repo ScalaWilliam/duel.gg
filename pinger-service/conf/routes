@@ -6,3 +6,5 @@ GET        /games/all/                @controllers.Main.allGames
 GET        /games/all-and-new/        @controllers.Main.allGamesAndNew
 GET        /games/new/                @controllers.Main.newGames
 GET        /version/        controllers.Version.getVersion
+GET /read-parsed/ @controllers.Main.readParsed
+GET /sauerbytes/stream/ @controllers.Main.sauerBytesStream
