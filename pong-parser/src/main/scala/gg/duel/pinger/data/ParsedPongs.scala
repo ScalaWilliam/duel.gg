@@ -1,7 +1,7 @@
 package gg.duel.pinger.data
 
-import org.joda.time.format.ISODateTimeFormat
 import gg.duel.pinger.data.ParsedPongs.ConvertedMessages.{ConvertedHopmodUptime, ConvertedServerInfoReply, ConvertedTeamScore, ConvertedThomasExt}
+import org.joda.time.format.ISODateTimeFormat
 
 object ParsedPongs {
 

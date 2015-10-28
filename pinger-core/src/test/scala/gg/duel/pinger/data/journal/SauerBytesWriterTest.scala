@@ -7,7 +7,6 @@ import scala.collection.mutable.ArrayBuffer
 class SauerBytesWriterTest extends WordSpec with Matchers {
   "Sauer bytes writer" must {
     "Convert forth and back correctly" in {
-      val buffer = ArrayBuffer.empty[Byte]
       val writer = new SauerBytesBufferWriter()
 
       val byteString = ByteString(1, 1, 1, 5, 5, -128, 3, 1, 3, -128, -61, 1, 17,
@@ -20,7 +19,7 @@ class SauerBytesWriterTest extends WordSpec with Matchers {
       writer.writeSauerBytes(receivedBytes2)
       writer.writeSauerBytes(receivedBytes)
 
-      val reader = new SauerByteArrayReader(buffer.toArray)
+      val reader = new SauerByteArrayReader(writer.buffer.toArray)
       val list = reader.toIterator.toList
 
       // just checking - this is quite superfluous though..

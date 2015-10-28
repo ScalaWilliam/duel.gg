@@ -20,25 +20,6 @@ case class SimpleCompletedCTF
  startTimeText: String, startTime: Long, map: String, mode: String,
  server: String, teams: Map[String, SimpleTeamScore],
  winner: Option[String], metaId: Option[String]) {
-  def toXml =
-    <completed-ctf
-    team-size={teamsize.toString}
-    simple-id={simpleId}
-    duration={duration.toString}
-    start-time-raw={startTime.toString}
-    start-time={startTimeText}
-    map={map} mode={mode}
-    server={server} winner={winner.orNull}
-    meta-id={metaId.orNull}>
-      {for {(team, scores) <- teams}
-    yield <team name={team} flags={scores.flags.toString}>
-        <flag-log>
-          {for {(time, flags) <- scores.flagLog.sortBy(_._1)} yield <flags at={time.toString}>{flags}</flags>}
-        </flag-log>{for {player <- scores.players} yield
-            <player name={player.name} partial-ip={player.ip} weapon={player.weapon}/>}
-      </team>}
-    </completed-ctf>
-
   def toPrettyJson = {
     import org.json4s._
     import org.json4s.native.Serialization

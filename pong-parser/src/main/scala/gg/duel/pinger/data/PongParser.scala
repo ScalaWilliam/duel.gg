@@ -1,11 +1,10 @@
 package gg.duel.pinger.data
 
 import akka.util.ByteString
-import com.typesafe.scalalogging.slf4j.StrictLogging
 import gg.duel.pinger.data.ParsedPongs._
 
 /** 01/02/14 */
-object PongParser extends StrictLogging {
+object PongParser {
 
   val matchers: PartialFunction[ByteString, Any] = {
     case GetRelaxedPlayerExtInfo(x) => x

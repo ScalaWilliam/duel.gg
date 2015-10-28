@@ -1,6 +1,6 @@
 package gg.duel.pinger.analytics
 
-import MultiplexedReader.{CompletedGame, MFoundGame}
+import gg.duel.pinger.analytics.MultiplexedReader.{MIteratorState, CompletedGame, MFoundGame}
 import gg.duel.pinger.analytics.duel.StubGenerator
 import org.scalatest.{Inspectors, Matchers, WordSpec}
 import gg.duel.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
@@ -41,6 +41,12 @@ class MultiplexedDuelReaderSpec extends WordSpec with Matchers with Inspectors {
 //      secondServerSequence foreach println
 
       val haveThis = randomlyInterleave(Nil, firstServerSequence, secondServerSequence)
+
+      def timedMultiplexedStates(items: List[ParsedMessage]): List[MIteratorState] = {
+        MultiplexedReader.multiplexParsedMessagesStates(
+          items.toIterator
+        ).toList
+      }
 
       val gotStates = timedMultiplexedStates(haveThis).toList
 

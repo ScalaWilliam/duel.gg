@@ -1,7 +1,5 @@
 package gg.duel.pinger.analytics.duel
 
-import gg.duel.pinger.analytics.MultiplexedReader
-import gg.duel.pinger.analytics.MultiplexedReader.MIteratorState
 import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZFoundDuel, ZIteratorState}
 import gg.duel.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import gg.duel.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
@@ -40,11 +38,6 @@ object StubGenerator {
   }
 
 
-  def timedMultiplexedStates(items: List[ParsedMessage]): List[MIteratorState] = {
-    MultiplexedReader.multiplexParsedMessagesStates(
-      items.toIterator
-    ).toList
-  }
 
   val drakasUkIp = "213.171.195.x"
   val artBosniaIp = "80.65.161.x"
