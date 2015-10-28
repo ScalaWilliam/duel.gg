@@ -1,6 +1,6 @@
 lazy val root = (project in file("."))
-  .dependsOn(pingerCore, pingerService)
-  .aggregate(pingerCore, pingerService)
+  .dependsOn(api, pingerCore, pingerService, playersCore, gamesCore)
+  .aggregate(api, pingerCore, pingerService, playersCore, gamesCore)
 
 
 lazy val api = (project in file("api")).enablePlugins(PlayScala).dependsOn(gamesCore, playersCore)
