@@ -24,5 +24,20 @@ class SauerBytesBinaryTest extends WordSpecLike with Matchers {
       haveBytes.message shouldBe receivedBytes.message
       haveBytes shouldBe receivedBytes
     }
+    "Convert long one and back" in {
+
+      val deLonghy = SauerBytes(
+        server = Server.stub,
+        time = 123912389,
+        message = Vector.fill(9000)(17.toByte)
+      )
+
+      val tehBytes = SauerBytesBinary
+        .toBytes(deLonghy)
+        .take(Short.MaxValue)
+
+      SauerBytesBinary.fromBytes(tehBytes) shouldBe deLonghy
+
+    }
   }
 }

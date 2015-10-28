@@ -1,4 +1,5 @@
 api/resources
+*.sblog.gz
 /resources
 *.db
 /data/
