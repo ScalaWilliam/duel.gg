@@ -1,13 +1,8 @@
 package gg.duel.pinger.data
 
-import scala.xml.NodeSeq
-
 object ModesList {
 
-  case class Weapon(num: Int) {
-    def xml: NodeSeq =
-      guns.get(num).toList.map{n => <weapon>{n}</weapon>}
-  }
+  case class Weapon(num: Int)
 
   val guns = List("fist", "shotgun", "minigun", "rocket launcher", "rifle", "grenade launcher", "pistol", "fireball", "iceball", "slimeball", "bite", "barrel").zipWithIndex.map{_.swap}.toMap
 

@@ -39,25 +39,5 @@ case class SimpleCompletedDuel
     implicit val formats = Serialization.formats(NoTypeHints)
     writePretty(this)
   }
-  def toXml = <completed-duel
-  simple-id={simpleId}
-  meta-id={metaId.orNull}
-  duration={s"$duration"}
-  start-time={startTimeText}
-  map={map}
-  mode={mode}
-  server={server}
-  winner={winner.orNull}>
-    <played-at>{playedAt.mkString(" ")}</played-at>
-    {for {(name, stats) <- players} yield
-    <player name={name} partial-ip={stats.ip} frags={s"${stats.frags}"} accuracy={s"${stats.accuracy}"}
-            weapon={stats.weapon}>
-      {for {(at, frags) <- stats.fragLog}
-    yield
-      <frags at={at.toString}>{frags}</frags>}
-    </player>
-    }
-  </completed-duel>
-
 
 }
