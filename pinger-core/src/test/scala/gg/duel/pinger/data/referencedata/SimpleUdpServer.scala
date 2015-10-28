@@ -3,7 +3,7 @@ package gg.duel.pinger.data.referencedata
 import java.net.InetSocketAddress
 
 import akka.actor.ActorDSL._
-import akka.actor.{Props, ActorLogging, ActorRef}
+import akka.actor.{ActorLogging, ActorRef, Props}
 import akka.event.LoggingReceive
 import akka.io.{IO, Udp}
 import akka.util.ByteString
