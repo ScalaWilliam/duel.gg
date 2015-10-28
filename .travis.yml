@@ -1,0 +1,18 @@
+language: scala
+script:
+  - mkdir resources
+  - cd resources
+  - wget -N http://geolite.maxmind.com/download/geoip/database/GeoLiteCityv6-beta/GeoLiteCityv6.dat.gz
+  - wget -N http://geolite.maxmind.com/download/geoip/database/asnum/GeoIPASNumv6.dat.gz
+  - gunzip -c GeoLiteCityv6.dat.gz > GeoLiteCityv6.dat
+  - gunzip -c GeoIPASNumv6.dat.gz > GeoIPASNumv6.dat
+  - cd ..
+  - cd games-clojure-core
+  - wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein
+  - chmod +x lein
+  - ./lein with-profile precomp install
+  - cd ..
+scala:
+  - 2.11.7
+jdk:
+  - oraclejdk8
