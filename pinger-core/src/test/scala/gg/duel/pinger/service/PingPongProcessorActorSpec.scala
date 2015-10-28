@@ -4,7 +4,8 @@ import akka.actor.{ActorSystem, PoisonPill}
 import akka.testkit.{ImplicitSender, TestKit}
 import gg.duel.pinger.data.Server
 import gg.duel.pinger.data.referencedata.SimpleUdpServer
-import gg.duel.pinger.data.referencedata.SimpleUdpServer.{BadHashSauerbratenPongServer, GoodHashSauerbratenPongServer}
+import SimpleUdpServer.{BadHashSauerbratenPongServer, GoodHashSauerbratenPongServer}
+import gg.duel.pinger.data.referencedata.SimpleUdpServer
 import gg.duel.pinger.service.PingPongProcessor.{BadHash, Ping, ReceivedBytes}
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike, Matchers}
 

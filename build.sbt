@@ -1,7 +1,28 @@
 lazy val root = (project in file("."))
   .dependsOn(pingerCore, pingerService)
-  .aggregate(pingerCore, pingerService)
+  .aggregate(pingerCore, pingerService, pongParser,gameResolver,api,playersCore,gamesCore)
 
+lazy val pongParser = (project in file("pong-parser"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalactic" %% "scalactic" % "2.2.5",
+      "com.typesafe.akka" %% "akka-actor" % "2.4.0",
+      "org.scalatest" %% "scalatest" % "2.2.5" % "test",
+      "commons-validator" % "commons-validator" % "1.4.1" exclude ("commons-logging", "commons-logging"),
+      "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
+      "com.typesafe.akka" %% "akka-slf4j" % "2.4.0" exclude ("commons-logging", "commons-logging"),
+      "joda-time" % "joda-time" % "2.8.2",
+      "org.joda" % "joda-convert" % "1.8.1",
+      "org.json4s" %% "json4s-native" % "3.3.0"
+    )
+  )
+
+lazy val gameResolver = (project in file("game-resolver")).settings(
+  libraryDependencies ++= Seq(
+    "org.scalactic" %% "scalactic" % "2.2.5",
+    "org.scalatest" %% "scalatest" % "2.2.5" % "test"
+  )
+).dependsOn(pongParser)
 
 lazy val api = (project in file("api")).enablePlugins(PlayScala).dependsOn(gamesCore, playersCore)
   .settings(
@@ -32,7 +53,7 @@ lazy val pingerCore = (project in file("pinger-core")).settings(
     "org.scalactic" %% "scalactic" % "2.2.5",
     "org.scalatest" %% "scalatest" % "2.2.5" % "test"
   )
-)
+).dependsOn(pongParser, gameResolver)
 
 lazy val pingerService = (project in file("pinger-service")).enablePlugins(PlayScala).dependsOn(pingerCore)
 .settings(libraryDependencies ++= Seq("org.scala-lang.modules" %% "scala-async" % "0.9.5",
