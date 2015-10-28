@@ -44,6 +44,7 @@ object SauerBytesWriter {
      for {
        lengthBytes <- get(2)
        length = ByteBuffer.wrap(lengthBytes).order(ByteOrder.BIG_ENDIAN).getShort
+       if length > 0
        data <- get(length)
        if data.length == length
      } yield SauerBytesBinary.fromBytes(data)
