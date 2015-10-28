@@ -1,4 +1,4 @@
-package models.pinger
+package services
 
 import javax.inject.{Inject, Singleton}
 
@@ -6,11 +6,9 @@ import akka.actor.ActorDSL._
 import akka.actor.{ActorSystem, Kill}
 import akka.agent.Agent
 import gg.duel.pinger.analytics.MultiplexedReader.{CompletedGame, SFoundGame, SIteratorState}
-import gg.duel.pinger.masterserver.MasterserverClient
 import gg.duel.pinger.service.PingPongProcessor.{Ping, Ready, ReceivedBytes}
 import gg.duel.pinger.service.{PingPongProcessorActor, PingPongProcessorState}
-import models.games.GamesManager
-import models.servers.ServerManager
+import modules.{GamesManager, ServerManager}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Concurrent
@@ -32,7 +30,6 @@ class PingerService @Inject()
   val ourState = Agent(SIteratorState.empty)
 
   val (enumerator, channel) = Concurrent.broadcast[Event]
-
 
   val conactor = actor(name = "wut")(new Act {
 

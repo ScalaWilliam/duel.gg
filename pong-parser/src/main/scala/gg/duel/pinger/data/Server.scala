@@ -20,6 +20,10 @@ case class Server(ip: IP, port: Int) {
 }
 
 object Server {
+  def stub = Server(
+    ip = "127.0.0.1",
+    port = 2234
+  )
   val regex = """([^:]+)(:| )([\d]+)""".r
   def fromInfoInetSocketAddress(address: InetSocketAddress) =
     Server(address.getHostName, address.getPort - 1)

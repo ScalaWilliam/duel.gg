@@ -6,7 +6,7 @@ import java.util.zip.{Deflater, DeflaterOutputStream}
 import javax.inject._
 
 import akka.actor.{Kill, ActorSystem}
-import gg.duel.pinger.data.journal.{SauerBytesWriter, SauerBytesBinary, SauerBytes}
+import gg.duel.pinger.data.journal.{JournalWriter, SauerBytesWriter, SauerBytesBinary, SauerBytes}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 
@@ -18,26 +18,18 @@ executionContext: ExecutionContext) {
 
   import akka.actor.ActorDSL._
 
-  val targetFilename = s"${LocalDateTime.now().withNano(0).toString.replaceAllLiterally(":","")}.sblog"
+  val targetFilename = s"${LocalDateTime.now().withNano(0).toString.replaceAllLiterally(":","")}.sblog.gz"
 
   val targetFile = new File(targetFilename)
 
   Logger.info(s"Journalling to $targetFilename (${targetFile.getCanonicalFile})")
 
-  val theFile = new FileOutputStream(targetFile)
-
-  val compressedFile = new DeflaterOutputStream(theFile, new Deflater(Deflater.BEST_COMPRESSION), true)
-
-  val push = SauerBytesWriter.createInjectedWriter{bytes =>
-    compressedFile.write(bytes)
-    compressedFile.flush()
-    theFile.flush()
-  }
+  val jw = new JournalWriter(targetFile)
 
   val myActor = actor(name = "journaller")(new Act {
     become {
       case sauerBytes: SauerBytes =>
-        push(sauerBytes)
+        jw.write(sauerBytes)
     }
   })
 
@@ -45,8 +37,7 @@ executionContext: ExecutionContext) {
 
   applicationLifecycle.addStopHook(() => Future {
     myActor ! Kill
-    compressedFile.close()
-    theFile.close()
+    jw.close()
   })
 
 }

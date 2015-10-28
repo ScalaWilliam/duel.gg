@@ -1,11 +1,11 @@
-package models.games
+package modules
 
 import javax.inject.{Inject, Singleton}
 
 import akka.agent.Agent
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
-import models.SimpleEmbeddedDatabase
+import models.games.Games
 import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.ExecutionContext
