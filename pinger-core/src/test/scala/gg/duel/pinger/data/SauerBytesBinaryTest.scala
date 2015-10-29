@@ -14,7 +14,7 @@ class SauerBytesBinaryTest extends WordSpecLike with Matchers {
       val byteArray = SauerBytesBinary.toBytes(receivedBytes)
 
       val expectedByteArraySize = 4 + 4 + 8 + byteString.size
-      byteArray.size shouldBe expectedByteArraySize
+      byteArray.length shouldBe expectedByteArraySize
 
       val haveBytes = SauerBytesBinary.fromBytes(byteArray)
       haveBytes.server.ip shouldBe receivedBytes.server.ip

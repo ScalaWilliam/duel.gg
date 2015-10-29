@@ -10,7 +10,16 @@ object GameHeader {
   val testServer = "test:1234"
   def test = GameHeader(
     startTime = System.currentTimeMillis,
-    startMessage = ConvertedServerInfoReply(0,0,0,0,0,true,0,"test","test"),
+    startMessage = ConvertedServerInfoReply(
+      clients = 0,
+      protocol = 0,
+      gamemode = 0,
+      remain = 0,
+      maxclients = 0,
+      gamepaused = true,
+      gamespeed = 0,
+      mapname = "test",
+      description = "test"),
     server = testServer, mode = "test", map = "test"
   )
 }

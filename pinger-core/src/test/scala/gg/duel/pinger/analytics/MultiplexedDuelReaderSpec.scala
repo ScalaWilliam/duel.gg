@@ -48,7 +48,7 @@ class MultiplexedDuelReaderSpec extends WordSpec with Matchers with Inspectors {
         ).toList
       }
 
-      val gotStates = timedMultiplexedStates(haveThis).toList
+      val gotStates = timedMultiplexedStates(haveThis)
 
       forExactly(2, gotStates) {
         _ shouldBe a [MFoundGame]

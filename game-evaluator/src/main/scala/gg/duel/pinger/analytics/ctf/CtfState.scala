@@ -99,7 +99,7 @@ case class TransitionalCtf(gameHeader: GameHeader, isRunning: Boolean, timeRemai
       _ <- if (bothTeamsStarted) Good(Unit) else Bad(One("Could not find a team log item to say that both teams started the game"))
       _ <- if (bothTeamsFinished) Good(Unit) else Bad(One(s"Could not find a team log item to stay that both teams finished the game ($nextMessage)"))
       playedAt <- {
-        val plays = transitionalCtf.ctfAccumulation.teams.map(_.remaining.seconds).map(t => (t / 60) + 1).toSet.toList.sorted
+        val plays = transitionalCtf.ctfAccumulation.teams.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted
         if (plays.size < 8) Bad(One(s"Game active at $plays, expected more")) else Good(plays)
       }
       durationSeconds = maxRemainingTeams
@@ -120,7 +120,7 @@ case class TransitionalCtf(gameHeader: GameHeader, isRunning: Boolean, timeRemai
           teamScore = SimpleTeamScore(name = team.name, flags = flags.flags, flagLog = flagLog, players = teamPlayers.toList)
         } yield team.name -> teamScore
       }
-      winner = if (teamResults.map(_._2.flags).toSet.size == 1) None
+      winner = if (teamResults.toList.map(_._2.flags).toSet.size == 1) None
       else {
         Option(teamResults.maxBy(_._2.flags)._1)
       }

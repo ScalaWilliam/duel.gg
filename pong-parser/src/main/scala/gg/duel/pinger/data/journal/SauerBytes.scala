@@ -15,7 +15,7 @@ object SauerBytesOld {
   def toBytes(sauerBytes: SauerBytes): Array[Byte] = {
     implicit val byteOrdering = ByteOrder.BIG_ENDIAN
     val ipBytes = sauerBytes.server.ip.ip.split('.').map(_.toInt.toByte)
-    assert(ipBytes.size == 4, s"ipBytes must be of size 4. Input = ${sauerBytes.server}")
+    assert(ipBytes.length == 4, s"ipBytes must be of size 4. Input = ${sauerBytes.server}")
     new ByteStringBuilder().putBytes(ipBytes).putInt(sauerBytes.server.port).putLong(sauerBytes.time).append(ByteString(sauerBytes.message.toArray)).result().toArray
   }
   def fromBytes(bytes: Array[Byte]): SauerBytes = {
@@ -37,7 +37,7 @@ object SauerBytesBinary {
   def toBytes(sauerBytes: SauerBytes): Array[Byte] = {
     implicit val byteOrdering = ByteOrder.BIG_ENDIAN
     val ipBytes = sauerBytes.server.ip.ip.split('.').map(_.toInt.toByte)
-    assert(ipBytes.size == 4, s"ipBytes must be of size 4. Input = ${sauerBytes.server}")
+    assert(ipBytes.length == 4, s"ipBytes must be of size 4. Input = ${sauerBytes.server}")
     new ByteStringBuilder()
       .putLong(sauerBytes.time)
       .putBytes(ipBytes)
