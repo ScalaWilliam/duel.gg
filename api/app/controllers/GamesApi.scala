@@ -151,7 +151,7 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
 
   def timedGames(gameType: GameType, timing: TimingCondition, playerCondition: PlayerCondition, limitCondition: LimitCondition) = Action {
 
-    var games = gamesAgt.get().games.valuesIterator.filter(playerConditionFilter(playerCondition)).toList.sortBy(_.id)
+    var games = gamesAgt.get().games.valuesIterator.filter(typeCondition(gameType)).filter(playerConditionFilter(playerCondition)).toList.sortBy(_.id)
     if ( timing == Recent ) games = games.reverse
 
     val limit = limitCondition match {
