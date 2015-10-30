@@ -102,13 +102,13 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
               focus match {
                 case SimpleFocus =>
                   Json.toJson(SimpleFocus.collect(
-                    previous = previousGames.toVector,
+                    previous = previousGames.reverse.toVector,
                     focus = currentGame,
                     next = nextGames.toVector
                   ))
                 case mf: MultipleFocus =>
                   Json.toJson(mf.collect(
-                    previous = previousGames.toVector,
+                    previous = previousGames.reverse.toVector,
                     focus = currentGame,
                     next = nextGames.toVector
                   ))
@@ -120,13 +120,20 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
 
 
   def playerConditionFilter(playerCondition: PlayerCondition)(game: SimpleGame): Boolean = {
+
     {
       playerCondition.player.isEmpty &&
         playerCondition.user.isEmpty && playerCondition.clan.isEmpty
     } || {
-      (game.users & playerCondition.user).nonEmpty ||
-        (game.players & playerCondition.player).nonEmpty ||
-        (game.clans & playerCondition.clan).nonEmpty
+      if ( playerCondition.operand == Or ) {
+        (game.users & playerCondition.user).nonEmpty ||
+          (game.players & playerCondition.player).nonEmpty ||
+          (game.clans & playerCondition.clan).nonEmpty
+      } else {
+        (playerCondition.user.isEmpty || (playerCondition.user.nonEmpty && (playerCondition.user -- game.users).isEmpty)) &&
+        (playerCondition.player.isEmpty || (playerCondition.player.nonEmpty && (playerCondition.player -- game.players).isEmpty)) &&
+        (playerCondition.clan.isEmpty || (playerCondition.clan.nonEmpty && (playerCondition.clan -- game.clans).isEmpty))
+      }
     }
   }
 

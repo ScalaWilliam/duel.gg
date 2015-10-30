@@ -49,12 +49,12 @@ case class AsymmetricFocus(previous: Int, next: Int) extends MultipleFocus {
 
 case class SimpleFocusResult[T](focus: T, previous: Option[T], next: Option[T])
 object SimpleFocusResult {
-  private case class SFRJS(focus: JsValue, previous: Option[JsValue], next: Option[JsValue])
+  private case class SFRJS(game: JsValue, previous: Option[JsValue], next: Option[JsValue])
   private implicit val sfrjsWrites = Json.writes[SFRJS]
   implicit def sfrWrites[T](implicit writesT: Writes[T]): Writes[SimpleFocusResult[T]] = new Writes[SimpleFocusResult[T]] {
     override def writes(o: SimpleFocusResult[T]): JsValue = {
       sfrjsWrites.writes(SFRJS(
-        focus = writesT.writes(o.focus),
+        game = writesT.writes(o.focus),
         previous = o.previous.map(writesT.writes),
         next = o.next.map(writesT.writes)
       ))
@@ -64,12 +64,12 @@ object SimpleFocusResult {
 
 case class MultipleFocusResult[T](focus: T, previous: Option[Vector[T]], next: Option[Vector[T]])
 object MultipleFocusResult {
-  private case class MFRJS(focus: JsValue, previous: Option[Vector[JsValue]], next: Option[Vector[JsValue]])
+  private case class MFRJS(game: JsValue, previous: Option[Vector[JsValue]], next: Option[Vector[JsValue]])
   private implicit val sfrjsWrites = Json.writes[MFRJS]
   implicit def sfrWrites[T](implicit writesT: Writes[T]): Writes[MultipleFocusResult[T]] = new Writes[MultipleFocusResult[T]] {
     override def writes(o: MultipleFocusResult[T]): JsValue = {
       sfrjsWrites.writes(MFRJS(
-        focus = writesT.writes(o.focus),
+        game = writesT.writes(o.focus),
         previous = o.previous.map(_.map(writesT.writes)),
         next = o.next.map(_.map(writesT.writes))
       ))
