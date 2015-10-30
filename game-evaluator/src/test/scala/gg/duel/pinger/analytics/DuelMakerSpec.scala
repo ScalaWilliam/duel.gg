@@ -105,7 +105,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
         4 * 60 -> csr(2, 2, 500, "tartech")
       )
       result shouldFailWithDuel { r =>
-        val cause = r.cause.toString
+        val cause = s"${r.cause}"
         cause should not include "expected at least 8 minutes"
         cause should include("Could not find a log item to say that both players finished the game")
       }
@@ -132,7 +132,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
         4 * 60 -> csr(2, 2, 500, "tartech")
       )
       result shouldFailWithDuel { r =>
-        val cause = r.cause.toString
+        val cause = s"${r.cause}"
         cause should include("Expected exactly two players")
       }
     }

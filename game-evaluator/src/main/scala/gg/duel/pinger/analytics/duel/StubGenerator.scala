@@ -13,7 +13,15 @@ object StubGenerator {
 
   def csr(clients: Int, mode: Int, remain: Int, mapname: String) = {
     ConvertedServerInfoReply(
-      clients, 0, mode, remain, 10, false, 100, mapname, "test"
+      clients = clients,
+      protocol = 0,
+      gamemode = mode,
+      remain = remain,
+      maxclients = 10,
+      gamepaused = false,
+      gamespeed = 100,
+      mapname = mapname,
+      description = "test"
     )
   }
 

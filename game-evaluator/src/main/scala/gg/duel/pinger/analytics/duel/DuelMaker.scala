@@ -78,7 +78,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
           // we'll let it pass through, but it might cause the game to fail silently
           Good(this)
       }
-    case ParsedMessage(_, time, info: ConvertedServerInfoReply) if info.remain == 0 && timeRemaining == 0 =>
+    case ParsedMessage(_, time, info: ConvertedServerInfoReply) if info.remain == 0 && timeRemaining.seconds == 0 =>
       this.completeDuel(Option(info)).map(BetterDuelFound(gameHeader, _)) match {
         case result@Bad(reasons) =>
           // psl override - in case they don't send enough data, we'll wait one more tick
@@ -168,7 +168,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
     } yield LiveDuel(
       simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
       duration = durationMinutes,
-      playedAt = duelAccumulation.playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).toSet.toList.sorted,
+      playedAt = duelAccumulation.playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted,
       startTimeText = gameHeader.startTimeText,
       startTime = gameHeader.startTime,
       map = gameHeader.map,
@@ -232,7 +232,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
       SimpleCompletedDuel(
         simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
         duration = durationMinutes,
-        playedAt = playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).toSet.toList.sorted,
+        playedAt = playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted,
         startTimeText = gameHeader.startTimeText,
         startTime = gameHeader.startTime,
         map = gameHeader.map,
