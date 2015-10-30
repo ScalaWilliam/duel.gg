@@ -10,6 +10,6 @@ import play.api.Configuration
 @Singleton
 class AuthenticationService @Inject()(configuration: Configuration) {
   import scala.collection.JavaConverters._
-  val apiKeys = configuration.getStringList("gg.duel.players.api-keys").toList.flatMap(_.asScala)
+  val apiKeys = configuration.getStringList("gg.duel.api.api-key").toList.flatMap(_.asScala)
   def authenticates(apiKey: String): Boolean = apiKeys.contains(apiKey)
 }

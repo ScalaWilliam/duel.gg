@@ -13,7 +13,7 @@ import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Concurrent
-import play.api.libs.json.{JsObject, JsArray, JsValue, Json}
+import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Controller}
 
@@ -34,6 +34,10 @@ case class SimpleGame(id: String, gameJson: String, enhancedJson: String, enhanc
 class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext: ExecutionContext, wsClient: WSClient) extends Controller {
 
   def index = TODO
+
+  def getNicknames = Action {
+    Ok(JsArray(gamesAgt.get().games.valuesIterator.flatMap(_.players).toSet.toList.map(JsString.apply)))
+  }
 
   val playerLookup = new PlayerLookup {
     override def lookupUserId(nickname: String, atTime: DateTime): String = null
@@ -95,7 +99,7 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
 
   upstreamGames.allAndNewClient.createStream(sseToSimpleGame.to(Sink.foreach { game => gamesAgt.sendOff(_.withNewGame(game)) }))
 
-  def focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition, limitCondition: LimitCondition) = Action {
+  def focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition) = Action {
     val games = gamesAgt.get().games.valuesIterator.filter(typeCondition(gameType)).filter(playerConditionFilter(playerCondition)).toList.sortBy(_.id)
 
     games.indexWhere(_.id == id.gameId) match {
