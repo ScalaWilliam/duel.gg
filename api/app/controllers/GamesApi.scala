@@ -89,10 +89,18 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
       }.toList
   }
 
+  def typeCondition(gameType: GameType)(simpleGame: SimpleGame): Boolean = {
+    gameType match {
+      case All => true
+      case Ctf => simpleGame.gameType == "ctf"
+      case Duel => simpleGame.gameType == "duel"
+    }
+  }
+
   upstreamGames.allAndNewClient.createStream(sseToSimpleGame.to(Sink.foreach { game => gamesAgt.sendOff(_.withNewGame(game)) }))
 
   def focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition, limitCondition: LimitCondition) = Action {
-    val games = gamesAgt.get().games.valuesIterator.filter(playerConditionFilter(playerCondition)).toList.sortBy(_.id)
+    val games = gamesAgt.get().games.valuesIterator.filter(typeCondition(gameType)).filter(playerConditionFilter(playerCondition)).toList.sortBy(_.id)
 
     games.indexWhere(_.id == id.gameId) match {
       case -1 =>
