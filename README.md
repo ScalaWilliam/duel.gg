@@ -33,7 +33,8 @@ This is the core external API that everybody will consume. Following endpoints a
 
 ### games api
 |Endpoint | Function|
-| http://alfa.duel.gg/api/new-games/ | __EventSource / Server-Sent Events__ - automatic push of new games coming through.|
+|-----|------|
+| [/new-games/](http://api.duel.gg/new-games/) | __EventSource / Server-Sent Events__ - automatic push of new games coming through.|
 | [/games/duel/first/?player=vaQ%27Frosty&limit=2](http://api.duel.gg/games/duel/first/?player=vaQ%27Frosty&limit=2) | find first duel games involving Drakas. Get two. |
 | [/games/all/recent/?player=vaQ%27Frosty&player=w00p%27raffael&operator=and](http://api.duel.gg/games/all/recent/?player=vaQ%27Frosty&player=w00p%27raffael&operator=and) | Find recent games with both raffael and Frosty |
 | [/games/ctf/recent/?clan=rb&clan=woop&operator=or](http://api.duel.gg/games/ctf/recent/?clan=rb&clan=woop&operator=or) | Find recent games with both raffael and Frosty |
@@ -46,10 +47,10 @@ This is the core external API that everybody will consume. Following endpoints a
 ### players api
 |Endpoint | Function|
 |-----|------|
-| http://api.duel.gg/players/ | list all players |
-| http://api.duel.gg/player/drakas/ | show player by ID |
-| http://api.duel.gg/clans/ | list all clans |
-| http://api.duel.gg/clan/woop/ | show clan by ID |
+| [/players/](http://api.duel.gg/players/) | list all players |
+| [/player/drakas/](http://api.duel.gg/player/drakas/) | show player by ID |
+| [/clans/](http://api.duel.gg/clans/) | list all clans |
+| [/woop/](http://api.duel.gg/clan/woop/) | show clan by ID |
 
 ### E-mails
 
