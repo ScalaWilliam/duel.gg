@@ -35,12 +35,12 @@ This is the core external API that everybody will consume. Following endpoints a
 |Endpoint | Function|
 |-----|------|
 | [/new-games/](http://api.duel.gg/new-games/) | __EventSource / Server-Sent Events__ - automatic push of new games coming through.|
-| [/games/duel/first/?player=vaQ&#124;Frosty&limit=2](http://api.duel.gg/games/duel/first/?player=vaQ&#124;Frosty&limit=2) | find first duel games involving Drakas. Get two. |
-| [/games/all/recent/?player=vaQ&#124;Frosty&player=w00p&#124;raffael&operator=and](http://api.duel.gg/games/all/recent/?player=vaQ&#124;Frosty&player=w00p&#124;raffael&operator=and) | Find recent games with both raffael and Frosty |
+| [/games/duel/first/?player=va%27rosty&limit=2](http://api.duel.gg/games/duel/first/?player=va%27rosty&limit=2) | find first duel games involving Drakas. Get two. |
+| [/games/all/recent/?player=va%27rosty&player=w00p%7Craffael&operator=and](http://api.duel.gg/games/all/recent/?player=va%27rosty&player=w00p%7Craffael&operator=and) | Find recent games with both raffael and Frosty |
 | [/games/ctf/recent/?clan=rb&clan=woop&operator=or](http://api.duel.gg/games/ctf/recent/?clan=rb&clan=woop&operator=or) | Find recent games with both raffael and Frosty |
-| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p&#124;raffael](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p&#124;raffael) | Find raffael's ctf game at the specified time, the game before and the game after |
-| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p&#124;raffael&radius=15](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p&#124;raffael) | Find raffael's ctf game at the specified time, 15 games before, 15 after |
-| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p&#124;raffael&previous=0&next=30](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p&#124;raffael) | Find raffael's ctf game at the specified time, 0 games before, 30 games after |
+| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael) | Find raffael's ctf game at the specified time, the game before and the game after |
+| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael&radius=15](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael) | Find raffael's ctf game at the specified time, 15 games before, 15 after |
+| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael&previous=0&next=30](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael) | Find raffael's ctf game at the specified time, 0 games before, 30 games after |
 | [/game/2015-08-11T20:47:11Z/](http://api.duel.gg/game/2015-08-11T20:47:11Z/) | game at a specific ID |
 | [/games/?game=2015-08-11T20:47:11Z&game=2015-08-11T20:58:29Z](http://api.duel.gg/games/?game=2015-08-11T20:47:11Z&game=2015-08-11T20:58:29Z) | games with those start times |
 
