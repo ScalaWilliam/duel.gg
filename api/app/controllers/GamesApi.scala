@@ -125,7 +125,7 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
       playerCondition.player.isEmpty &&
         playerCondition.user.isEmpty && playerCondition.clan.isEmpty
     } || {
-      if ( playerCondition.operand == Or ) {
+      if ( playerCondition.playerConditionOperator == Or ) {
         (game.users & playerCondition.user).nonEmpty ||
           (game.players & playerCondition.player).nonEmpty ||
           (game.clans & playerCondition.clan).nonEmpty

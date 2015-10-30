@@ -24,7 +24,7 @@ package object binders {
               player = params.get("player").toSet.flatten,
               user = params.get("user").toSet.flatten,
               clan = params.get("clan").toSet.flatten,
-              operand  = params.get("operand").toList.flatten.collectFirst{ case Operand(operand) => operand }.getOrElse(Or)
+              playerConditionOperator  = params.get("operator").toList.flatten.collectFirst{ case PlayerConditionOperator(operand) => operand }.getOrElse(Or)
             )
           }
         }
