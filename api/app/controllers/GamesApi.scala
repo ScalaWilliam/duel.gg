@@ -20,18 +20,9 @@ import play.api.mvc.{Action, Controller}
 import scala.concurrent.ExecutionContext
 import scala.language.implicitConversions
 
-case class PlayerCondition(player: Set[String], user: Set[String], clan: Set[String]) {
-  def on(game: SimpleGame): Boolean = {
-    {player.isEmpty && user.isEmpty && clan.isEmpty} || {
-      (game.users & user).nonEmpty ||
-        (game.players & player).nonEmpty ||
-        (game.clans & clan).nonEmpty
-    }
-  }
-}
 
 case class SimpleGame(id: String, gameJson: String, enhancedJson: String, enhancedNativeJson: JsObject, gameType: String,
-                       users: Set[String], clans: Set[String], players: Set[String]) {
+                      users: Set[String], clans: Set[String], players: Set[String]) {
   def toEvent = Event(
     name = Option(gameType),
     id = Option(id),
@@ -46,6 +37,7 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
 
   val playerLookup = new PlayerLookup {
     override def lookupUserId(nickname: String, atTime: DateTime): String = null
+
     override def lookupClanId(nickname: String, atTime: DateTime): String = null
   }
 
@@ -55,6 +47,7 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
       copy(games = games + (simpleGame.id -> simpleGame))
     }
   }
+
   object Games {
     def empty: Games = Games(
       games = Map.empty
@@ -79,9 +72,9 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
             enhancedJson = richJson,
             enhancedNativeJson = richNativeJson,
             gameType = gameType,
-            users = gameReader.getUsers(richJson).asScala.collect{ case x: String => x }.toSet,
-            clans = gameReader.getClans(richJson).asScala.collect{ case x: String => x }.toSet,
-            players = gameReader.getPlayers(richJson).asScala.collect{ case x: String => x }.toSet
+            users = gameReader.getUsers(richJson).asScala.collect { case x: String => x }.toSet,
+            clans = gameReader.getClans(richJson).asScala.collect { case x: String => x }.toSet,
+            players = gameReader.getPlayers(richJson).asScala.collect { case x: String => x }.toSet
           )
           rsg
         } catch {
@@ -91,47 +84,71 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
         }
       }.toList
   }
-  
-  upstreamGames.allAndNewClient.createStream(sseToSimpleGame.to(Sink.foreach { game => gamesAgt.sendOff(_.withNewGame(game))}))
 
-  def games(condition: TimingCondition, playerCondition: controllers.PlayerCondition) = Action {
-    val matchedGames: Vector[SimpleGame] = condition.onVector(
-      vector = gamesAgt.get().games.values.filter(playerCondition.on).toVector,
-      t = (g: SimpleGame) => g.id,
-      limit = 25
-    )
-    Ok(
-      JsArray(matchedGames.map(_.enhancedNativeJson))
-    )
+  upstreamGames.allAndNewClient.createStream(sseToSimpleGame.to(Sink.foreach { game => gamesAgt.sendOff(_.withNewGame(game)) }))
+
+  def focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition, limitCondition: LimitCondition) = Action {
+    val games = gamesAgt.get().games.valuesIterator.filter(playerConditionFilter(playerCondition)).toList.sortBy(_.id)
+
+    games.indexWhere(_.id == id.gameId) match {
+      case -1 =>
+        NotFound("Focus game not found")
+      case index =>
+        import SimpleFocusResult._
+        import MultipleFocusResult._
+        Ok {
+          games.map(_.enhancedNativeJson).splitAt(index) match {
+            case (previousGames, currentGame :: nextGames) =>
+              focus match {
+                case SimpleFocus =>
+                  Json.toJson(SimpleFocus.collect(
+                    previous = previousGames.toVector,
+                    focus = currentGame,
+                    next = nextGames.toVector
+                  ))
+                case mf: MultipleFocus =>
+                  Json.toJson(mf.collect(
+                    previous = previousGames.toVector,
+                    focus = currentGame,
+                    next = nextGames.toVector
+                  ))
+              }
+          }
+        }
+    }
   }
 
-  def ctfGames(condition: TimingCondition, playerCondition: controllers.PlayerCondition) = Action {
-    val matchedGames: Vector[SimpleGame] = condition.onVector(
-      vector = gamesAgt.get().games.values.filter(playerCondition.on).toVector.filter(_.gameType == "ctf"),
-      t = (g: SimpleGame) => g.id,
-      limit = 25
-    )
-    Ok(
-      JsArray(matchedGames.map(_.enhancedNativeJson))
-    )
+
+  def playerConditionFilter(playerCondition: PlayerCondition)(game: SimpleGame): Boolean = {
+    {
+      playerCondition.player.isEmpty &&
+        playerCondition.user.isEmpty && playerCondition.clan.isEmpty
+    } || {
+      (game.users & playerCondition.user).nonEmpty ||
+        (game.players & playerCondition.player).nonEmpty ||
+        (game.clans & playerCondition.clan).nonEmpty
+    }
   }
 
+  def timedGames(gameType: GameType, timing: TimingCondition, playerCondition: PlayerCondition, limitCondition: LimitCondition) = Action {
 
-  def duels(condition: TimingCondition, playerCondition: controllers.PlayerCondition) = Action {
-    val matchedGames: Vector[SimpleGame] = condition.onVector(
-      vector = gamesAgt.get().games.values.filter(playerCondition.on).toVector.filter(_.gameType == "duel"),
-      t = (g: SimpleGame) => g.id,
-      limit = 25
-    )
-    Ok(
-      JsArray(matchedGames.map(_.enhancedNativeJson))
-    )
+    var games = gamesAgt.get().games.valuesIterator.filter(playerConditionFilter(playerCondition)).toList.sortBy(_.id)
+    if ( timing == Recent ) games = games.reverse
+
+    val limit = limitCondition match {
+      case DefaultLimit => 5
+      case SpecificLimit(l) => l
+    }
+
+    val gl = games.take(limit)
+
+    Ok(JsArray(gl.map(g => Json.toJson(g.enhancedNativeJson))))
   }
 
   def gamesByIds(gameIds: gg.duel.query.MultipleByIdQuery) = Action {
     val gamesMap = gameIds.gameIds.flatMap(gameId => gamesAgt.get().games.get(gameId.gameId)).map(sg =>
       sg.id -> sg.enhancedNativeJson).toMap
-    if ( gamesMap.isEmpty ) NotFound("Nothing matching found.")
+    if (gamesMap.isEmpty) NotFound("Nothing matching found.")
     else Ok(JsObject(gamesMap))
   }
 

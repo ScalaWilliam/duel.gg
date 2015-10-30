@@ -6,7 +6,7 @@ lazy val root = (project in file("."))
 
 lazy val api = (project in file("api")).enablePlugins(PlayScala).dependsOn(gamesCore, playersCore)
   .settings(
-    routesImport += "binders._",
+    routesImport ++= Seq("binders._", "gg.duel.query._"),
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
     libraryDependencies ++= Seq(
       ws,
