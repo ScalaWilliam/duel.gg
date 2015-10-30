@@ -32,17 +32,20 @@ Build your own apps on top of this: all the public endpoints will be available f
 This is the core external API that everybody will consume. Following endpoints are available:
 
 ### games api
+
+A game ID is its start time, ie startTimeText.
+
 |Endpoint | Function|
 |-----|------|
 | [/new-games/](http://api.duel.gg/new-games/) | __EventSource / Server-Sent Events__ - automatic push of new games coming through.|
 | [/games/duel/first/?player=vaQ%27Frosty&limit=2](http://api.duel.gg/games/duel/first/?player=vaQ%27Frosty&limit=2) | find first duel games involving Drakas. Get two. |
 | [/games/all/recent/?player=vaQ%27Frosty&player=w00p%7Craffael&operator=and](http://api.duel.gg/games/all/recent/?player=vaQ%27Frosty&player=w00p%7Craffael&operator=and) | Find recent games with both raffael and Frosty |
-| [/games/ctf/recent/?clan=rb&clan=woop&operator=or](http://api.duel.gg/games/ctf/recent/?clan=rb&clan=woop&operator=or) | Find recent games with both raffael and Frosty |
-| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael) | Find raffael's ctf game at the specified time, the game before and the game after |
-| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael&radius=15](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael) | Find raffael's ctf game at the specified time, 15 games before, 15 after |
-| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael&previous=0&next=30](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael) | Find raffael's ctf game at the specified time, 0 games before, 30 games after |
-| [/game/2015-08-11T20:47:11Z/](http://api.duel.gg/game/2015-08-11T20:47:11Z/) | game at a specific ID |
-| [/games/?game=2015-08-11T20:47:11Z&game=2015-08-11T20:58:29Z](http://api.duel.gg/games/?game=2015-08-11T20:47:11Z&game=2015-08-11T20:58:29Z) | games with those start times |
+| [/games/ctf/recent/?clan=rb&clan=woop&operator=or](http://api.duel.gg/games/ctf/recent/?clan=rb&clan=woop&operator=or) | Find recent ctf games with either woop or rb clan |
+| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael) | Find raffael's ctf games at the specified time, the game before and the game after |
+| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael&radius=15](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael) | Find raffael's ctf games at the specified time, 15 games before, 15 after |
+| [/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael&previous=0&next=25](http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael) | Find raffael's ctf games at the specified time, 0 games before, 25 games after |
+| [/game/2015-08-11T20:47:11Z/](http://api.duel.gg/game/2015-08-11T20:47:11Z/) | get game at a specific ID |
+| [/games/?game=2015-08-11T20:47:11Z&game=2015-08-11T20:58:29Z](http://api.duel.gg/games/?game=2015-08-11T20:47:11Z&game=2015-08-11T20:58:29Z) | get these games |
 
 ### players api
 |Endpoint | Function|
