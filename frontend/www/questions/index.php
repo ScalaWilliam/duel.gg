@@ -28,48 +28,48 @@
     </style>
 
     <h2>What is duel.gg?</h2>
-    <p>duel.gg collects duel results from selected <a href="http://www.sauerbraten.org/" target="_blank">Sauerbraten</a> servers.</p>
+    <p>duel.gg is a
+        <a href="http://www.sauerbraten.org/" target="_blank">Sauerbraten</a>
+        public server game aggregation platform.</p>
     <p>Here's some Sauerbraten:</p>
     <iframe width="560" height="315" src="//www.youtube-nocookie.com/embed/fX7o-1OH-WM?rel=0" frameborder="0" allowfullscreen></iframe>
 
     <h2>What's the magic behind duel.gg?</h2>
-    <p>The genius of <a target="_blank" href="https://www.scalawilliam.com/">William Narmontas, professional software engineer</a>.<br/>Technology-wise, it's Scala, Akka, Hazelcast, BaseX, XQuery and Play!</p>
-
-    <h2>Where's ELO? Is there a ladder?</h2>
-    <p>There will be no ELO. We have other priorities.</p>
-
-    <h2>I have a suggestion</h2>
-    <p>Go to IRC and let us now &mdash; <a href="https://webchat.gamesurge.net/?channels=duel.gg">#duel.gg @@ GameSurge</a> (nickname Drakas).</p>
-
-    <h2>The site is slow...</h2>
-    <p>Google Chrome is the recommended browser because I used bleeding edge technology.</p>
-
-    <h2>Something is wrong...</h2>
-    <p>duel.gg is still in beta.</p>
-
-    <h2 id="several-nicknames"><a href="#several-nicknames">I have used several nicknames before 1st February 2015</a></h2>
-    <p>We'll aggregate each nickname of yours that has at least 10 duels. Send Drakas a message on IRC.</p>
-    <p>From 1st February 2015 only a single nickname for a user is allowed at any time.</p>
-    <p>If you want to change your nickname, you must let me know.</p>
-
-    <h2>Why the Google sign in?</h2>
-    <p>To save me time. These things don't come free, you know.</p>
-
-    <h2>Why should I register?</h2>
-    <p>Get a complete profile, we're not done yet, you know.</p>
-
-    <h2 id="my-ip-not-found"><a href="#my-ip-not-found">My IP is not found? I can't register</a></h2>
-    <p>Play a duel right now. Your IP will get registered and you'll be able to register with the nickname that you used.</p>
-    <p>We verify your IP only once.</p>
-
-    <h2 id="who-else-helped"><a href="#who-else-helped">Who else helped with this project?</a></h2>
-    <p><a href="/player/swatllama/">swatllama</a>, greenadiss and <a href="/player/frosty/">Frosty</a> helped with ideas and testing.</p>
-
-
-    <h2 id="demos"><a href="#demos">Do you collect demos too?</a></h2>
-    <p>We collect demos from PSL and effic.me servers. If you would like to share your server demos, drop me a link.
-        They will be available eventually.
+    <p>The genius of <a target="_blank" href="https://www.scalawilliam.com/">William Narmontas, professional software engineer</a>.<br/>
+        Technology-wise, it's Scala, Play! Akka, BaseX, ...
     </p>
+
+    <h2>Is duel.gg open source?</h2>
+    <p>Yes. See: <a target="_blank" href="https://github.com/scalawilliam/duel.gg">duel.gg repository on GitHub</a>.</p>
+
+    <h2>I have a suggestion or something is wrong</h2>
+    <p>Make a <a target="_blank" href="https://github.com/ScalaWilliam/duel.gg/issues">GitHub issue</a>.</p>
+
+    <h2>What are your plans?</h2>
+    <p>To get people building on top of this project. Previously it was closed source but I realised there's no huge benefit to
+    that. And the platform was quite closed. Now it is easy to make very powerful queries</p>
+    <p>We'll have google sign-in for player management. There will also be clan management.</p>
+    <p>I'll also create a public UDP API to stream the live information we get from all sauer servers in a consolidated fashion.
+    This will allow you to build your own apps on top including analysis. Likewise, you can consume the API already. See the GitHub
+    repository for examples, including this very PHP website making use of the public API.</p>
+    <p>With this project, we should have an open ecosystem where we can publish game information on blogs, websites...
+    All automatically aggregated for everyone's use.</p>
+
+    <h2>What is the history of the project?</h2>
+
+    <ul>
+        <li><strong>January 2014:</strong> Began working on an AssaultCube ladder, next-gen of <a href="http://hi-skill.us/">HI-SKILL</a></li>
+        <li><strong>February 2014:</strong> Realised it's futile, so decided to focus on Sauerbraten as it's got a stronger player base.</li>
+        <li><strong>April 2014:</strong> Most of the parsing logic was complete.</li>
+        <li><strong>August 2014:</strong> Built the front-end.</li>
+        <li><strong>September 2014:</strong> Released the project.</li>
+        <li><strong>November 2014:</strong> Started working on AssaultCube again.</li>
+        <li><strong>December 2015:</strong> Released woop.ac</li>
+        <li><strong>January 2015:</strong> Start working on new features, such as player registration and individual stats.</li>
+        <li><strong>February 2015:</strong> Released them features &amp; went back to woop.ac.</li>
+        <li><strong>July 2015:</strong> Released an open API</li>
+        <li><strong>October 2015:</strong> Decided to open-source it and re-architect it.</li>
+    </ul>
 
 </article>
 

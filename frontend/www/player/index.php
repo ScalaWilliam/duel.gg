@@ -18,15 +18,15 @@
                     }
                 </style>
                 <br/>
-
+<?php if ( !isset($_GET['name'])) { $_GET['name'] = "w00p|Drakas";} ?>
                 <div id="dduelss">
                     <pre><?php
-    $url = "http://alfa.duel.gg/api/duels/recent/?player=".rawurlencode($_GET['name']);
-                        if ( isset($_GET['to'])) {
-                            $url = "http://alfa.duel.gg/api/duels/to/".rawurlencode($_GET['to'])."/?player=" . rawurlencode($_GET['name']);
+                        $url = "http://api.duel.gg/games/duel/recent/?player=".rawurlencode($_GET['name']);
+                        if ( isset($_GET['before']) ) {
+                            $url = "http://api.duel.gg/games/duel/focus/".rawurlencode((string)$_GET['before'])."/?previous=25&next=0&player=".rawurlencode($_GET['name']);
                         }
                         $recentduels = json_decode(file_get_contents($url), true);
-
+                        if ( isset($recentduels['previous'])) $recentduels = $recentduels['previous'];
                         ?></pre>
                 </div>
 
@@ -37,11 +37,9 @@
                 }
 
                 ?>
-                <?php if ( isset($duel)) {
-?>
-                <p><a href="?name=<?php echo rawurlencode($_GET['name']); ?>&amp;to=<?php echo rawurlencode($duel['startTimeText']); ?>">Earlier games</a></p>
-<?php } ?>
                 <div id="rest">
+
+                        <p><a href="?name=<?php echo rawurlencode($_GET['name']) ?>&amp;before=<?php echo rawurlencode($duel['startTimeText']);?>">Older games...</a></p>
 
                 </div>
 

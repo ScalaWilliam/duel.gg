@@ -3,63 +3,27 @@
 <head>
     <meta charset="utf-8"/>
     <title>Homepage</title>
-    <link href='http://fonts.googleapis.com/css?family=Permanent+Marker|Signika:400,700' rel='stylesheet' type='text/css'>
-    <link href='http://duel.gg/assets/stylesheets/main.css' rel="stylesheet" type="text/css"/>
+    <link href='//fonts.googleapis.com/css?family=Signika:400,700' rel='stylesheet' type='text/css'>
+    <link href='/style.css' rel="stylesheet" type="text/css"/>
     <meta name="description" content="duel.gg is a match league for the Sauerbraten multiplayer first-person shooter">
     <meta name="keywords" content="online FPS, first person shooter, sauerbraten league, sauerbraten, sauerbraten duel">
-    <link href='http://duel.gg/news/atom/' rel="alternate" type="application/atom+xml" title="Atom feed of news articles"/>
-    <script src="https://apis.google.com/js/platform.js" async defer></script>
-    <meta name="google-signin-client_id" content="781186895692-fo36vv5kmk8ti3hbkvpmfn64gab5act1.apps.googleusercontent.com">
+    <link href='http://duel.gg/news/atom/' rel="alternate" type="application/atom+xml"
+          title="Atom feed of news articles"/>
 </head>
 <body>
 
 <div role="main">
     <header id="top">
-        <h1><a href="/">Duel? GG!</a></h1>
-        <h2>The <a href="http://www.sauerbraten.org/">Sauerbraten</a> Game League</h2>
+        <h1><a href="/"><img src="/logo-small.png" alt="duel.gg "/></a></h1>
     </header>
 
-    <div id="menu">
-        <ol>
-            <li><a href="/">Home</a></li>
-            <li><a href="/questions/">Questions</a></li>
-            <li><a href="/news/">News</a></li>
-            <li><div class="g-signin2" data-onsuccess="onSignIn"></div></li>
-        </ol>
-    </div>
+    <nav id="menu">
+        <a href="/">Home</a>
+        <a href="/questions/">Questions</a>
+        <a href="https://github.com/ScalaWilliam/duel.gg/" target="_blank">GitHub Open Source</a>
+        <a  target="_blank" href="http://duelgg.tumblr.com/">Tumblr News</a>
+    </nav>
     <div id="main">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-alpha1/jquery.min.js"></script>
-        <script type="text/javascript">
-        function onSignIn(googleUser) {
-            var id_token = googleUser.getAuthResponse().id_token;
-            var uri = 'http://api.duel.gg/check-authentication/?google-id-token='+ encodeURIComponent(id_token);
-//            var uri = 'http://localhost:9001/check-authentication/?google-id-token='+ encodeURIComponent(id_token);
-            var xhr = new XMLHttpRequest();
-            xhr.withCredentials = true;
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState == 4 && xhr.status == 200) {
-                    var jsonResponse = JSON.parse(xhr.responseText);
-                    if (jsonResponse.signed) {
-                        $.cookie("auth", jsonResponse.signed);
-                    }
-                    $(window).trigger("login", jsonResponse);
-                }
-            };
-            xhr.open("GET", uri, true);
-            xhr.send();
-        }
-        </script>
-
-        <div id="download-ac-button">
-            <a href="http://sourceforge.net/projects/sauerbraten/files/sauerbraten/2013_01_04/sauerbraten_2013_02_03_collect_edition_windows.exe/download" target="_blank">
-                <paper-button class="colored custom">
-
-                    <core-icon icon="file-download" style="width:2em;height:2em"></core-icon>
-                    Download the Sauerbraten Collect Edition first-person shooter (576MB, Windows .exe)
-
-                </paper-button>
-            </a>
-        </div>
 
         <div id="content">Content goes here</div>
 
