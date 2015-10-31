@@ -50,10 +50,8 @@ A game ID is its start time, ie startTimeText.
 ### players api
 |Endpoint | Function|
 |-----|------|
-| [/players/](http://api.duel.gg/players/) | list all players |
-| [/player/drakas/](http://api.duel.gg/player/drakas/) | show player by ID |
+| [/nicknames/](http://api.duel.gg/nicknames/) | list all seen nicknames |
 | [/clans/](http://api.duel.gg/clans/) | list all clans |
-| [/woop/](http://api.duel.gg/clan/woop/) | show clan by ID |
 
 ### E-mails
 
