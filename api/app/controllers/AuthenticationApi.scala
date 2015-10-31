@@ -1,17 +1,15 @@
 package controllers
 
-import java.time.{LocalDateTime, ZonedDateTime}
+import java.time.LocalDateTime
 import javax.inject._
 
 import com.maxmind.geoip.LookupService
 import controllers.authentication.{AuthenticationUser, CookieParser, GoogleToken, SignedParser}
-import gg.duel.uservice.player.RegisterPlayer
-import modules.{AuthenticationService, PlayerClanManager}
+import modules.AuthenticationService
 import play.api.Configuration
 import play.api.data.Forms._
 import play.api.data._
 import play.api.libs.Jsonp
-import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Controller, RequestHeader}
 
@@ -19,8 +17,7 @@ import scala.async.Async
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AuthenticationApi @Inject()(wSClient: WSClient, configuration: Configuration,
-                                  playerClanManager: PlayerClanManager)(implicit executionContext: ExecutionContext,
+class AuthenticationApi @Inject()(wSClient: WSClient, configuration: Configuration)(implicit executionContext: ExecutionContext,
   authenticationService: AuthenticationService
   ) extends Controller {
   lazy val cp = CookieParser(salt = salt)
@@ -46,23 +43,7 @@ class AuthenticationApi @Inject()(wSClient: WSClient, configuration: Configurati
         case Some(form) =>
           form.validAuthToken match {
             case Some(auth) =>
-              Async.await {
-                playerClanManager.registerPlayer(
-                  registerPlayer = RegisterPlayer(
-                    id = form.id,
-                    google = auth.google,
-                    nickname = form.nickname,
-                    countryCode = auth.countryCode.getOrElse("UN"),
-                    startTime = Option.empty
-                  ),
-                  registerTime = ZonedDateTime.now()
-                )
-              } match {
-                case Left(reason) =>
-                  BadRequest(s"Failed to register due to: $reason")
-                case Right(playerAndClan) =>
-                  Ok(Json.toJson(playerAndClan))
-              }
+              ???
             case None =>
               BadRequest("Invalid auth token.")
           }
