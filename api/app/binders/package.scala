@@ -33,6 +33,15 @@ package object binders {
       override def unbind(key: String, value: PlayerCondition): String = ???
     }
   }
+  implicit def tagFilterQB: QueryStringBindable[TagFilter] = {
+    new QueryStringBindable[TagFilter] {
+      override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, TagFilter]] = {
+        Option(Right(TagFilter(tags = params.get("tag").toSet.flatten)))
+      }
+
+      override def unbind(key: String, value: TagFilter): String = ???
+    }
+  }
   implicit def limitConditionPathBindable(implicit intBindable: QueryStringBindable[Int]): QueryStringBindable[LimitCondition] = {
     new QueryStringBindable[LimitCondition] {
       override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, LimitCondition]] = {

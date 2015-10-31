@@ -92,6 +92,15 @@
 (defn with-type [game]
   (merge game (when-let [type (game-type game)] {"type" type})))
 
+(defn with-tags [game]
+  (merge
+    game
+    {"tags"
+     (remove nil? [
+      (game-type game)
+      (if (is-clanwar? game) "clanwar" nil)
+      ])}))
+
 (defn enrich-game [game player-lookup]
   (->
     game
@@ -104,6 +113,7 @@
     (with-player-clans player-lookup)
     with-team-clans
     with-game-clan-info
+    with-tags
     )
   )
 

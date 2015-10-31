@@ -1,8 +1,8 @@
 GET         /                                  @controllers.GamesApi.index
 
 GET         /games/                            @controllers.GamesApi.gamesByIds(game: MultipleByIdQuery)
-GET         /games/:gameType/focus/:id/        @controllers.GamesApi.focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition)
-GET         /games/:gameType/:timing/          @controllers.GamesApi.timedGames(gameType: GameType, timing: TimingCondition, playerCondition: PlayerCondition, limit: LimitCondition)
+GET         /games/:gameType/focus/:id/        @controllers.GamesApi.focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition, tagFilter: TagFilter)
+GET         /games/:gameType/:timing/          @controllers.GamesApi.timedGames(gameType: GameType, timing: TimingCondition, playerCondition: PlayerCondition, limit: LimitCondition, tagFilter: TagFilter)
 GET         /game/:id/                         @controllers.GamesApi.gameById(id: GameId)
 GET        /nicknames/        @controllers.GamesApi.getNicknames
 GET         /new-games/                        @controllers.GamesApi.newGames

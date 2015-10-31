@@ -8,5 +8,8 @@
                  [clj-time "0.10.0"]
                  ]
 
-  :profiles {:precomp {:aot [gcc.enrichment gcc.game]}}
+  :profiles {
+             :precomp {:aot [gcc.enrichment gcc.game]}
+             :dev {:plugins [[com.jakemccrary/lein-test-refresh "0.11.0"]]}
+             }
   )

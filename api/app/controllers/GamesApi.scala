@@ -22,7 +22,7 @@ import scala.language.implicitConversions
 
 
 case class SimpleGame(id: String, gameJson: String, enhancedJson: String, enhancedNativeJson: JsObject, gameType: String,
-                      users: Set[String], clans: Set[String], players: Set[String]) {
+                      users: Set[String], clans: Set[String], players: Set[String], tags: Set[String]) {
   def toEvent = Event(
     name = Option(gameType),
     id = Option(id),
@@ -80,7 +80,8 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames, clansService: ClansServic
             gameType = gameType,
             users = gameReader.getUsers(richJson).asScala.collect { case x: String => x }.toSet,
             clans = gameReader.getClans(richJson).asScala.collect { case x: String => x }.toSet,
-            players = gameReader.getPlayers(richJson).asScala.collect { case x: String => x }.toSet
+            players = gameReader.getPlayers(richJson).asScala.collect { case x: String => x }.toSet,
+            tags =  gameReader.getTags(richJson).asScala.collect { case x: String => x }.toSet
           )
           rsg
         } catch {
@@ -99,10 +100,18 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames, clansService: ClansServic
     }
   }
 
+  def tagFilterCondition(tagFilter: TagFilter)(simpleGame: SimpleGame): Boolean = {
+    tagFilter.tags.isEmpty || (tagFilter.tags.nonEmpty && (tagFilter.tags -- simpleGame.tags).isEmpty)
+  }
+
   upstreamGames.allAndNewClient.createStream(sseToSimpleGame.to(Sink.foreach { game => gamesAgt.sendOff(_.withNewGame(game)) }))
 
-  def focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition) = Action {
-    val games = gamesAgt.get().games.valuesIterator.filter(typeCondition(gameType)).filter(playerConditionFilter(playerCondition)).toList.sortBy(_.id)
+  def focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition, tagFilter: TagFilter) = Action {
+    val games = gamesAgt.get().games.valuesIterator
+      .filter(typeCondition(gameType))
+      .filter(playerConditionFilter(playerCondition))
+      .filter(tagFilterCondition(tagFilter))
+      .toList.sortBy(_.id)
 
     games.indexWhere(_.id == id.gameId) match {
       case -1 =>
@@ -151,9 +160,14 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames, clansService: ClansServic
     }
   }
 
-  def timedGames(gameType: GameType, timing: TimingCondition, playerCondition: PlayerCondition, limitCondition: LimitCondition) = Action {
+  def timedGames(gameType: GameType, timing: TimingCondition, playerCondition: PlayerCondition, limitCondition: LimitCondition, tagFilter: TagFilter) = Action {
 
-    var games = gamesAgt.get().games.valuesIterator.filter(typeCondition(gameType)).filter(playerConditionFilter(playerCondition)).toList.sortBy(_.id)
+    var games = gamesAgt.get().games.valuesIterator
+      .filter(typeCondition(gameType))
+      .filter(tagFilterCondition(tagFilter))
+      .filter(playerConditionFilter(playerCondition))
+      .toList.sortBy(_.id)
+
     if ( timing == Recent ) games = games.reverse
 
     val limit = limitCondition match {

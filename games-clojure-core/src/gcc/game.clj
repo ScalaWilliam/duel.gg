@@ -56,6 +56,9 @@
   (keep #(get % "clan") (tree-seq coll? seq game))
   )
 
+(defn tags [game]
+  (get game "tags"))
+
 (defn team-clan [team]
   (let [player-clans (map #(get % "clan") (get team "players"))
         clans-set (set player-clans)]
@@ -72,6 +75,30 @@
 
 (defn is-duel? [game] (= "duel" (game-type game)))
 
+; - there are at least two players in the team
+; - all players in the team belong to the same clan
+(defn get-team-clan [team]
+  (when-let [clan ((first (team "players")) "clan")]
+    (if
+      (and
+        (> (count (team "players")) 1)
+        (every? #(= (% "clan") clan) (team "players")))
+      clan
+      nil
+      )))
+
+
+(defn is-clanwar? [game]
+  (when-let [evil (get-in game ["teams" "evil"])]
+    (when-let [good (get-in game ["teams" "good"])]
+      (when-let [evil-clan (get-team-clan evil)]
+        (when-let [good-clan (get-team-clan good)]
+          (not (= evil-clan good-clan))
+          )
+        )
+      )
+    ))
+
 
 (gen-class :name gcc.game.GameReader
            :prefix "reader-"
@@ -79,11 +106,14 @@
                      [getPlayers [String] java.util.Collection]
                      [getClans [String] java.util.Collection]
                      [getUsers [String] java.util.Collection]
+                     [getTags [String] java.util.Collection]
                      ])
 
 (defn reader-getPlayers [_ game-string]
   (players (json/read-str game-string)))
 (defn reader-getClans [_ game-string]
   (clans (json/read-str game-string)))
+(defn reader-getTags [_ game-string]
+  (tags (json/read-str game-string)))
 (defn reader-getUsers [_ game-string]
   (users (json/read-str game-string)))
