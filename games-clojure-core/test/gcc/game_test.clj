@@ -18,6 +18,9 @@
 (def clanwar-game {"teams" {"evil" {"players" [{"clan" "woop"} {"clan" "woop"}]}
                             "good" {"players" [{"clan" "rb"} {"clan" "rb"}]}}})
 
+(def intern-game {"teams" {"evil" {"players" [{"clan" "woop"} {"clan" "woop"}]}
+                            "good" {"players" [{"clan" "woop"} {"clan" "woop"}]}}})
+
 (def one-player-different-clan {"teams" {"evil" {"players" [{"clan" "woop"} {"clan" "rb"}]}
                             "good" {"players" [{"clan" "rb"} {"clan" "rb"}]}}})
 
@@ -35,6 +38,7 @@
 
 (deftest clanwar-checks
   (is (is-clanwar? clanwar-game))
+  (is (not (is-clanwar? intern-game)))
   (is (not (is-clanwar? one-player-different-clan)))
   (is (not (is-clanwar? one-player-no-clan)))
   (is (not (is-clanwar? one-vs-two)))

@@ -52,7 +52,7 @@ function render_ctf($ctf) {
             </span></p>
         </section>
         <section class="score score-right">
-            <?php $team = $ctf['teams'][array_keys($ctf['teams'])[0]]; ?>
+            <?php $team = $ctf['teams'][array_keys($ctf['teams'])[1]]; ?>
             <p class="score"><?php echo $team['flags']; ?></p>
             <p class="name"><?php echo $team['name'];?><br/>
             <span class="players">
