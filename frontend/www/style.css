@@ -158,3 +158,12 @@ ul.servers-list {
 .ctf .players a {
     font-size:0.7em;
 }
+
+#api-endpoint {
+    padding:0.3em;
+    font-size:1.2em;
+    border-width:thin 0 thin 0;
+    border-color: white;
+    border-style: solid;
+    margin-bottom:3em;
+}

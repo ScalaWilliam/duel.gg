@@ -1,5 +1,8 @@
 <?php
 
+function show_api_endpoint($uri) {
+    ?><div id="api-endpoint">JSON API endpoint for this page: <code><a href="<?php echo htmlspecialchars($uri); ?>" target="_blank"><?php echo htmlspecialchars($uri); ?></a></code></div><?php
+}
 function verify_user() {
 //    $_COOKIE['auth']
 }

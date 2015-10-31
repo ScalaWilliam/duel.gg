@@ -1,10 +1,13 @@
 <?php
 require("../render.inc.php");
 ?>
-    <div id="content" style="width:60em;margin-left:auto;margin-right:auto;">
-
             <?php
-            $game = json_decode(file_get_contents("http://api.duel.gg/game/".rawurlencode($_GET['id'])."/"), true);
+            $uri = "http://api.duel.gg/game/".rawurlencode($_GET['id'])."/";
+            show_api_endpoint($uri);
+?>
+    <div id="content" style="width:60em;margin-left:auto;margin-right:auto;">
+        <?php
+            $game = json_decode(file_get_contents($uri), true);
             require_once("../render_game.inc.php");
             render_game($game);
             ?>
