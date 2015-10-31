@@ -2,84 +2,98 @@
 # If you want to make changes, simply submit a pull request.
 
 woop:
+  id: woop
   name: w00p
   tag: w00p|*
   website: http://woop.us/
   irc: "#woop-clan"
 
 spank:
-  short name: sp4nk
+  id: spank
+  name: sp4nk
   tag: "*|sp4nk|"
   website: http://sp4nk.net
   irc: "#sp4nk"
 
 rb:
+  id: rb
   name: Red Butchers
   tag: "*|RB|*"
   website: http://butchers.su
   irc: "#rb"
 
 vaq:
+  id: vaq
   name: Vulture Attack Squad
   tag: "vaQ'*"
   website: http://www.vaq-clan.de
   irc: "#vaq"
 
 s:
+  id: s
   name: Impressive Squad
   tag: "!s]*"
   website: http://impressivesquad.eu
   irc: "#impressivesquad"
 
 rc:
+  id: rc
   name: The Rising Cubers
   tag: ".rC|*"
   website: http://rising-cubers.tk
   irc: "#rc"
 
 dm:
+  id: dm
   name: Dangerous Monkeys
   tag: "*|DM|*"
   website: http://dm.pwnz.org
   irc: "#dangerous-monkeys"
 
 ogros:
+  id: ogros
   name: ogros
   tag: "oo|*"
   website: http://ogros.org
   irc: "#ogros"
 
 fd:
+  id: fd
   name: Forgotten Dream
   tag: "*[FD]*"
   website: http://www.forgottendream.org
   irc: "#fd"
 
 novi:
+  id: novi
   name: No Violence
   tags: ["*|noVI", "noVI|*"]
   website: http://www.noviteam.de
   irc: "#novi"
 
 dk:
+  id: dk
   name: Dark Keepers
   tag: "*=DK=*"
   website: http://www.darkkeepers.dk
   irc: "#darkkeepers"
 
 crowd:
+  id: crowd
   name: Crowd
   tag: "Crowd>*"
   website: http://crowd.gg
   irc: "#crowd"
 
 tbmc:
+  id: tbmc
   name: The Blue Monkey Cult
   tag: "*[tBMC]*"
   website: http://thebluemonkeycult.webs.com
   irc: "#thebluemonkeycult"
 
 cs:
+  id: cs
   name: Cube Strikers
   tag: ".cS|*"
   website: http://cubestrikers.eu

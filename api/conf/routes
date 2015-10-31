@@ -8,3 +8,5 @@ GET        /nicknames/        @controllers.GamesApi.getNicknames
 GET         /new-games/                        @controllers.GamesApi.newGames
 
 GET         /version/                          controllers.Version.getVersion
+
+GET /clans/ @controllers.ClansApi.getClans

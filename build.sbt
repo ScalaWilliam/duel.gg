@@ -22,7 +22,8 @@ lazy val api = Project(
       "org.scala-lang.modules" %% "scala-async" % "0.9.5",
       "de.heikoseeberger" %% "akka-sse" % "1.1.0",
       "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-      filters
+      filters,
+      "org.apache.httpcomponents" % "fluent-hc" % "4.5.1"
     ))
   .settings(includeGitStamp, dontDocument)
   .dependsOn(gameEvaluator % "test->test")
