@@ -33,6 +33,13 @@ class JournalReader(file: File) {
     }
   }
 
+  def getGamesIterator: Iterator[Game] = {
+    getSauerBytes
+      .scanLeft(SIteratorState.empty){case (state, sauerBytes) =>
+        state.next.apply(sauerBytes)
+      }.collect{ case SFoundGame(_, CompletedGame(completedGame, _)) => completedGame }
+  }
+
   def close(): Unit = {
     is.close()
     gis.close()
