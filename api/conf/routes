@@ -7,16 +7,6 @@ GET         /game/:id/                         @controllers.GamesApi.gameById(id
 GET        /nicknames/        @controllers.GamesApi.getNicknames
 GET         /new-games/                        @controllers.GamesApi.newGames
 
-GET         /players/                        @controllers.PlayersApi.listPlayers
-GET         /player/:id/                     @controllers.PlayersApi.getPlayer(id)
-GET         /clans/                          @controllers.PlayersApi.listClans
-GET         /clan/:id/                       @controllers.PlayersApi.getClan(id)
-POST        /players/register/               @controllers.PlayersApi.registerPlayer
-POST        /clans/register/                 @controllers.PlayersApi.registerClan
-POST        /player/:id/set-nickname/        @controllers.PlayersApi.setNickname(id)
-POST        /clan/:id/set-patterns/          @controllers.PlayersApi.setPatterns(id)
-
-#GET /check-authentication/ @controllers.AuthenticationApi.checkAuthentication
-#POST /web/register/ @controllers.AuthenticationApi.register
-
 GET         /version/                          controllers.Version.getVersion
+
+GET /clans/ @controllers.ClansApi.getClans

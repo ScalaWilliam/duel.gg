@@ -3,14 +3,14 @@ name := "duelgg"
 lazy val root = Project(
     id = "duelgg",
     base = file("."))
-  .dependsOn(gameEvaluator, pongParser, api, pingerCore, pingerService, playersCore, gamesCore)
-  .aggregate(gameEvaluator, pongParser, api, pingerCore, pingerService, playersCore, gamesCore)
+  .dependsOn(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore)
+  .aggregate(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore)
 
 lazy val api = Project(
     id = "api",
     base = file("api"))
   .enablePlugins(PlayScala)
-  .dependsOn(gamesCore, playersCore)
+  .dependsOn(gamesCore)
   .settings(
     routesImport ++= Seq("binders._", "gg.duel.query._"),
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
@@ -22,7 +22,8 @@ lazy val api = Project(
       "org.scala-lang.modules" %% "scala-async" % "0.9.5",
       "de.heikoseeberger" %% "akka-sse" % "1.1.0",
       "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-      filters
+      filters,
+      "org.apache.httpcomponents" % "fluent-hc" % "4.5.1"
     ))
   .settings(includeGitStamp, dontDocument)
   .dependsOn(gameEvaluator % "test->test")
@@ -69,15 +70,6 @@ lazy val pingerService = Project(
     filters,
     "com.typesafe.akka" %% "akka-agent" % "2.4.0"))
   .settings(includeGitStamp, dontDocument)
-
-lazy val playersCore = Project(
-    id = "players-core",
-    base = file("players-core"))
-  .settings(libraryDependencies ++= Seq(
-    "com.h2database" % "h2-mvstore" % "1.4.190",
-    "com.typesafe.akka" %% "akka-agent" % "2.4.0",
-    "org.scala-lang.modules" %% "scala-async" % "0.9.5"
-  ))
 
 lazy val pongParser = Project(
     id = "pong-parser",

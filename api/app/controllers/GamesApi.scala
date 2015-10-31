@@ -8,7 +8,7 @@ import de.heikoseeberger.akkasse.ServerSentEvent
 import gcc.enrichment.{Enricher, PlayerLookup}
 import gcc.game.GameReader
 import gg.duel.query._
-import modules.UpstreamGames
+import modules.{ClansService, UpstreamGames}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.EventSource.Event
@@ -31,7 +31,7 @@ case class SimpleGame(id: String, gameJson: String, enhancedJson: String, enhanc
 }
 
 @Singleton
-class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext: ExecutionContext, wsClient: WSClient) extends Controller {
+class GamesApi @Inject()(upstreamGames: UpstreamGames, clansService: ClansService)(implicit executionContext: ExecutionContext, wsClient: WSClient) extends Controller {
 
   def index = TODO
 
@@ -42,7 +42,9 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames)(implicit executionContext
   val playerLookup = new PlayerLookup {
     override def lookupUserId(nickname: String, atTime: DateTime): String = null
 
-    override def lookupClanId(nickname: String, atTime: DateTime): String = null
+    override def lookupClanId(nickname: String, atTime: DateTime): String = {
+      clansService.clans.collectFirst{case (id, clan) if clan.nicknameIsInClan(nickname)=> id}.orNull
+    }
   }
 
   case class Games
