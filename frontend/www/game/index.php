@@ -6,7 +6,7 @@ require("../render.inc.php");
             <?php
             $game = json_decode(file_get_contents("http://api.duel.gg/game/".rawurlencode($_GET['id'])."/"), true);
             require_once("../render_game.inc.php");
-            render_duel($game);
+            render_game($game);
             ?>
 
         </div>
