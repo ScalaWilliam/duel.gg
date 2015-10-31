@@ -33,7 +33,7 @@
                 <?php
                 require_once("../render_game.inc.php");
                 foreach($recentduels as $duel) {
-                    render_duel($duel);
+                    render_game($duel);
                 }
 
                 ?>
