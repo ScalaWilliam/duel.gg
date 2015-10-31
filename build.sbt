@@ -1,10 +1,16 @@
 name := "duelgg"
 
-lazy val root = (project in file("."))
+lazy val root = Project(
+    id = "duelgg",
+    base = file("."))
   .dependsOn(gameEvaluator, pongParser, api, pingerCore, pingerService, playersCore, gamesCore)
   .aggregate(gameEvaluator, pongParser, api, pingerCore, pingerService, playersCore, gamesCore)
 
-lazy val api = (project in file("api")).enablePlugins(PlayScala).dependsOn(gamesCore, playersCore)
+lazy val api = Project(
+    id = "api",
+    base = file("api"))
+  .enablePlugins(PlayScala)
+  .dependsOn(gamesCore, playersCore)
   .settings(
     routesImport ++= Seq("binders._", "gg.duel.query._"),
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
@@ -21,7 +27,9 @@ lazy val api = (project in file("api")).enablePlugins(PlayScala).dependsOn(games
   .settings(includeGitStamp, dontDocument)
   .dependsOn(gameEvaluator % "test->test")
 
-lazy val gameEvaluator = (project in file("game-evaluator"))
+lazy val gameEvaluator = Project(
+    id = "game-evaluator",
+    base = file("game-evaluator"))
   .dependsOn(pongParser)
   .settings(libraryDependencies ++= Seq(
     "org.scalatest" %% "scalatest" % "2.2.5" % "test",
@@ -29,13 +37,17 @@ lazy val gameEvaluator = (project in file("game-evaluator"))
     "org.json4s" %% "json4s-native" % "3.3.0"
   ))
 
-lazy val gamesCore = (project in file("games-core"))
+lazy val gamesCore = Project(
+    id = "games-core",
+    base = file("games-core"))
   .settings(libraryDependencies ++= Seq(
     "gcc" % "gcc" % "1.0.0-SNAPSHOT",
     json
   ))
 
-lazy val pingerCore = (project in file("pinger-core"))
+lazy val pingerCore = Project(
+    id = "pinger-core",
+    base = file("pinger-core"))
   .settings(libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.3",
     "com.typesafe.akka" %% "akka-actor" % "2.4.0",
@@ -45,7 +57,12 @@ lazy val pingerCore = (project in file("pinger-core"))
   ))
   .dependsOn(pongParser, gameEvaluator)
 
-lazy val pingerService = (project in file("pinger-service")).enablePlugins(PlayScala).dependsOn(pingerCore)
+lazy val pingerService = Project(
+    id = "pinger-service",
+    base = file("pinger-service"))
+  .enablePlugins(PlayScala)
+  .dependsOn(pingerCore)
+  .settings(name := "pingerservice")
   .settings(libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-async" % "0.9.5",
     "com.h2database" % "h2" % "1.4.190",
@@ -53,14 +70,18 @@ lazy val pingerService = (project in file("pinger-service")).enablePlugins(PlayS
     "com.typesafe.akka" %% "akka-agent" % "2.4.0"))
   .settings(includeGitStamp, dontDocument)
 
-lazy val playersCore = (project in file("players-core"))
+lazy val playersCore = Project(
+    id = "players-core",
+    base = file("players-core"))
   .settings(libraryDependencies ++= Seq(
     "com.h2database" % "h2-mvstore" % "1.4.190",
     "com.typesafe.akka" %% "akka-agent" % "2.4.0",
     "org.scala-lang.modules" %% "scala-async" % "0.9.5"
   ))
 
-lazy val pongParser = (project in file("pong-parser"))
+lazy val pongParser = Project(
+    id = "pong-parser",
+    base = file("pong-parser"))
   .settings(libraryDependencies ++= Seq(
     "com.typesafe.akka" %% "akka-actor" % "2.4.0",
     "joda-time" % "joda-time" % "2.8.2",
