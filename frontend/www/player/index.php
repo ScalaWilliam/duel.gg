@@ -37,12 +37,15 @@
                 }
 
                 ?>
+                <?php if ( $duel) { ?>
                 <div id="rest">
 
                         <p><a href="?name=<?php echo rawurlencode($_GET['name']) ?>&amp;before=<?php echo rawurlencode($duel['startTimeText']);?>">Older games...</a></p>
 
+
                 </div>
 
+    <?php } ?>
             </div>
         </div>
 
