@@ -50,7 +50,7 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
   val loadGamesFromDatabase = Async.async {
     Logger.info("Loading games from database...")
     Async.await {
-      Source(dbConfig.db.stream(gamesT.result)).mapAsyncUnordered(16) { case (id, json) =>
+      Source(dbConfig.db.stream(gamesT.result)).mapAsyncUnordered(6) { case (id, json) =>
         Future(Try(sseToGameOption(id = id, json = json)).toOption.flatten.toList)
       }.mapConcat(identity).mapAsyncUnordered(8){
         game =>
