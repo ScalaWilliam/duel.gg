@@ -68,7 +68,8 @@ lazy val pingerJournalReader = Project(
   "com.typesafe.slick" %% "slick" % "3.1.0",
   "org.scala-lang.modules" %% "scala-async" % "0.9.5",
   "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
-  "mysql" % "mysql-connector-java" % "5.1.37"
+  "mysql" % "mysql-connector-java" % "5.1.37",
+  "com.typesafe.akka" %% "akka-stream-experimental" % "1.0"
 ))
 .dependsOn(pingerCore)
 

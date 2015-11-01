@@ -1,51 +1,73 @@
-import java.net.URL
+import java.io.File
+import java.util.concurrent.CountDownLatch
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl._
 import gg.duel.pinger.data.journal.JournalReader
 import slick.driver.PostgresDriver.api._
 
-import scala.async.Async
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
+import scala.util.Failure
 
 object ReadGamesApp extends App {
+
+  val files = new File("C:/Users/William/old/")
+    .listFiles()
+    .collect { case f if f.getName.endsWith("sblog.gz") =>
+      f.getCanonicalFile
+    }.toList
+
+  files foreach (f => println(s"File found: $f"))
 
   val destinationDatabase = Database.forURL(url = args(0), driver = "org.postgresql.Driver")
   val games = TableQuery[Games]
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-  println(args.tail.toList)
+  implicit val as = ActorSystem()
+  implicit val am = ActorMaterializer()
 
-  args.tail.toList.par.foreach { file =>
-    val sourceUrl = new URL(file)
-    val journalReader = new JournalReader(sourceUrl)
-    println(s"Beginning to read $sourceUrl")
-    import concurrent.duration._
-    Await.result(
-      atMost = 1.hour,
-      awaitable =  {
-        val f =     Async.async {
-      Async.await {
-        Future.sequence {
-          journalReader.getGamesIterator.map { game =>
-            val id = game.fold(_.startTimeText, _.startTimeText)
-            val json = game.fold(_.toJson, _.toJson)
-            val req = DBIO.seq(games.insertOrUpdate(id, json))
-            Async.async {
-              println(s"Found game ID $id...")
-              Async.await(destinationDatabase.run(req))
-              println(s"Saved game ID $id.")
-            }
-          }
-        }
+  import scala.concurrent.ExecutionContext.Implicits.global
+
+  val parSeqFutureList = files.par.map { file =>
+    println(s"Reading journal for file $file")
+    val journalReader = new JournalReader(file)
+    val journalFinishedF = Source.apply(() => journalReader.getGamesIterator)
+      .map { game =>
+        val id = game.fold(_.startTimeText, _.startTimeText)
+        val json = game.fold(_.toJson, _.toJson)
+        id -> games.insertOrUpdate(id, json)
       }
-    }
-          f.onComplete{ case stuff =>
-      println(s"Finished reading $sourceUrl")
+      .map { case (id, req) =>
+        id -> DBIO.seq(req)
+      }
+      .mapAsyncUnordered(2) { case (id, s) =>
+        val ff = destinationDatabase.run(s)
+        ff.onComplete {
+          case Failure(r) =>
+            r.printStackTrace()
+          case r =>
+           println(s"Putting action done for game $id: $r")
+
+        }
+        ff.map(r => id -> r).recover{case _ => "K"}
+      }.runForeach { _ => () }
+    journalFinishedF.onComplete { case r =>
+      println(s"Finished journal for $file")
       journalReader.close()
     }
-        f}
-    )
-
+    journalFinishedF
   }
+
+  val he = Future.sequence(parSeqFutureList.toList)
+  val dontQuit = new CountDownLatch(1)
+  he.onComplete {
+    case r => println(s"Completed everything with result $r")
+      dontQuit.countDown()
+  }
+
+  dontQuit.await()
+
+  println("All done. Bye!")
 
 }
 
