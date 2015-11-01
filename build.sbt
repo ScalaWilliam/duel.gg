@@ -25,7 +25,11 @@ lazy val api = Project(
       filters,
       "org.apache.httpcomponents" % "fluent-hc" % "4.5.1",
       "org.scalatestplus" %% "play" % "1.4.0-M4" % "test",
-      "org.jsoup" % "jsoup" % "1.8.3"
+      "org.jsoup" % "jsoup" % "1.8.3",
+      "com.typesafe.play" %% "play-slick" % "1.1.0",
+      "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
+      "mysql" % "mysql-connector-java" % "5.1.37",
+      "com.typesafe.play" %% "play-slick-evolutions" % "1.1.0"
 ))
   .settings(includeGitStamp, dontDocument)
   .dependsOn(gameEvaluator % "test->test")
