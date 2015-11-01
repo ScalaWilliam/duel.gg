@@ -14,11 +14,25 @@ case class LiveDuel
   secondsRemaining: Int,
   map: String,
   mode: String,
+  serverDescription: String,
   server: String,
   players: Map[String, SimplePlayerStatistics],
   winner: Option[String], metaId: Option[String]
   ) {
-  def asScd = SimpleCompletedDuel(simpleId, duration, playedAt, startTimeText, startTime, map, mode, server, players, winner, metaId)
+  def asScd = SimpleCompletedDuel(
+    simpleId = simpleId,
+    duration = duration,
+    playedAt = playedAt,
+    startTimeText = startTimeText,
+    startTime = startTime,
+    map = map,
+    mode = mode,
+    serverDescription = serverDescription,
+    server = server,
+    players = players,
+    winner = winner,
+    metaId = metaId
+  )
   def toJson = asScd.toJson
   def toPrettyJson = asScd.toPrettyJson
 }

@@ -13,7 +13,7 @@ import scala.util.Try
 object MultiplexedReader {
   /** ParsedMessage ==> MFoundGame(_, CompletedDuel) **/
   type MProcessor = ParsedMessage => MIteratorState
-  trait MIteratorState {
+  sealed trait MIteratorState {
     def next: MProcessor = {
       case parsedMessage @ ParsedMessage(server, _, _) =>
         serverStates.get(server) match {
@@ -52,7 +52,7 @@ object MultiplexedReader {
   }
   /** SauerBytes ==> SFoundGame(_, Seq(CompletedDuel)) **/
   type SProcessor = SauerBytes => SIteratorState
-  trait SIteratorState {
+  sealed trait SIteratorState {
     def next: SProcessor = {
       case sauerBytes =>
         /** Note: Multiple parsedMessages from a single SauerBytes CANNOT lead to a CompletedDuel. Impossibru. **/

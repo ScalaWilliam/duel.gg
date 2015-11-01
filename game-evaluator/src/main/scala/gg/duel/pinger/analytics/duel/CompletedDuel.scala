@@ -1,5 +1,6 @@
 package gg.duel.pinger.analytics.duel
 
+import gg.duel.pinger.analytics.CleanupDescription
 import gg.duel.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 
 case class CompletedDuel(gameHeader: GameHeader, nextMessage: Option[ConvertedServerInfoReply],
@@ -15,6 +16,7 @@ case class CompletedDuel(gameHeader: GameHeader, nextMessage: Option[ConvertedSe
       duration = duration,
       playedAt = playedAt.toSet.toList.sorted,
       startTimeText = gameHeader.startTimeText,
+      serverDescription = CleanupDescription(gameHeader.startMessage.description),
       startTime = gameHeader.startTime,
       map = gameHeader.map,
       mode = gameHeader.mode,

@@ -15,10 +15,35 @@ case class SimplePlayer(name: String, ip: String, weapon: String)
 
 case class SimpleTeamScore(name: String, flags: Int, flagLog: List[(Int, Int)], players: List[SimplePlayer])
 
+case class LiveCTF(simpleId: String, teamsize: Int, duration: Int, playedAt: List[Int],
+                    startTimeText: String, startTime: Long, map: String, mode: String,
+                    serverDescription: String, server: String, teams: Map[String, SimpleTeamScore], metaId: Option[String]) {
+
+  def toSimpleCompletedCTF = SimpleCompletedCTF(
+    simpleId = simpleId,
+    teamsize = teamsize,
+  duration = duration,
+  playedAt = playedAt,
+  startTimeText = startTimeText,
+  startTime = startTime,
+  map = map,
+  mode = mode,
+  serverDescription = serverDescription,
+    server = server,
+  teams= teams,
+  winner = Option.empty,
+  metaId = metaId
+  )
+
+  def toJson = toSimpleCompletedCTF.toJson
+  def toPrettyJson = toSimpleCompletedCTF.toPrettyJson
+
+}
+
 case class SimpleCompletedCTF
 (simpleId: String, teamsize: Int, duration: Int, playedAt: List[Int],
  startTimeText: String, startTime: Long, map: String, mode: String,
- server: String, teams: Map[String, SimpleTeamScore],
+ serverDescription: String, server: String, teams: Map[String, SimpleTeamScore],
  winner: Option[String], metaId: Option[String]) {
   def toPrettyJson = {
     import org.json4s._
@@ -52,6 +77,7 @@ object SimpleCompletedCTF {
       simpleId = "yay",
       duration = 5,
       playedAt = List(1, 2, 3, 4, 5),
+      serverDescription = "test",
       startTimeText = ISODateTimeFormat.dateTimeNoMillis().withZone(DateTimeZone.forID("UTC")).print(t),
       startTime = t,
       map = "reissen",

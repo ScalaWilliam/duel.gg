@@ -1,5 +1,6 @@
 package gg.duel.pinger.analytics.duel
 
+import gg.duel.pinger.analytics.CleanupDescription
 import gg.duel.pinger.analytics.duel.BetterDuelState.StateTransition
 import gg.duel.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import gg.duel.pinger.data.ParsedPongs.{PartialPlayerExtInfo, PlayerExtInfo, ParsedMessage}
@@ -168,6 +169,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
     } yield LiveDuel(
       simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
       duration = durationMinutes,
+      serverDescription = CleanupDescription(gameHeader.startMessage.description),
       playedAt = duelAccumulation.playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted,
       startTimeText = gameHeader.startTimeText,
       startTime = gameHeader.startTime,
@@ -233,6 +235,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
         simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
         duration = durationMinutes,
         playedAt = playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted,
+        serverDescription = CleanupDescription(gameHeader.startMessage.description),
         startTimeText = gameHeader.startTimeText,
         startTime = gameHeader.startTime,
         map = gameHeader.map,

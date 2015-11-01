@@ -20,9 +20,9 @@ executionContext: ExecutionContext) {
 
   val targetFilename = s"${LocalDateTime.now().withNano(0).toString.replaceAllLiterally(":","")}.sblog.gz"
 
-  val targetFile = new File(targetFilename)
+  val targetFile = new File(s"../$targetFilename")
 
-  Logger.info(s"Journalling to $targetFilename (${targetFile.getCanonicalFile})")
+  Logger.info(s"Journalling to $targetFile (${targetFile.getCanonicalFile})")
 
   val jw = new JournalWriter(targetFile)
 

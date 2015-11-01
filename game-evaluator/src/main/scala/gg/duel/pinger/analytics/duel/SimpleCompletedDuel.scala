@@ -22,6 +22,7 @@ case class SimpleCompletedDuel
   startTime: Long,
   map: String,
   mode: String,
+  serverDescription: String,
   server: String,
   players: Map[String, SimplePlayerStatistics],
   winner: Option[String], metaId: Option[String]) {

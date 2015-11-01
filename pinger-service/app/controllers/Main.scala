@@ -65,6 +65,10 @@ class Main @Inject()
       ).as("text/event-stream")
   }
 
+  def liveGames = Action {
+    Ok.feed(content = pingerService.liveGameEnumerator).as("text/event-stream")
+  }
+
   def newGames = Action {
     implicit req =>
       Ok.feed(

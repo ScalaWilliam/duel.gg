@@ -5,7 +5,10 @@ import javax.inject.{Inject, Singleton}
 import akka.actor.ActorDSL._
 import akka.actor.{ActorSystem, Kill}
 import akka.agent.Agent
-import gg.duel.pinger.analytics.MultiplexedReader.{CompletedGame, SFoundGame, SIteratorState}
+import gg.duel.pinger.analytics.MultiplexedReader._
+import gg.duel.pinger.analytics.duel.{TransitionalBetterDuel, LiveDuel}
+import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZIteratorState, ZFoundDuel, ZInDuelState}
+import gg.duel.pinger.mulprocess.{NewProcessor, LiveProcessor}
 import gg.duel.pinger.service.PingPongProcessor.{Ping, Ready, ReceivedBytes}
 import gg.duel.pinger.service.{PingPongProcessorActor, PingPongProcessorState}
 import modules.{GamesManager, ServerManager}
@@ -26,10 +29,12 @@ class PingerService @Inject()
   actorSystem: ActorSystem,
   applicationLifecycle: ApplicationLifecycle
   ) {
-  
-  val ourState = Agent(SIteratorState.empty)
 
   val (enumerator, channel) = Concurrent.broadcast[Event]
+
+  val (liveGameEnumerator, liveGameChannel) = Concurrent.broadcast[Event]
+
+  val ourState = Agent(NewProcessor.empty)
 
   val conactor = actor(name = "wut")(new Act {
 
@@ -38,7 +43,21 @@ class PingerService @Inject()
       props = PingPongProcessorActor.props(initialState = PingPongProcessorState.empty)
     )
 
-    var currentState = SIteratorState.empty
+    var currentState = NewProcessor.empty
+
+    var liveDuelsState = LiveProcessor.empty
+
+
+    case object CleanUpLiveDuels
+
+    import concurrent.duration._
+    context.system.scheduler.schedule(2.minutes, 1.minute, self, CleanUpLiveDuels)
+
+    implicit def liveEventToEsEvent(liveEvent: gg.duel.pinger.mulprocess.Event): Event = Event(
+      id = liveEvent.id,
+      data = liveEvent.data,
+      name = liveEvent.name
+    )
 
     become {
       case Ready(_) =>
@@ -47,35 +66,40 @@ class PingerService @Inject()
         become {
           case 'Ping =>
             serverProvider.servers.servers.values.foreach(pingPong ! Ping(_))
+          case CleanUpLiveDuels =>
+            liveDuelsState.cleanUp.foreach { case (events, nextState) =>
+              events.foreach { event =>
+                liveGameChannel.push(event) }
+              liveDuelsState = nextState
+            }
           case r: ReceivedBytes =>
             context.system.eventStream.publish(r.toSauerBytes)
-            currentState = currentState.next(r.toSauerBytes)
-            ourState.send(currentState)
-            currentState match {
-              case SFoundGame(_, CompletedGame(Left(duel), _)) =>
-                val updatedDuel = serverProvider.servers.servers.collectFirst {
-                  case (serverName, server) if server.getAddress == duel.server =>
-                    duel.copy(server = serverName)
-                }.getOrElse(duel)
-                gamesManager.addDuel(updatedDuel)
-                channel.push(Event(
-                  data = updatedDuel.toJson,
-                  id = Option(updatedDuel.startTimeText),
-                  name = Option("duel")
-                )
-                )
-              case SFoundGame(_, CompletedGame(Right(ctf), _)) =>
-                val updatedCtf = serverProvider.servers.servers.collectFirst {
-                  case (serverName, server) if server.getAddress == ctf.server =>
-                    ctf.copy(server = serverName)
-                }.getOrElse(ctf)
-                gamesManager.addCtf(updatedCtf)
-                channel.push(Event(
-                  data = updatedCtf.toJson,
-                  id = Option(updatedCtf.startTimeText),
-                  name = Option("ctf")
-                ))
-              case _ =>
+            currentState.receiveBytes(r) match {
+              case (events, duelO, ctfO, nextNewProcessor) =>
+
+                for {
+                  previousServerState <- currentState.sIteratorState.mIteratorState.serverStates.get(r.server)
+                  currentServerState <- nextNewProcessor.sIteratorState.mIteratorState.serverStates.get(r.server)
+                } {
+                  liveDuelsState.stateChange(
+                    server = r.server,
+                    previousState = previousServerState,
+                    currentState = currentServerState
+                  ).foreach{ case (eventO, liveProcessor) =>
+                    liveDuelsState = liveProcessor
+                      eventO.foreach{ event =>
+                        liveGameChannel.push(event)
+                      }
+                  }
+                }
+
+                events.foreach(e => channel.push(e))
+                duelO.foreach(duel => gamesManager.addDuel(duel))
+                ctfO.foreach(ctf => gamesManager.addCtf(ctf))
+                currentState = nextNewProcessor
+                ourState.send(nextNewProcessor)
+
+
             }
         }
     }
