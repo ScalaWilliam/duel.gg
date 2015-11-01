@@ -77,7 +77,7 @@ class GamesService @Inject()(upstreamGames: UpstreamGames, clansService: ClansSe
 
   val demosAgt = Agent(DemosListing.empty)
 
-  upstreamGames.allAndNewClient.createStream(sseToGameOption.createFlow.to(Sink.foreach { game => gamesAgt.sendOff(_.withNewGame(game)) }))
+  val aln = upstreamGames.allAndNewClient.createStream(sseToGameOption.createFlow.to(Sink.foreach { game => gamesAgt.sendOff(_.withNewGame(game)) }))
 
   implicit val am = ActorMaterializer()
   val kr = demoCollectorModule.demoFetching.to(Sink.foreach{demosFetched =>
@@ -89,7 +89,7 @@ class GamesService @Inject()(upstreamGames: UpstreamGames, clansService: ClansSe
     }
   }).run()
 
-  applicationLifecycle.addStopHook(() => scala.concurrent.Future.successful(kr.cancel() -> xs.success(()) -> xl.success()))
+  applicationLifecycle.addStopHook(() => scala.concurrent.Future.successful(kr.cancel() -> xs.success(()) -> xl.success() -> aln.success()))
 
   val (newGamesEnum, newGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
 

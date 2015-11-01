@@ -117,7 +117,7 @@ class GamesApi @Inject()(gamesService: GamesService)
       content = gamesService.newGamesEnum.flatMap{
         case (sg, evt) if gameType(sg) && playerCondition(sg) && tagFilter(sg) && serverFilter(sg) =>
           Enumerator(evt)
-        case _ => Enumerator.empty[play.api.libs.EventSource.Event] }
+        case (_, evt) => Enumerator.empty[play.api.libs.EventSource.Event] }
     ).as("text/event-stream")
   }
 

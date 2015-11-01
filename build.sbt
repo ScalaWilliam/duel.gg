@@ -3,8 +3,8 @@ name := "duelgg"
 lazy val root = Project(
     id = "duelgg",
     base = file("."))
-  .dependsOn(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore)
-  .aggregate(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore)
+  .dependsOn(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore, pingerJournalReader)
+  .aggregate(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore, pingerJournalReader)
 
 lazy val api = Project(
     id = "api",
@@ -21,9 +21,9 @@ lazy val api = Project(
       "com.typesafe.akka" %% "akka-agent" % "2.4.0",
       "org.scala-lang.modules" %% "scala-async" % "0.9.5",
       "de.heikoseeberger" %% "akka-sse" % "1.1.0",
-      "org.scalatest" %% "scalatest" % "2.2.5" % "test",
       filters,
       "org.apache.httpcomponents" % "fluent-hc" % "4.5.1",
+      "org.scalatest" %% "scalatest" % "2.2.5" % "test",
       "org.scalatestplus" %% "play" % "1.4.0-M4" % "test",
       "org.jsoup" % "jsoup" % "1.8.3"
 ))
@@ -55,10 +55,20 @@ lazy val pingerCore = Project(
     "ch.qos.logback" % "logback-classic" % "1.1.3",
     "com.typesafe.akka" %% "akka-actor" % "2.4.0",
     "com.typesafe.akka" %% "akka-slf4j" % "2.4.0" exclude("commons-logging", "commons-logging"),
+    "com.h2database" % "h2" % "1.4.190",
     "com.typesafe.akka" %% "akka-testkit" % "2.4.0" % "test",
     "org.scalatest" %% "scalatest" % "2.2.5" % "test"
   ))
   .dependsOn(pongParser, gameEvaluator)
+
+lazy val pingerJournalReader = Project(
+  id = "pinger-journal-reader",
+  base = file("pinger-journal-reader")
+).settings(libraryDependencies ++= Seq(
+  "com.typesafe.slick" %% "slick" % "3.1.0",
+  "org.scala-lang.modules" %% "scala-async" % "0.9.5"
+))
+.dependsOn(pingerCore)
 
 lazy val pingerService = Project(
     id = "pinger-service",
@@ -68,9 +78,10 @@ lazy val pingerService = Project(
   .settings(name := "pingerservice")
   .settings(libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-async" % "0.9.5",
-    "com.h2database" % "h2" % "1.4.190",
     filters,
-    "com.typesafe.akka" %% "akka-agent" % "2.4.0"))
+    "com.typesafe.akka" %% "akka-agent" % "2.4.0",
+    "org.scalatest" %% "scalatest" % "2.2.5" % "test",
+    "org.scalatestplus" %% "play" % "1.4.0-M4" % "test"))
   .settings(includeGitStamp, dontDocument)
 
 lazy val pongParser = Project(
