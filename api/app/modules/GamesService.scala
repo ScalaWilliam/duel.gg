@@ -22,7 +22,7 @@ import slick.driver.PostgresDriver.api._
 import scala.async.Async
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
-import scala.util.{Failure, Success}
+import scala.util.{Try, Failure, Success}
 
 @Singleton
 class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamGames: UpstreamGames, clansService: ClansService, demoCollectorModule: DemoCollectorModule,
@@ -51,8 +51,8 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
     Logger.info("Loading games from database...")
     Async.await {
       Source(dbConfig.db.stream(gamesT.result)).mapAsyncUnordered(16) { case (id, json) =>
-        Future(sseToGameOption(id = id, json = json))
-      }.mapConcat(x => x.toList).mapAsyncUnordered(8){
+        Future(Try(sseToGameOption(id = id, json = json)).toOption.flatten.toList)
+      }.mapConcat(identity).mapAsyncUnordered(8){
         game =>
           gamesAgt.alterOff(_.withNewGame(game))
       }.runForeach(_ => ())
