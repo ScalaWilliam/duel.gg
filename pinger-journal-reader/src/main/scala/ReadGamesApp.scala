@@ -12,10 +12,12 @@ object ReadGamesApp extends App {
   val games = TableQuery[Games]
 
   import scala.concurrent.ExecutionContext.Implicits.global
+  println(args.tail.toList)
 
-  args.tail.par.foreach { file =>
+  args.tail.toList.par.foreach { file =>
     val sourceUrl = new URL(file)
     val journalReader = new JournalReader(sourceUrl)
+    println(s"Beginning to read $sourceUrl")
     Async.async {
       Async.await {
         Future.sequence {
@@ -31,8 +33,11 @@ object ReadGamesApp extends App {
           }
         }
       }
+    }.onComplete{ case stuff =>
+      println(s"Finished reading $sourceUrl")
+      journalReader.close()
     }
-    journalReader.close()
+
   }
 }
 
