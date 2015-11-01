@@ -4,7 +4,7 @@ import gg.duel.pinger.data.journal.JournalReader
 import slick.driver.PostgresDriver.api._
 
 import scala.async.Async
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 
 object ReadGamesApp extends App {
 
@@ -18,7 +18,11 @@ object ReadGamesApp extends App {
     val sourceUrl = new URL(file)
     val journalReader = new JournalReader(sourceUrl)
     println(s"Beginning to read $sourceUrl")
-    Async.async {
+    import concurrent.duration._
+    Await.result(
+      atMost = 1.hour,
+      awaitable =  {
+        val f =     Async.async {
       Async.await {
         Future.sequence {
           journalReader.getGamesIterator.map { game =>
@@ -33,12 +37,16 @@ object ReadGamesApp extends App {
           }
         }
       }
-    }.onComplete{ case stuff =>
+    }
+          f.onComplete{ case stuff =>
       println(s"Finished reading $sourceUrl")
       journalReader.close()
     }
+        f}
+    )
 
   }
+
 }
 
 class Games(tag: Tag) extends Table[(String, String)](tag, "GAMES") {
