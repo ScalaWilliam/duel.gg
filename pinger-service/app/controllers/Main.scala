@@ -29,19 +29,6 @@ class Main @Inject()
     Ok(views.html.index())
   }
 
-  def sauerBytesStream = Action {
-    Ok.feed(
-      content = serveLiveSauerBytesService.enumerator.map { sauerBytes =>
-        Hex.encodeHexString {
-          Base64.getEncoder.encode {
-            SauerBytesBinary
-              .toBytes(sauerBytes)
-              .take(Short.MaxValue)
-          }
-        }
-      }).as("application/x-sauer-bytes")
-  }
-
   private def allGamesEnum = Enumerator.enumerate(
     traversable = gamesManager.games.asCombined.games.sortBy(_.fold(_.startTime, _.startTime)).map(_.fold(scd =>
       Event(

@@ -62,6 +62,8 @@
   (^String lookupUserId [^String nickname ^org.joda.time.DateTime atTime])
   (^String lookupClanId [^String nickname ^org.joda.time.DateTime atTime])
   )
+(definterface DemoLookup
+  (^String lookupDemoUrl [^String server ^String mode ^String map ^org.joda.time.DateTime atTime]))
 
 (defn with-player-user [player-lookup game player]
   (when-let [player-user-id (.lookupUserId player-lookup (player "name") (start-time game))] (merge player {"user" player-user-id})))
@@ -101,7 +103,11 @@
       (if (is-clanwar? game) "clanwar" nil)
       ])}))
 
-(defn enrich-game [game player-lookup]
+(defn with-demo [game demo-lookup]
+  (let [demo-url (.lookupDemoUrl demo-lookup (game "server") (game "mode") (game "map") (start-time game))]
+    (merge game (if (nil? demo-url) {} {"demo" demo-url}))))
+
+(defn enrich-game [game player-lookup demo-lookup]
   (->
     game
     with-type
@@ -111,30 +117,30 @@
     with-geo-info
     (with-player-users player-lookup)
     (with-player-clans player-lookup)
+    (with-demo demo-lookup)
     with-team-clans
     with-game-clan-info
     with-tags
-    )
-  )
+    ))
 
 
 (gen-class :name gcc.enrichment.Enricher
            :init init
            :prefix "enricher-"
            :state state
-           :constructors {[gcc.enrichment.PlayerLookup] []}
+           :constructors {[gcc.enrichment.PlayerLookup gcc.enrichment.DemoLookup] []}
            :methods [
                      [enrichJsonGame [String] String]
                      [enrichJsonGames [String] String]
                      ])
 
-(defn enricher-init [player-lookup] [[] player-lookup])
+(defn enricher-init [player-lookup demo-lookup] [[] [player-lookup demo-lookup]])
 
 (defn enricher-enrichJsonGames [this json-games]
   (let
     [json-games-map (json/read-str json-games)
      ;_ (println "KKK" (pr-str json-games-map))
-     mapped-games (into {} (for [[k v] json-games-map] [k (enrich-game v (.state this))]))
+     mapped-games (into {} (for [[k v] json-games-map] [k (enrich-game v (first (.state this)) (second (.state this)))]))
      ]
     (json/write-str mapped-games)
     )
@@ -144,6 +150,5 @@
   (->
     json-game
     parse-game
-    (enrich-game (.state this))
-    game-to-json
-    ))
+    (enrich-game (first (.state this)) (second (.state this)))
+    game-to-json))

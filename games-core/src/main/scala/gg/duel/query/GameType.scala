@@ -1,9 +1,18 @@
 package gg.duel.query
 
+import gg.duel.SimpleGame
+
 /**
  * Created on 30/10/2015.
  */
-sealed trait GameType
+sealed trait GameType extends (SimpleGame => Boolean) {
+  override def apply(simpleGame: SimpleGame): Boolean =
+    this match {
+      case All => true
+      case Ctf => simpleGame.gameType == "ctf"
+      case Duel => simpleGame.gameType == "duel"
+    }
+}
 
 case object Ctf extends GameType
 

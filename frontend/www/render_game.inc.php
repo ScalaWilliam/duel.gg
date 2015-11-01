@@ -26,8 +26,18 @@ function render_duel($duel) {
             <p class="name"><a href="/player/?name=<?php echo rawurlencode($player['name']); ?>"><?php echo htmlspecialchars($player['name']); ?></a></p>
         </section>
 
+        <?php show_demo($duel); ?>
+
     </section>
 <?php
+}
+
+function show_demo($duel)
+{
+    if (isset($duel['demo'])) { ?><p class="demo"><a target="_blank"
+                                                     href="<?php echo htmlspecialchars($duel['demo']); ?>">Download
+            demo</a></p><?php
+    }
 }
 
 
@@ -60,6 +70,8 @@ function render_ctf($ctf) {
                     ?><a href="/player/?name=<?php echo rawurlencode($player['name']); ?>"><?php echo htmlspecialchars($player['name']); ?></a><br/><?php
                 } ?>
             </span></p>        </section>
+
+        <?php show_demo($ctf); ?>
 
     </section>
 <?php

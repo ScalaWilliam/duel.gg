@@ -23,8 +23,10 @@ lazy val api = Project(
       "de.heikoseeberger" %% "akka-sse" % "1.1.0",
       "org.scalatest" %% "scalatest" % "2.2.5" % "test",
       filters,
-      "org.apache.httpcomponents" % "fluent-hc" % "4.5.1"
-    ))
+      "org.apache.httpcomponents" % "fluent-hc" % "4.5.1",
+      "org.scalatestplus" %% "play" % "1.4.0-M4" % "test",
+      "org.jsoup" % "jsoup" % "1.8.3"
+))
   .settings(includeGitStamp, dontDocument)
   .dependsOn(gameEvaluator % "test->test")
 

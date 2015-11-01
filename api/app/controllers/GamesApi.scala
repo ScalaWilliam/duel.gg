@@ -1,16 +1,21 @@
 package controllers
 
+import java.time.ZonedDateTime
 import javax.inject._
 
 import akka.agent.Agent
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink}
 import de.heikoseeberger.akkasse.ServerSentEvent
-import gcc.enrichment.{Enricher, PlayerLookup}
+import gcc.enrichment.{DemoLookup, Enricher, PlayerLookup}
 import gcc.game.GameReader
+import gg.duel.SimpleGame
 import gg.duel.query._
-import modules.{ClansService, UpstreamGames}
+import modules._
 import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
 import play.api.Logger
+import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Concurrent
 import play.api.libs.json._
@@ -21,96 +26,24 @@ import scala.concurrent.ExecutionContext
 import scala.language.implicitConversions
 
 
-case class SimpleGame(id: String, gameJson: String, enhancedJson: String, enhancedNativeJson: JsObject, gameType: String,
-                      users: Set[String], clans: Set[String], players: Set[String], tags: Set[String]) {
-  def toEvent = Event(
-    name = Option(gameType),
-    id = Option(id),
-    data = enhancedJson
-  )
-}
-
 @Singleton
-class GamesApi @Inject()(upstreamGames: UpstreamGames, clansService: ClansService)(implicit executionContext: ExecutionContext, wsClient: WSClient) extends Controller {
+class GamesApi @Inject()(gamesService: GamesService)
+                        (implicit executionContext: ExecutionContext) extends Controller {
 
   def index = TODO
 
   def getNicknames = Action {
-    Ok(JsArray(gamesAgt.get().games.valuesIterator.flatMap(_.players).toSet.toList.map(JsString.apply)))
+    Ok(JsArray(gamesService.gamesAgt.get().games.valuesIterator.flatMap(_.players).toSet.toList.map(JsString.apply)))
   }
 
-  val playerLookup = new PlayerLookup {
-    override def lookupUserId(nickname: String, atTime: DateTime): String = null
+  def focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition, tagFilter: TagFilter,
+                 serverFilter: ServerFilter) = Action {
 
-    override def lookupClanId(nickname: String, atTime: DateTime): String = {
-      clansService.clans.collectFirst{case (id, clan) if clan.nicknameIsInClan(nickname)=> id}.orNull
-    }
-  }
-
-  case class Games
-  (games: Map[String, SimpleGame]) {
-    def withNewGame(simpleGame: SimpleGame): Games = {
-      copy(games = games + (simpleGame.id -> simpleGame))
-    }
-  }
-
-  object Games {
-    def empty: Games = Games(
-      games = Map.empty
-    )
-  }
-
-  val gamesAgt = Agent(Games.empty)
-  val gameReader = new GameReader()
-  val enricher = new Enricher(playerLookup)
-
-  def sseToSimpleGame = Flow.apply[ServerSentEvent].mapConcat {
-    sse =>
-      sse.id.map { id =>
-        try {
-          val richJson = enricher.enrichJsonGame(sse.data)
-          val richNativeJson = Json.parse(richJson).asInstanceOf[JsObject]
-          val gameType = (richNativeJson \ "type").get.as[String]
-          import collection.JavaConverters._
-          val rsg = SimpleGame(
-            id = id,
-            gameJson = sse.data,
-            enhancedJson = richJson,
-            enhancedNativeJson = richNativeJson,
-            gameType = gameType,
-            users = gameReader.getUsers(richJson).asScala.collect { case x: String => x }.toSet,
-            clans = gameReader.getClans(richJson).asScala.collect { case x: String => x }.toSet,
-            players = gameReader.getPlayers(richJson).asScala.collect { case x: String => x }.toSet,
-            tags =  gameReader.getTags(richJson).asScala.collect { case x: String => x }.toSet
-          )
-          rsg
-        } catch {
-          case x: Throwable =>
-            Logger.error("K, inside enricher loop this problem happened", x)
-            throw x
-        }
-      }.toList
-  }
-
-  def typeCondition(gameType: GameType)(simpleGame: SimpleGame): Boolean = {
-    gameType match {
-      case All => true
-      case Ctf => simpleGame.gameType == "ctf"
-      case Duel => simpleGame.gameType == "duel"
-    }
-  }
-
-  def tagFilterCondition(tagFilter: TagFilter)(simpleGame: SimpleGame): Boolean = {
-    tagFilter.tags.isEmpty || (tagFilter.tags.nonEmpty && (tagFilter.tags -- simpleGame.tags).isEmpty)
-  }
-
-  upstreamGames.allAndNewClient.createStream(sseToSimpleGame.to(Sink.foreach { game => gamesAgt.sendOff(_.withNewGame(game)) }))
-
-  def focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition, tagFilter: TagFilter) = Action {
-    val games = gamesAgt.get().games.valuesIterator
-      .filter(typeCondition(gameType))
-      .filter(playerConditionFilter(playerCondition))
-      .filter(tagFilterCondition(tagFilter))
+    val games = gamesService.gamesAgt.get().games.valuesIterator
+      .filter(gameType)
+      .filter(serverFilter)
+      .filter(playerCondition)
+      .filter(tagFilter)
       .toList.sortBy(_.id)
 
     games.indexWhere(_.id == id.gameId) match {
@@ -142,30 +75,14 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames, clansService: ClansServic
   }
 
 
-  def playerConditionFilter(playerCondition: PlayerCondition)(game: SimpleGame): Boolean = {
+  def timedGames(gameType: GameType, timing: TimingCondition, playerCondition: PlayerCondition,
+                 limitCondition: LimitCondition, tagFilter: TagFilter, serverFilter: ServerFilter) = Action {
 
-    {
-      playerCondition.player.isEmpty &&
-        playerCondition.user.isEmpty && playerCondition.clan.isEmpty
-    } || {
-      if ( playerCondition.playerConditionOperator == Or ) {
-        (game.users & playerCondition.user).nonEmpty ||
-          (game.players & playerCondition.player).nonEmpty ||
-          (game.clans & playerCondition.clan).nonEmpty
-      } else {
-        (playerCondition.user.isEmpty || (playerCondition.user.nonEmpty && (playerCondition.user -- game.users).isEmpty)) &&
-        (playerCondition.player.isEmpty || (playerCondition.player.nonEmpty && (playerCondition.player -- game.players).isEmpty)) &&
-        (playerCondition.clan.isEmpty || (playerCondition.clan.nonEmpty && (playerCondition.clan -- game.clans).isEmpty))
-      }
-    }
-  }
-
-  def timedGames(gameType: GameType, timing: TimingCondition, playerCondition: PlayerCondition, limitCondition: LimitCondition, tagFilter: TagFilter) = Action {
-
-    var games = gamesAgt.get().games.valuesIterator
-      .filter(typeCondition(gameType))
-      .filter(tagFilterCondition(tagFilter))
-      .filter(playerConditionFilter(playerCondition))
+    var games = gamesService.gamesAgt.get().games.valuesIterator
+      .filter(gameType)
+      .filter(serverFilter)
+      .filter(tagFilter)
+      .filter(playerCondition)
       .toList.sortBy(_.id)
 
     if ( timing == Recent ) games = games.reverse
@@ -181,14 +98,14 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames, clansService: ClansServic
   }
 
   def gamesByIds(gameIds: gg.duel.query.MultipleByIdQuery) = Action {
-    val gamesMap = gameIds.gameIds.flatMap(gameId => gamesAgt.get().games.get(gameId.gameId)).map(sg =>
+    val gamesMap = gameIds.gameIds.flatMap(gameId => gamesService.gamesAgt.get().games.get(gameId.gameId)).map(sg =>
       sg.id -> sg.enhancedNativeJson).toMap
     if (gamesMap.isEmpty) NotFound("Nothing matching found.")
     else Ok(JsObject(gamesMap))
   }
 
   def gameById(gameId: GameId) = Action {
-    gamesAgt.get().games.get(gameId.gameId) match {
+    gamesService.gamesAgt.get().games.get(gameId.gameId) match {
       case Some(simpleGame) => Ok(simpleGame.enhancedNativeJson)
       case None => NotFound("Not found.")
     }
@@ -196,12 +113,8 @@ class GamesApi @Inject()(upstreamGames: UpstreamGames, clansService: ClansServic
 
   def newGames = Action {
     Ok.feed(
-      content = newGamesEnum
+      content = gamesService.newGamesEnum
     ).as("text/event-stream")
   }
-
-  val (newGamesEnum, newGamesChan) = Concurrent.broadcast[Event]
-
-  upstreamGames.newClient.createStream(sseToSimpleGame.to(Sink.foreach(game => newGamesChan.push(game.toEvent))))
 
 }

@@ -42,6 +42,15 @@ package object binders {
       override def unbind(key: String, value: TagFilter): String = ???
     }
   }
+  implicit def snFQB: QueryStringBindable[ServerFilter] = {
+    new QueryStringBindable[ServerFilter] {
+      override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, ServerFilter]] = {
+        params.get(key).map(servers => Right(SimpleServerFilter(servers.toSet))).orElse(Option(Right(NoServerFilter)))
+      }
+
+      override def unbind(key: String, value: ServerFilter): String = ???
+    }
+  }
   implicit def limitConditionPathBindable(implicit intBindable: QueryStringBindable[Int]): QueryStringBindable[LimitCondition] = {
     new QueryStringBindable[LimitCondition] {
       override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, LimitCondition]] = {

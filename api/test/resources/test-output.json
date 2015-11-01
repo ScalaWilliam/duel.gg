@@ -6,6 +6,7 @@
     1,
     11
   ],
+  "tags": [ "duel" ],
   "startTimeText": "1970-01-01T03:25:12Z",
   "players": {
     "w00p|Drakas": {
@@ -40,5 +41,6 @@
   "winner": "w00p|Drakas",
   "duration": 10,
   "type": "duel",
-  "endTime": 12912000
+  "endTime": 12912000,
+  "demo": "http://test.dmo"
 }

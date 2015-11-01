@@ -1,4 +1,4 @@
-import gcc.enrichment.{Enricher, PlayerLookup}
+import gcc.enrichment.{DemoLookup, Enricher, PlayerLookup}
 import gg.duel.pinger.analytics.duel.StubGenerator
 import org.joda.time.DateTime
 import org.scalatest.{Matchers, WordSpec}
@@ -11,6 +11,10 @@ class FullStackTransformationSpec extends WordSpec with Matchers {
     override def lookupUserId(s: String, dateTime: DateTime): String = if (s == "w00p|Drakas") "drakas" else null
 
     override def lookupClanId(s: String, dateTime: DateTime): String = if (s.startsWith("w00p|")) "woop" else null
+  }, new DemoLookup {
+    override def lookupDemoUrl(server: String, mode: String, map: String, atTime: DateTime): String = {
+      "http://test.dmo"
+    }
   })
 
   "full stack" must {
