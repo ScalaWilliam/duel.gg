@@ -89,10 +89,16 @@ class GamesService @Inject()(upstreamGames: UpstreamGames, clansService: ClansSe
     }
   }).run()
 
-  applicationLifecycle.addStopHook(() => scala.concurrent.Future.successful(kr.cancel() -> xs.success(())))
+  applicationLifecycle.addStopHook(() => scala.concurrent.Future.successful(kr.cancel() -> xs.success(()) -> xl.success()))
 
-  val (newGamesEnum, newGamesChan) = Concurrent.broadcast[Event]
+  val (newGamesEnum, newGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
 
-  val xs = upstreamGames.newClient.createStream(sseToGameOption.createFlow.to(Sink.foreach(game => newGamesChan.push(game.toEvent))))
+  val xs = upstreamGames.newClient.createStream(sseToGameOption.createFlow.to(Sink.foreach(game => newGamesChan.push(game -> game.toEvent))))
+
+  val (liveGamesEnum, liveGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
+
+  val xl = upstreamGames.liveGames.createStream(upstreamGames.flw.mapConcat(sse =>
+    sseToGameOption.apply(sse).toList.map(sg => sse -> sg)
+  ).map{case (sse, sg) => sg -> sg.toEvent.copy(name = sse.eventType)}.to(Sink.foreach(event => liveGamesChan.push(event))))
 
 }

@@ -17,7 +17,7 @@ import org.joda.time.format.ISODateTimeFormat
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
-import play.api.libs.iteratee.Concurrent
+import play.api.libs.iteratee.{Enumerator, Concurrent}
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Controller}
@@ -111,9 +111,23 @@ class GamesApi @Inject()(gamesService: GamesService)
     }
   }
 
-  def newGames = Action {
+  def newGames(gameType: GameType, playerCondition: PlayerCondition,
+               tagFilter: TagFilter, serverFilter: ServerFilter) = Action {
     Ok.feed(
-      content = gamesService.newGamesEnum
+      content = gamesService.newGamesEnum.flatMap{
+        case (sg, evt) if gameType(sg) && playerCondition(sg) && tagFilter(sg) && serverFilter(sg) =>
+          Enumerator(evt)
+        case _ => Enumerator.empty[play.api.libs.EventSource.Event] }
+    ).as("text/event-stream")
+  }
+
+  def liveGames(gameType: GameType, playerCondition: PlayerCondition,
+                tagFilter: TagFilter, serverFilter: ServerFilter) = Action {
+    Ok.feed(
+      content = gamesService.liveGamesEnum.flatMap{
+        case (sg, evt) if gameType(sg) && playerCondition(sg) && tagFilter(sg) && serverFilter(sg) =>
+          Enumerator(evt)
+        case _ => Enumerator.empty[play.api.libs.EventSource.Event] }
     ).as("text/event-stream")
   }
 

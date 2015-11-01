@@ -5,6 +5,8 @@ import javax.inject._
 
 import akka.actor.ActorSystem
 import akka.stream._
+import akka.stream.scaladsl._
+import de.heikoseeberger.akkasse.ServerSentEvent
 import modules.sse.{CancellableServerSentEventClient, EmptyCancellableServerSentEventClient, SimpleCancellableServerSentEventClient}
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Logger}
@@ -36,11 +38,42 @@ class UpstreamGames @Inject()(configuration: Configuration, applicationLifecycle
   val allClient = buildStreamClient("/games/all/")
   val allAndNewClient = buildStreamClient("/games/all-and-new/")
   val newClient = buildStreamClient("/games/new/")
+  val liveGames = buildStreamClient("/games/live/")
+
+  /**
+   * Collect latest state for each game ID.
+   * Flush it all every 5 seconds.
+   */
+
+  case object Flush
+
+  def sseFlushToEvents = Flow.apply[Either[ServerSentEvent, Flush.type]].scan(Map.empty[String, ServerSentEvent] -> List.empty[ServerSentEvent]){
+    case ((map, _), Right(Flush)) =>
+      Map.empty[String, ServerSentEvent] -> map.valuesIterator.toList
+    case ((map, _), Left(event)) if event.id.isDefined =>
+      map.updated(event.id.get, event) -> List.empty
+    case (stuff, _) => stuff
+  }.mapConcat{case (_, events) => events}
+
+  import concurrent.duration._
+  def flw = {
+    Flow() {implicit builder =>
+      import FlowGraph.Implicits._
+      val flusher = Source.apply(5.seconds, 5.seconds, Right(Flush))
+      val sem = builder.add(Flow.apply[ServerSentEvent].map(Left.apply))
+      val merge = builder.add(Merge.apply[Either[ServerSentEvent, Flush.type]](2))
+      sem ~> merge.in(0)
+      flusher ~> merge.in(1)
+      (sem.inlet, (merge ~> sseFlushToEvents).outlet)
+    }
+  }
+
 
   applicationLifecycle.addStopHook(() => Future.successful{
     allClient.shutdown()
     newClient.shutdown()
     allAndNewClient.shutdown()
+    liveGames.shutdown()
   })
 
 }
