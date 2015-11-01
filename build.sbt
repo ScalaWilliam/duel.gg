@@ -69,6 +69,10 @@ lazy val pingerService = Project(
   .settings(libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-async" % "0.9.5",
     "com.h2database" % "h2" % "1.4.190",
+    "com.typesafe.play" %% "play-slick" % "1.1.0",
+    "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
+    "mysql" % "mysql-connector-java" % "5.1.37",
+    "com.typesafe.play" %% "play-slick-evolutions" % "1.1.0",
     filters,
     "com.typesafe.akka" %% "akka-agent" % "2.4.0"))
   .settings(includeGitStamp, dontDocument)

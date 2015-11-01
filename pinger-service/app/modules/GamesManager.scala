@@ -5,47 +5,52 @@ import javax.inject.{Inject, Singleton}
 import akka.agent.Agent
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
-import models.games.Games
+import models.games.GamesContainer
+import play.api.Logger
+import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.ApplicationLifecycle
+import play.api.libs.json.Json
+import slick.driver.JdbcProfile
+import scala.concurrent.{Future, ExecutionContext}
+import scala.util.{Failure, Success}
+import slick.driver.PostgresDriver.api._
 
-import scala.concurrent.ExecutionContext
-import scala.util.Try
-
-/**
- * Created on 13/07/2015.
- */
 @Singleton
-class GamesManager @Inject()(simpleEmbeddedDatabase: SimpleEmbeddedDatabase)(implicit executionContext: ExecutionContext, applicationLifecycle: ApplicationLifecycle) {
+class GamesManager @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit executionContext: ExecutionContext, applicationLifecycle: ApplicationLifecycle) {
+  val dbConfig = dbConfigProvider.get[JdbcProfile]
 
-  val duelsMap = simpleEmbeddedDatabase.get().openMap[String, String]("duels")
+  val gamesT = TableQuery[GamesTable]
 
-  val ctfMap = simpleEmbeddedDatabase.get().openMap[String, String]("ctf")
-  import collection.JavaConverters._
-  val gamesA = Agent(Games(
-    duels = {
-      duelsMap.asScala.toList
-        .flatMap{case (k, v) =>
-        Try(k -> SimpleCompletedDuel.fromPrettyJson(v)).toOption}.toMap
-    },
-  ctfs = {
-    ctfMap.asScala.toList
-      .flatMap{case (k, v) =>
-      Try(k -> SimpleCompletedCTF.fromPrettyJson(v)).toOption}.toMap
-  }
-  ))
+  val gamesA = Agent(GamesContainer.empty)
 
-  def games: Games = gamesA.get()
+  val gamesLoadedF = dbConfig.db.run(gamesT.result).map(_.map {
+    case (id, json) => gamesA.alter(_.withGame(id, Json.parse(json)))
+  }).flatMap(fs => Future.sequence(fs))
+
+  def games: GamesContainer = gamesA.get()
 
   def addDuel(duel: SimpleCompletedDuel): Unit = {
-    duelsMap.put(duel.simpleId, duel.toPrettyJson)
-    simpleEmbeddedDatabase.commit()
-    gamesA.alter(_.withDuel(duel))
+    dbConfig.db.run(gamesT.insertOrUpdate(duel.startTimeText, duel.toPrettyJson)).onComplete {
+      case Success(good) => Logger.info(s"Saved duel ${duel.startTimeText} successfully.")
+      case Failure(reason) => Logger.error(s"Failed to save duel ${duel.toJson}", reason)
+    }
+    gamesA.alter(_.withGame(duel.startTimeText, Json.parse(duel.toPrettyJson)))
   }
 
   def addCtf(ctf: SimpleCompletedCTF): Unit = {
-    ctfMap.put(ctf.simpleId, ctf.toPrettyJson)
-    simpleEmbeddedDatabase.commit()
-    gamesA.alter(_.withCtf(ctf))
+    dbConfig.db.run(gamesT.insertOrUpdate(ctf.startTimeText, ctf.toPrettyJson)).onComplete {
+      case Success(good) => Logger.info(s"Saved ctf ${ctf.startTimeText} successfully.")
+      case Failure(reason) => Logger.error(s"Failed to save ctf ${ctf.toJson}", reason)
+    }
+    gamesA.alter(_.withGame(ctf.startTimeText, Json.parse(ctf.toPrettyJson)))
   }
 
+}
+
+class GamesTable(tag: Tag) extends Table[(String, String)](tag, "GAMES") {
+  def id = column[String]("ID", O.PrimaryKey)
+
+  def json = column[String]("JSON")
+
+  def * = (id, json)
 }
