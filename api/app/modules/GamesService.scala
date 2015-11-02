@@ -25,7 +25,7 @@ import scala.language.implicitConversions
 import scala.util.{Try, Failure, Success}
 
 @Singleton
-class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamGames: UpstreamGames, clansService: ClansService, demoCollectorModule: DemoCollectorModule,
+class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamGames: UpstreamGames, clansService: ClansService, demoCollectorModule: DemoCollection,
                              applicationLifecycle: ApplicationLifecycle)
                             (implicit executionContext: ExecutionContext, actorSystem: ActorSystem) {
 
@@ -50,18 +50,20 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
   val loadGamesFromDatabase = Async.async {
     Logger.info("Loading games from database...")
     Async.await {
-      Source(dbConfig.db.stream(gamesT.result)).mapAsyncUnordered(6) { case (id, json) =>
-        Future(Try(sseToGameOption(id = id, json = json)).toOption.flatten.toList)
-      }.mapConcat(identity).mapAsyncUnordered(8){
+      Source(dbConfig.db.stream(gamesT.result)).mapAsyncUnordered(8) { case (id, json) =>
+        Future(sseToGameOption(id = id, json = json).toList)
+      }.mapConcat(identity).mapAsyncUnordered(2){
         game =>
-          gamesAgt.alterOff(_.withNewGame(game))
-      }.runForeach(_ => ())
+          val f = gamesAgt.alterOff(_.withNewGame(game))
+          f.onFailure{ case x => println(s"==> $x")}
+          f
+      }.runFold(0){case (n,_) => n+1}
     }
   }
 
   loadGamesFromDatabase.onComplete {
     case Success(result) =>
-      Logger.info(s"Loading games from database completed.")
+      Logger.info(s"Loading $result games from database completed.")
     case Failure(reas) =>
       Logger.error(s"Loading games from database failed due to $reas", reas)
   }
@@ -126,7 +128,7 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
 
   val (liveGamesEnum, liveGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
 
-  val xl = upstreamGames.liveGames.createStream(upstreamGames.flw.mapConcat(sse =>
+  val xl = upstreamGames.liveGames.createStream(UpstreamGames.flw.mapConcat(sse =>
     sseToGameOption.apply(sse).toList.map(sg => sse -> sg)
   ).map { case (sse, sg) => sg -> sg.toEvent.copy(name = sse.eventType) }.to(Sink.foreach(event => liveGamesChan.push(event))))
 

@@ -58,3 +58,4 @@ build.log
 build.log
 
 pinger/demos
+*.backup

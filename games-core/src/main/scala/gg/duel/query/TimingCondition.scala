@@ -2,7 +2,9 @@ package gg.duel.query
 
 import scala.language.higherKinds
 
-sealed trait TimingCondition
+sealed trait TimingCondition {
+  def stringValue: String
+}
 object TimingCondition {
   def unapply(string: String): Option[TimingCondition] = PartialFunction.condOpt(string) {
     case "recent" => Recent
@@ -10,6 +12,10 @@ object TimingCondition {
   }
 }
 
-case object Recent extends TimingCondition
+case object Recent extends TimingCondition {
+  override def stringValue: String = "recent"
+}
 
-case object First extends TimingCondition
+case object First extends TimingCondition {
+  override def stringValue: String = "first"
+}

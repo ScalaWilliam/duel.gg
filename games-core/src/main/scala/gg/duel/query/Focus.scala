@@ -47,7 +47,13 @@ case class AsymmetricFocus(previous: Int, next: Int) extends MultipleFocus {
     )
 }
 
-case class SimpleFocusResult[T](focus: T, previous: Option[T], next: Option[T])
+case class SimpleFocusResult[T](focus: T, previous: Option[T], next: Option[T]) {
+  def map[V](f: T => V): SimpleFocusResult[V] = SimpleFocusResult(
+    focus = f(focus),
+    previous = previous.map(f),
+    next = next.map(f)
+  )
+}
 object SimpleFocusResult {
   private case class SFRJS(game: JsValue, previous: Option[JsValue], next: Option[JsValue])
   private implicit val sfrjsWrites = Json.writes[SFRJS]
@@ -62,7 +68,14 @@ object SimpleFocusResult {
   }
 }
 
-case class MultipleFocusResult[T](focus: T, previous: Option[Vector[T]], next: Option[Vector[T]])
+case class MultipleFocusResult[T](focus: T, previous: Option[Vector[T]], next: Option[Vector[T]]) {
+
+  def map[V](f: T => V): MultipleFocusResult[V] = MultipleFocusResult(
+    focus = f(focus),
+    previous = previous.map(_.map(f)),
+    next = next.map(_.map(f))
+  )
+}
 object MultipleFocusResult {
   private case class MFRJS(game: JsValue, previous: Option[Vector[JsValue]], next: Option[Vector[JsValue]])
   private implicit val sfrjsWrites = Json.writes[MFRJS]

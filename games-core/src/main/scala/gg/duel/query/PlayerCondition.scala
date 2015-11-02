@@ -5,13 +5,21 @@ import gg.duel.SimpleGame
 /**
  * Created on 04/10/2015.
  */
-sealed trait PlayerConditionOperator
-case object And extends PlayerConditionOperator
-case object Or extends PlayerConditionOperator
+sealed trait PlayerConditionOperator {
+  def stringValue: String
+  def isOr = this == Or
+  def isAnd = this == And
+}
+case object And extends PlayerConditionOperator {
+  override val stringValue: String = "and"
+}
+case object Or extends PlayerConditionOperator {
+  override val stringValue: String = "or"
+}
 object PlayerConditionOperator {
   def unapply(string: String): Option[PlayerConditionOperator] = PartialFunction.condOpt(string) {
-    case "or" => Or
-    case "and" => And
+    case Or.stringValue => Or
+    case And.stringValue => And
   }
 }
 

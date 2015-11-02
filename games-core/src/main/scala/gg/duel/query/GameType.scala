@@ -6,6 +6,7 @@ import gg.duel.SimpleGame
  * Created on 30/10/2015.
  */
 sealed trait GameType extends (SimpleGame => Boolean) {
+  def stringValue: String
   override def apply(simpleGame: SimpleGame): Boolean =
     this match {
       case All => true
@@ -14,16 +15,22 @@ sealed trait GameType extends (SimpleGame => Boolean) {
     }
 }
 
-case object Ctf extends GameType
+case object Ctf extends GameType {
+  override val stringValue: String = "ctf"
+}
 
-case object All extends GameType
+case object All extends GameType {
+  override val stringValue: String = "all"
+}
 
-case object Duel extends GameType
+case object Duel extends GameType {
+  override val stringValue: String = "duel"
+}
 
 object GameType {
   def unapply(string: String): Option[GameType] = PartialFunction.condOpt(string) {
-    case "ctf" => Ctf
-    case "all" => All
-    case "duel" => Duel
+    case Ctf.stringValue => Ctf
+    case All.stringValue => All
+    case Duel.stringValue => Duel
   }
 }
