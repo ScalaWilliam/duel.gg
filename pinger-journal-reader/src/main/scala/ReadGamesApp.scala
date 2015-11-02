@@ -12,13 +12,13 @@ import scala.util.Failure
 
 object ReadGamesApp extends App {
 
-  val files = new File("C:/Users/William/old/")
-    .listFiles()
-    .collect { case f if f.getName.endsWith("sblog.gz") =>
-      f.getCanonicalFile
-    }.toList
+  val file = new File("")
+//    .listFiles()
+//    .collect { case f if f.getName.endsWith("sblog.gz") =>
+//      f.getCanonicalFile
+//    }.toList
 
-  files foreach (f => println(s"File found: $f"))
+//  files foreach (f => println(s"File found: $f"))
 
   val destinationDatabase = Database.forURL(url = args(0), driver = "org.postgresql.Driver")
   val games = TableQuery[Games]
@@ -28,7 +28,7 @@ object ReadGamesApp extends App {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  val parSeqFutureList = files.par.map { file =>
+//  val parSeqFutureList = files.par.map { file =>
     println(s"Reading journal for file $file")
     val journalReader = new JournalReader(file)
     val journalFinishedF = Source.apply(() => journalReader.getGamesIterator)
@@ -40,34 +40,35 @@ object ReadGamesApp extends App {
       .map { case (id, req) =>
         id -> DBIO.seq(req)
       }
-      .mapAsyncUnordered(2) { case (id, s) =>
+      .mapAsync(1) { case (id, s) =>
         val ff = destinationDatabase.run(s)
         ff.onComplete {
           case Failure(r) =>
+            println(s"At $id $s:")
             r.printStackTrace()
           case r =>
            println(s"Putting action done for game $id: $r")
 
         }
-        ff.map(r => id -> r).recover{case _ => "K"}
+        ff.map(r => id -> r).recover{case _ => println("K")}
       }.runForeach { _ => () }
     journalFinishedF.onComplete { case r =>
       println(s"Finished journal for $file")
       journalReader.close()
     }
     journalFinishedF
-  }
-
-  val he = Future.sequence(parSeqFutureList.toList)
-  val dontQuit = new CountDownLatch(1)
-  he.onComplete {
-    case r => println(s"Completed everything with result $r")
-      dontQuit.countDown()
-  }
-
-  dontQuit.await()
-
-  println("All done. Bye!")
+//  }
+//
+//  val he = Future.sequence(parSeqFutureList.toList)
+//  val dontQuit = new CountDownLatch(1)
+//  he.onComplete {
+//    case r => println(s"Completed everything with result $r")
+//      dontQuit.countDown()
+//  }
+//
+//  dontQuit.await()
+//
+//  println("All done. Bye!")
 
 }
 
