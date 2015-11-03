@@ -1,7 +1,5 @@
 <?php
 require("render.inc.php");
-$host = "http://api.duel.gg";
-//$host = "http://localhost:9000";
 $uri = "$host/games/recent/?limit=5&type=duel";
 if ( isset($_GET['before']) ) {
     $uri = "$host/games/before/".rawurlencode((string)$_GET['before'])."/?limit=20&type=duel";

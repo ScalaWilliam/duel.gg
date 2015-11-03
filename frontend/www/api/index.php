@@ -20,39 +20,39 @@ require("../render.inc.php");
             </tr>
             </thead><tbody>
             <tr>
-                <td><a href="http://api.duel.gg/new-games/">/new-games/</a></td>
+                <td><a href="<?php echo $host; ?>/new-games/">/new-games/</a></td>
                 <td><strong>EventSource / Server-Sent Events</strong> - automatic push of new games coming through.</td>
             </tr>
             <tr>
-                <td><a href="http://api.duel.gg/games/duel/first/?player=vaQ%27Frosty&amp;limit=2">/games/duel/first/?player=vaQ%27Frosty&amp;limit=2</a></td>
+                <td><a href="<?php echo $host; ?>/games/duel/first/?player=vaQ%27Frosty&amp;limit=2">/games/duel/first/?player=vaQ%27Frosty&amp;limit=2</a></td>
                 <td>find first duel games involving Drakas. Get two.</td>
             </tr>
             <tr>
-                <td><a href="http://api.duel.gg/games/all/recent/?player=vaQ%27Frosty&amp;player=w00p%7Craffael&amp;operator=and">/games/all/recent/?player=vaQ%27Frosty&amp;player=w00p%7Craffael&amp;operator=and</a></td>
+                <td><a href="<?php echo $host; ?>/games/all/recent/?player=vaQ%27Frosty&amp;player=w00p%7Craffael&amp;operator=and">/games/all/recent/?player=vaQ%27Frosty&amp;player=w00p%7Craffael&amp;operator=and</a></td>
                 <td>Find recent games with both raffael and Frosty</td>
             </tr>
             <tr>
-                <td><a href="http://api.duel.gg/games/ctf/recent/?clan=rb&amp;clan=woop&amp;operator=or">/games/ctf/recent/?clan=rb&amp;clan=woop&amp;operator=or</a></td>
+                <td><a href="<?php echo $host; ?>/games/ctf/recent/?clan=rb&amp;clan=woop&amp;operator=or">/games/ctf/recent/?clan=rb&amp;clan=woop&amp;operator=or</a></td>
                 <td>Find recent ctf games with either woop or rb clan</td>
             </tr>
             <tr>
-                <td><a href="http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael">/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael</a></td>
+                <td><a href="<?php echo $host; ?>/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael">/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael</a></td>
                 <td>Find raffael's ctf games at the specified time, the game before and the game after</td>
             </tr>
             <tr>
-                <td><a href="http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael">/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael&amp;radius=15</a></td>
+                <td><a href="<?php echo $host; ?>/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael">/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael&amp;radius=15</a></td>
                 <td>Find raffael's ctf games at the specified time, 15 games before, 15 after</td>
             </tr>
             <tr>
-                <td><a href="http://api.duel.gg/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael">/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael&amp;previous=0&amp;next=25</a></td>
+                <td><a href="<?php echo $host; ?>/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael">/games/ctf/focus/2015-09-11T22:57:05Z/?player=w00p%7Craffael&amp;previous=0&amp;next=25</a></td>
                 <td>Find raffael's ctf games at the specified time, 0 games before, 25 games after</td>
             </tr>
             <tr>
-                <td><a href="http://api.duel.gg/game/2015-08-11T20:47:11Z/">/game/2015-08-11T20:47:11Z/</a></td>
+                <td><a href="<?php echo $host; ?>/game/2015-08-11T20:47:11Z/">/game/2015-08-11T20:47:11Z/</a></td>
                 <td>get game at a specific ID</td>
             </tr>
             <tr>
-                <td><a href="http://api.duel.gg/games/?game=2015-08-11T20:47:11Z&amp;game=2015-08-11T20:58:29Z">/games/?game=2015-08-11T20:47:11Z&amp;game=2015-08-11T20:58:29Z</a></td>
+                <td><a href="<?php echo $host; ?>/games/?game=2015-08-11T20:47:11Z&amp;game=2015-08-11T20:58:29Z">/games/?game=2015-08-11T20:47:11Z&amp;game=2015-08-11T20:58:29Z</a></td>
                 <td>get these games</td>
             </tr>
             </tbody></table>
@@ -66,11 +66,11 @@ require("../render.inc.php");
             </tr>
             </thead><tbody>
             <tr>
-                <td><a href="http://api.duel.gg/nicknames/">/nicknames/</a></td>
+                <td><a href="<?php echo $host; ?>/nicknames/">/nicknames/</a></td>
                 <td>list all seen nicknames</td>
             </tr>
             <tr>
-                <td><a href="http://api.duel.gg/clans/">/clans/</a></td>
+                <td><a href="<?php echo $host; ?>/clans/">/clans/</a></td>
                 <td>list all clans</td>
             </tr>
             </tbody></table>

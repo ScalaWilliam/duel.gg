@@ -5,7 +5,7 @@ GET        /games/new/                   @controllers.GamesApi.newGames(queryCon
 GET        /games/live/                  @controllers.GamesApi.liveGames(queryCondition: QueryCondition)
 GET        /games/:timing/               @controllers.GamesApi.timedGames(timing: TimingCondition, queryCondition: QueryCondition, limit: LimitCondition)
 GET        /games/:direction/:id/        @controllers.GamesApi.directedGames(direction: LookupDirection, id: GameId, queryCondition: QueryCondition, limit: LimitCondition)
-GET        /game/:id/                    @controllers.GamesApi.gameById(id: GameId)
+GET        /game/:gameId/                    @controllers.GamesApi.gameById(gameId: GameId, queryCondition: QueryCondition)
 
 GET        /nicknames/                   @controllers.GamesApi.getNicknames
 

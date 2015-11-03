@@ -29,6 +29,8 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
                              applicationLifecycle: ApplicationLifecycle, configuration: Configuration)
                             (implicit executionContext: ExecutionContext, actorSystem: ActorSystem) {
 
+  applicationLifecycle.addStopHook(() => Future.successful(dbConfig.db.close()))
+
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   val gamesT = TableQuery[GamesTable]
   implicit val am = ActorMaterializer()
@@ -50,7 +52,7 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
   def allGamesQuery = {
     var q = gamesT.sortBy(_.id)
     if ( configuration.getBoolean("gg.duel.limit-game-load") == Some(true) ) {
-      q = q.take(500)
+      q = q.take(2000)
     }
     q
   }

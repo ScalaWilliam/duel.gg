@@ -1,8 +1,6 @@
 <?php
 require("../render.inc.php");
 require("../render_game.inc.php");
-$host = "http://api.duel.gg";
-//$host = "http://localhost:9000";
 $uri = "$host/games/recent/?tag=clanwar&limit=5";
 if (isset($_GET['before'])) {
     $uri = "$host/games/before/" . rawurlencode((string)$_GET['before']) . "/?tag=clanwar&limit=10";

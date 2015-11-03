@@ -1,5 +1,5 @@
 <?php
-
+require(__DIR__."/api_root.inc.php");
 function show_api_endpoint($uri, $link = null)
 {
     ?>

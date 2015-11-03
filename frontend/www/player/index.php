@@ -1,8 +1,5 @@
 <?php
 require("../render.inc.php");
-$host = "http://api.duel.gg";
-//$host = "http://localhost:9000";
-
 if (!isset($_GET['name'])) {
     $_GET['name'] = "w00p|Drakas";
 }
