@@ -4,17 +4,32 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import javax.inject._
 
-import akka.actor.ActorSystem
+import akka.actor.{Cancellable, ActorSystem}
 import akka.stream.scaladsl._
 import modules.OgroDemoParser.Demo
+import modules.sse.CancellableServerSentEventClient
 import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.{Future, ExecutionContext}
 
+trait DemoCollection {
+
+  def demoFetching: Source[DemosListing, Cancellable]
+}
+
 @Singleton
-class DemoCollectorModule @Inject()(ogroDemoParser: OgroDemoParser,
+final class DemoCollectorEmpty @Inject()(implicit actorSystem: ActorSystem) extends DemoCollection {
+
+  import concurrent.duration._
+
+  override def demoFetching: Source[DemosListing, Cancellable] = Source.apply(0.seconds, 15.minutes, DemosListing.empty)
+}
+
+@Singleton
+final class DemoCollectorLive @Inject()(ogroDemoParser: OgroDemoParser,
                                     applicationLifecycle: ApplicationLifecycle)
-                                   (implicit actorSystem: ActorSystem, executionContext: ExecutionContext) {
+                                   (implicit actorSystem: ActorSystem, executionContext: ExecutionContext)
+extends DemoCollection {
 
   def getDemosF: Future[DemosListing] = Future.sequence(OgroDemoParser.servers.values.map { server =>
     ogroDemoParser.getDemosF(server).map { demos => server -> demos }
@@ -22,7 +37,7 @@ class DemoCollectorModule @Inject()(ogroDemoParser: OgroDemoParser,
 
   import concurrent.duration._
 
-  def demoFetching = Source.apply(0.seconds, 15.minutes, ()).mapAsyncUnordered(5) { _ => getDemosF }
+  override def demoFetching = Source.apply(0.seconds, 15.minutes, ()).mapAsyncUnordered(5) { _ => getDemosF }
 
 }
 

@@ -11,7 +11,7 @@ import gcc.enrichment.{DemoLookup, Enricher, PlayerLookup}
 import gcc.game.GameReader
 import gg.duel.SimpleGame
 import org.joda.time.DateTime
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
@@ -25,9 +25,11 @@ import scala.language.implicitConversions
 import scala.util.{Try, Failure, Success}
 
 @Singleton
-class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamGames: UpstreamGames, clansService: ClansService, demoCollectorModule: DemoCollectorModule,
-                             applicationLifecycle: ApplicationLifecycle)
+class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamGames: UpstreamGames, clansService: ClansService, demoCollectorModule: DemoCollection,
+                             applicationLifecycle: ApplicationLifecycle, configuration: Configuration)
                             (implicit executionContext: ExecutionContext, actorSystem: ActorSystem) {
+
+  applicationLifecycle.addStopHook(() => Future.successful(dbConfig.db.close()))
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
   val gamesT = TableQuery[GamesTable]
@@ -47,21 +49,31 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
 
   val gamesAgt = Agent(Games.empty)
 
+  def allGamesQuery = {
+    var q = gamesT.sortBy(_.id)
+    if ( configuration.getBoolean("gg.duel.limit-game-load") == Some(true) ) {
+      q = q.take(2000)
+    }
+    q
+  }
+
   val loadGamesFromDatabase = Async.async {
     Logger.info("Loading games from database...")
     Async.await {
-      Source(dbConfig.db.stream(gamesT.result)).mapAsyncUnordered(6) { case (id, json) =>
-        Future(Try(sseToGameOption(id = id, json = json)).toOption.flatten.toList)
-      }.mapConcat(identity).mapAsyncUnordered(8){
+      Source(dbConfig.db.stream(allGamesQuery.result)).mapAsyncUnordered(8) { case (id, json) =>
+        Future(sseToGameOption(id = id, json = json).toList)
+      }.mapConcat(identity).mapAsyncUnordered(2){
         game =>
-          gamesAgt.alterOff(_.withNewGame(game))
-      }.runForeach(_ => ())
+          val f = gamesAgt.alterOff(_.withNewGame(game))
+          f.onFailure{ case x => println(s"==> $x")}
+          f
+      }.runFold(0){case (n,_) => n+1}
     }
   }
 
   loadGamesFromDatabase.onComplete {
     case Success(result) =>
-      Logger.info(s"Loading games from database completed.")
+      Logger.info(s"Loading $result games from database completed.")
     case Failure(reas) =>
       Logger.error(s"Loading games from database failed due to $reas", reas)
   }
@@ -89,7 +101,7 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
     )
   }
 
-  val demoLookup = new DemoLookup {
+  lazy val demoLookup = new DemoLookup {
     override def lookupDemoUrl(server: String, mode: String, map: String, atTime: org.joda.time.DateTime): String = {
       demosAgt.get().lookupFromGame(
         server = server,
@@ -99,8 +111,8 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
       ).orNull
     }
   }
-  val gameReader = new GameReader()
-  val enricher = new Enricher(playerLookup, demoLookup)
+  lazy val gameReader = new GameReader()
+  lazy val enricher = new Enricher(playerLookup, demoLookup)
 
   def sseToGameOption = JsonGameToSimpleGame(enricher = enricher, gameReader = gameReader)
 
@@ -118,7 +130,11 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
     }
   }).run()
 
-  applicationLifecycle.addStopHook(() => scala.concurrent.Future.successful(kr.cancel() -> xs.success(()) -> xl.success()))
+  applicationLifecycle.addStopHook(() => Future.successful{
+    kr.cancel()
+    xs.success(())
+    xl.success(())
+  })
 
   val (newGamesEnum, newGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
 
@@ -126,7 +142,7 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
 
   val (liveGamesEnum, liveGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
 
-  val xl = upstreamGames.liveGames.createStream(upstreamGames.flw.mapConcat(sse =>
+  val xl = upstreamGames.liveGames.createStream(UpstreamGames.flw.mapConcat(sse =>
     sseToGameOption.apply(sse).toList.map(sg => sse -> sg)
   ).map { case (sse, sg) => sg -> sg.toEvent.copy(name = sse.eventType) }.to(Sink.foreach(event => liveGamesChan.push(event))))
 

@@ -7,6 +7,7 @@ import akka.actor.ActorSystem
 import akka.stream._
 import akka.stream.scaladsl._
 import de.heikoseeberger.akkasse.ServerSentEvent
+import modules.UpstreamGames.Flush
 import modules.sse.{CancellableServerSentEventClient, EmptyCancellableServerSentEventClient, SimpleCancellableServerSentEventClient}
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Logger}
@@ -14,14 +15,29 @@ import play.api.{Configuration, Logger}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
+trait UpstreamGames {
+  def allClient: CancellableServerSentEventClient
+  def allAndNewClient: CancellableServerSentEventClient
+  def newClient: CancellableServerSentEventClient
+  def liveGames: CancellableServerSentEventClient
+}
+
+class UpstreamGamesNone @Inject()()(implicit actorSystem: ActorSystem) extends UpstreamGames {
+  private implicit val actorMaterializer = ActorMaterializer()
+  val allClient: CancellableServerSentEventClient = new EmptyCancellableServerSentEventClient()
+  val allAndNewClient: CancellableServerSentEventClient = new EmptyCancellableServerSentEventClient()
+  val newClient: CancellableServerSentEventClient = new EmptyCancellableServerSentEventClient()
+  val liveGames: CancellableServerSentEventClient = new EmptyCancellableServerSentEventClient()
+}
+
 @Singleton
-class UpstreamGames @Inject()(configuration: Configuration, applicationLifecycle: ApplicationLifecycle)
+class UpstreamGamesLive @Inject()(configuration: Configuration, applicationLifecycle: ApplicationLifecycle)
                              (implicit actorSystem: ActorSystem,
-                              executionContext: ExecutionContext) {
+                              executionContext: ExecutionContext) extends UpstreamGames {
 
-  implicit val actorMaterializer = ActorMaterializer()
+  private implicit val actorMaterializer = ActorMaterializer()
 
-  val configPath = "gg.duel.pinger-service.url"
+  private val configPath = "gg.duel.pinger-service.url"
 
   private def buildStreamClient(endpointName: String): CancellableServerSentEventClient = {
     configuration.getString(configPath)
@@ -35,26 +51,28 @@ class UpstreamGames @Inject()(configuration: Configuration, applicationLifecycle
     }
   }
 
-  val allClient = buildStreamClient("/games/all/")
-  val allAndNewClient = buildStreamClient("/games/all-and-new/")
-  val newClient = buildStreamClient("/games/new/")
-  val liveGames = buildStreamClient("/games/live/")
+  val allClient: CancellableServerSentEventClient = buildStreamClient("/games/all/")
+  val allAndNewClient: CancellableServerSentEventClient = buildStreamClient("/games/all-and-new/")
+  val newClient: CancellableServerSentEventClient = buildStreamClient("/games/new/")
+  val liveGames: CancellableServerSentEventClient = buildStreamClient("/games/live/")
 
   /**
    * Collect latest state for each game ID.
    * Flush it all every 5 seconds.
    */
 
+
+  applicationLifecycle.addStopHook(() => Future.successful{
+    allClient.shutdown()
+    newClient.shutdown()
+    allAndNewClient.shutdown()
+    liveGames.shutdown()
+  })
+
+}
+object UpstreamGames {
+
   case object Flush
-
-  def sseFlushToEvents = Flow.apply[Either[ServerSentEvent, Flush.type]].scan(Map.empty[String, ServerSentEvent] -> List.empty[ServerSentEvent]){
-    case ((map, _), Right(Flush)) =>
-      Map.empty[String, ServerSentEvent] -> map.valuesIterator.toList
-    case ((map, _), Left(event)) if event.id.isDefined =>
-      map.updated(event.id.get, event) -> List.empty
-    case (stuff, _) => stuff
-  }.mapConcat{case (_, events) => events}
-
   import concurrent.duration._
   def flw = {
     Flow() {implicit builder =>
@@ -66,15 +84,18 @@ class UpstreamGames @Inject()(configuration: Configuration, applicationLifecycle
       flusher ~> merge.in(1)
       (sem.inlet, (merge ~> sseFlushToEvents).outlet)
     }
+
   }
 
 
-  applicationLifecycle.addStopHook(() => Future.successful{
-    allClient.shutdown()
-    newClient.shutdown()
-    allAndNewClient.shutdown()
-    liveGames.shutdown()
-  })
+  def sseFlushToEvents = Flow.apply[Either[ServerSentEvent, Flush.type]].scan(Map.empty[String, ServerSentEvent] -> List.empty[ServerSentEvent]){
+    case ((map, _), Right(Flush)) =>
+      Map.empty[String, ServerSentEvent] -> map.valuesIterator.toList
+    case ((map, _), Left(event)) if event.id.isDefined =>
+      map.updated(event.id.get, event) -> List.empty
+    case (stuff, _) => stuff
+  }.mapConcat{case (_, events) => events}
+
 
 }
 

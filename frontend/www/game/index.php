@@ -2,7 +2,7 @@
 require("../render.inc.php");
 ?>
             <?php
-            $uri = "http://api.duel.gg/game/".rawurlencode($_GET['id'])."/";
+            $uri = "$host/game/".rawurlencode($_GET['id'])."/";
             show_api_endpoint($uri);
 ?>
     <div id="content" style="width:60em;margin-left:auto;margin-right:auto;">
