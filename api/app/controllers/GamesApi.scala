@@ -47,7 +47,7 @@ class GamesApi @Inject()(gamesService: GamesService)
                   val url = controllers.routes.GamesApi.directedGames(
                     direction = direction, id = gameId, queryCondition = queryCondition, limit = limit
                   )
-                  s"""<$url>; rel="${direction.httpValue}" title="$title""""
+                  s"""<$url>; rel="${direction.httpValue}"; title="$title""""
                 }
                 if (direction.isAfter) {
                   val nextLinkO = nextGames.take(n-1).lastOption.map(sg =>
@@ -97,7 +97,7 @@ class GamesApi @Inject()(gamesService: GamesService)
             queryCondition = queryCondition,
             limit = limitCondition
           )
-          s"""<$url>; rel="${direction.httpValue}" title="$title""""
+          s"""<$url>; rel="${direction.httpValue}"; title="$title""""
         }
 
         val links = backLinkO.toList ++ List(

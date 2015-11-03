@@ -103,7 +103,7 @@ case class NonEmptyTagFilter(tags: Set[String]) extends TagFilter {
   override def apply(simpleGame: SimpleGame): Boolean = {
     (tags -- simpleGame.tags).isEmpty
   }
-  override def toMap = Map("tags" -> tags.toSeq)
+  override def toMap = Map("tag" -> tags.toSeq)
 }
 object TagFilter {
   def apply(map: Map[String, Seq[String]]): TagFilter = {
