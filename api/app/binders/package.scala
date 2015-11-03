@@ -44,12 +44,11 @@ package object binders {
 
   implicit def gameIdPathBindable: PathBindable[GameId] =
     new PathBindable[GameId] {
-      override def unbind(key: String, value: GameId): String = PathBindable.bindableString.unbind(key, value.gameId)
+      override def unbind(key: String, value: GameId): String =
+        PathBindable.bindableString.unbind(key, value.gameId)
 
-      override def bind(key: String, value: String): Either[String, GameId] = value match {
-        case zdt => Right(GameId(zdt))
-        case _ => Left("Invalid game ID supplied")
-      }
+      override def bind(key: String, value: String): Either[String, GameId] =
+        Right(GameId(value))
     }
 
   implicit def limitConditionPathBindable: QueryStringBindable[LimitCondition] = {

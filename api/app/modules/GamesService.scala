@@ -11,7 +11,7 @@ import gcc.enrichment.{DemoLookup, Enricher, PlayerLookup}
 import gcc.game.GameReader
 import gg.duel.SimpleGame
 import org.joda.time.DateTime
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
@@ -26,7 +26,7 @@ import scala.util.{Try, Failure, Success}
 
 @Singleton
 class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamGames: UpstreamGames, clansService: ClansService, demoCollectorModule: DemoCollection,
-                             applicationLifecycle: ApplicationLifecycle)
+                             applicationLifecycle: ApplicationLifecycle, configuration: Configuration)
                             (implicit executionContext: ExecutionContext, actorSystem: ActorSystem) {
 
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
@@ -47,10 +47,18 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
 
   val gamesAgt = Agent(Games.empty)
 
+  def allGamesQuery = {
+    var q = gamesT.sortBy(_.id)
+    if ( configuration.getBoolean("gg.duel.limit-game-load") == Some(true) ) {
+      q = q.take(500)
+    }
+    q
+  }
+
   val loadGamesFromDatabase = Async.async {
     Logger.info("Loading games from database...")
     Async.await {
-      Source(dbConfig.db.stream(gamesT.sortBy(_.id).take(500).result)).mapAsyncUnordered(8) { case (id, json) =>
+      Source(dbConfig.db.stream(allGamesQuery.result)).mapAsyncUnordered(8) { case (id, json) =>
         Future(sseToGameOption(id = id, json = json).toList)
       }.mapConcat(identity).mapAsyncUnordered(2){
         game =>
@@ -120,7 +128,11 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
     }
   }).run()
 
-  applicationLifecycle.addStopHook(() => scala.concurrent.Future.successful(kr.cancel() -> xs.success(()) -> xl.success()))
+  applicationLifecycle.addStopHook(() => Future.successful{
+    kr.cancel()
+    xs.success(())
+    xl.success(())
+  })
 
   val (newGamesEnum, newGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
 
