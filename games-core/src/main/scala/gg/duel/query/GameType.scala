@@ -1,12 +1,19 @@
 package gg.duel.query
 
 import gg.duel.SimpleGame
+import gg.duel.query.GameType.{All, Ctf, Duel}
 
 /**
  * Created on 30/10/2015.
  */
 sealed trait GameType extends (SimpleGame => Boolean) {
   def stringValue: String
+  def toMap: Map[String, Seq[String]] = {
+    this match {
+      case All => Map.empty
+      case other => Map("type" -> List(stringValue))
+    }
+  }
   override def apply(simpleGame: SimpleGame): Boolean =
     this match {
       case All => true
@@ -15,22 +22,33 @@ sealed trait GameType extends (SimpleGame => Boolean) {
     }
 }
 
-case object Ctf extends GameType {
-  override val stringValue: String = "ctf"
-}
-
-case object All extends GameType {
-  override val stringValue: String = "all"
-}
-
-case object Duel extends GameType {
-  override val stringValue: String = "duel"
-}
 
 object GameType {
+
+  case object Ctf extends GameType {
+    override val stringValue: String = "ctf"
+  }
+
+  case object All extends GameType {
+    override val stringValue: String = "all"
+  }
+
+  case object Duel extends GameType {
+    override val stringValue: String = "duel"
+  }
+
   def unapply(string: String): Option[GameType] = PartialFunction.condOpt(string) {
     case Ctf.stringValue => Ctf
     case All.stringValue => All
     case Duel.stringValue => Duel
   }
+
+  def apply(map: Map[String, Seq[String]]): Either[String, GameType] = {
+    map.get("type").flatMap(_.lastOption) match {
+      case None => Right(All)
+      case Some(GameType(gameType)) => Right(gameType)
+      case Some(otherType) => Left("Unknown gameType given")
+    }
+  }
+
 }

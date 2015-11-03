@@ -50,7 +50,7 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
   val loadGamesFromDatabase = Async.async {
     Logger.info("Loading games from database...")
     Async.await {
-      Source(dbConfig.db.stream(gamesT.result)).mapAsyncUnordered(8) { case (id, json) =>
+      Source(dbConfig.db.stream(gamesT.sortBy(_.id).take(500).result)).mapAsyncUnordered(8) { case (id, json) =>
         Future(sseToGameOption(id = id, json = json).toList)
       }.mapConcat(identity).mapAsyncUnordered(2){
         game =>
@@ -91,7 +91,7 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
     )
   }
 
-  val demoLookup = new DemoLookup {
+  lazy val demoLookup = new DemoLookup {
     override def lookupDemoUrl(server: String, mode: String, map: String, atTime: org.joda.time.DateTime): String = {
       demosAgt.get().lookupFromGame(
         server = server,
@@ -101,8 +101,8 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
       ).orNull
     }
   }
-  val gameReader = new GameReader()
-  val enricher = new Enricher(playerLookup, demoLookup)
+  lazy val gameReader = new GameReader()
+  lazy val enricher = new Enricher(playerLookup, demoLookup)
 
   def sseToGameOption = JsonGameToSimpleGame(enricher = enricher, gameReader = gameReader)
 

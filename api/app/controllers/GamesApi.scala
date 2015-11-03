@@ -26,102 +26,87 @@ class GamesApi @Inject()(gamesService: GamesService)
     }
   }
 
-  def focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition, tagFilter: TagFilter,
-                 serverFilter: ServerFilter) = Action.async { implicit request =>
-    val liveGamesUrl = controllers.routes.GamesApi.liveGames(gameType, playerCondition, tagFilter, serverFilter).url
-    val newGamesUrl = controllers.routes.GamesApi.newGames(gameType, playerCondition, tagFilter, serverFilter).url
-    Async.async {
-      Async.await(gamesService.loadGamesFromDatabase)
-
-      val games = gamesService.gamesAgt.get().games.valuesIterator
-        .filter(gameType)
-        .filter(serverFilter)
-        .filter(playerCondition)
-        .filter(tagFilter)
-        .toList.sortBy(_.id)
-
-      games.indexWhere(_.id == id.gameId) match {
-        case -1 =>
-          NotFound("Focus game not found")
-        case index =>
-          import MultipleFocusResult._
-          import SimpleFocusResult._
-          val (returnJason, previousUrlO, nextUrlO) = games.splitAt(index) match {
-            case (previousGames, currentGame :: nextGames) =>
-
-              focus match {
-                case SimpleFocus =>
-                  val simpleFocusResult = SimpleFocus.collect(
-                    previous = previousGames.reverse.toVector,
-                    focus = currentGame,
-                    next = nextGames.toVector
-                  )
-                  // link to the game we've not yet seen, effectively forming a pagination
-                  val nextPageUrlO = nextGames.drop(1).headOption.map(nid =>  controllers.routes.GamesApi.focusGames(
-                    AsymmetricFocus(previous = 0, next = 2), gameType, GameId(nid.id), playerCondition, tagFilter, serverFilter).url)
-                  val previousPageUrlO = previousGames.dropRight(1).lastOption.map(nid =>controllers.routes.GamesApi.focusGames(
-                    AsymmetricFocus(previous = 2, next = 0), gameType, GameId(nid.id), playerCondition, tagFilter,
-                    serverFilter).url)
-                  (Json.toJson(simpleFocusResult.map(_.enhancedNativeJson)), previousPageUrlO, nextPageUrlO)
-                case mf: MultipleFocus =>
-                  val multipleFocusResult = mf.collect(
-                    previous = previousGames.reverse.toVector,
-                    focus = currentGame,
-                    next = nextGames.toVector
-                  )
-                  val nextPageUrlO = multipleFocusResult.next.flatMap(n => nextGames.drop(n.size).headOption.map(nid => controllers.routes.GamesApi.focusGames(
-                    mf match {
-                      case RadialFocus(r) => AsymmetricFocus(previous = 0, next = r)
-                      case AsymmetricFocus(p, nx) => AsymmetricFocus(previous = 0, next = Math.max(p, nx))
-                    }, gameType, GameId(nid.id), playerCondition, tagFilter,
-                    serverFilter).url))
-                  val previousPageUrlO = multipleFocusResult.previous.flatMap(n => previousGames.dropRight(n.size).lastOption.map(nid => controllers.routes.GamesApi.focusGames(
-                    mf match {
-                      case RadialFocus(r) => AsymmetricFocus(previous = r, next = 0)
-                      case AsymmetricFocus(p, nx) => AsymmetricFocus(previous = Math.max(p, nx), next = 0)
-                    }, gameType, GameId(nid.id), playerCondition, tagFilter,
-                    serverFilter).url))
-                  (Json.toJson(multipleFocusResult.map(_.enhancedNativeJson)), previousPageUrlO, nextPageUrlO)
-              }
-          }
-          val links = List(s"""<$liveGamesUrl>; rel="related"; title="Live game updates SSE stream"""",
-            s"""<$newGamesUrl>; rel="related"; title="New games SSE stream"""") ++
-            nextUrlO.map(pu => s"""<$pu>; rel=next" title="Next focused games"""") ++
-            previousUrlO.map(pu => s"""<$pu>; rel="previous"; title="Previous focused games"""")
-          Ok(returnJason).withHeaders("Link" -> links.mkString(", "))
-      }
-    }
-  }
-
-
-  def timedGames(gameType: GameType, timing: TimingCondition, playerCondition: PlayerCondition,
-                 limitCondition: LimitCondition, tagFilter: TagFilter, serverFilter: ServerFilter) = Action.async { implicit req =>
-    Async.async {
-      Async.await(gamesService.loadGamesFromDatabase)
-      val liveGamesUrl = controllers.routes.GamesApi.liveGames(gameType, playerCondition, tagFilter, serverFilter).url
-      val newGamesUrl = controllers.routes.GamesApi.newGames(gameType, playerCondition, tagFilter, serverFilter).url
-      var games = gamesService.gamesAgt.get().games.valuesIterator
-        .filter(gameType)
-        .filter(serverFilter)
-        .filter(tagFilter)
-        .filter(playerCondition)
-        .toList.sortBy(_.id)
-
-      if (timing == Recent) games = games.reverse
-
-      val limit = limitCondition match {
-        case DefaultLimit => 5
-        case SpecificLimit(l) => l
-      }
-
-      val gl = games.take(limit)
-      val links = List(
+  def directedGames(direction: LookupDirection, id: GameId, queryCondition: QueryCondition, limit: LimitCondition) =
+    Action.async { implicit request =>
+      val liveGamesUrl = controllers.routes.GamesApi.liveGames(queryCondition).url
+      val newGamesUrl = controllers.routes.GamesApi.newGames(queryCondition).url
+      val xlinks = List(
         s"""<$liveGamesUrl>; rel="related"; title="Live game updates SSE stream"""",
         s"""<$newGamesUrl>; rel="related"; title="New games SSE stream""""
       )
-      Ok(JsArray(gl.map(g => Json.toJson(g.enhancedNativeJson)))).withHeaders("Link" -> links.mkString(", "))
+      Async.async {
+        Async.await(gamesService.loadGamesFromDatabase)
+        val games = gamesService.gamesAgt.get().games.valuesIterator.filter(queryCondition).toList.sortBy(_.id)
+        games.indexWhere(_.id == id.gameId) match {
+          case -1 => NotFound("Focus game not found")
+          case index =>
+            games.splitAt(index) match {
+              case (previousGames, focusGame :: nextGames) =>
+                val n = 5
+                def fullLink(gameId: GameId, direction: LookupDirection, title: String) = {
+                  val url = controllers.routes.GamesApi.directedGames(
+                    direction = direction, id = gameId, queryCondition = queryCondition, limit = limit
+                  )
+                  s"""<$url>; rel="${direction.httpValue}" title="$title""""
+                }
+                if (direction.isAfter) {
+                  val nextLinkO = nextGames.take(n-1).lastOption.map(sg =>
+                    fullLink(gameId = GameId(sg.id), direction = LookupDirection.After, title = "More recent set of games"))
+                  val previousLink = fullLink(gameId = id, direction = LookupDirection.Before, title = "Games before this one")
+                  val json = JsArray(nextGames.take(n).map(_.enhancedNativeJson))
+                  val links = xlinks ++ nextLinkO ++ List(previousLink)
+                  Ok(json).withHeaders("Link" -> links.mkString(", "))
+                } else {
+                  val nextLink = fullLink(gameId = id, direction = LookupDirection.After, title = "Games after this one")
+                  val previousLinkO = previousGames.dropRight(n-1).lastOption.map(sg =>
+                    fullLink(gameId = GameId(sg.id), direction =direction, title = "More recent set of games"))
+                  val json = JsArray(previousGames.dropRight(n).map(_.enhancedNativeJson).reverse)
+                  val links = List(nextLink) ++ previousLinkO ++ xlinks
+                  Ok(json).withHeaders("Link" -> links.mkString(", "))
+                }
+            }
+        }
+      }
     }
-  }
+
+
+  def timedGames(timing: TimingCondition, queryCondition: QueryCondition, limitCondition: LimitCondition) =
+    Action.async { implicit req =>
+      Async.async {
+        Async.await(gamesService.loadGamesFromDatabase)
+        val liveGamesUrl = controllers.routes.GamesApi.liveGames(queryCondition).url
+        val newGamesUrl = controllers.routes.GamesApi.newGames(queryCondition).url
+        var games = gamesService.gamesAgt.get().games.valuesIterator
+          .filter(queryCondition)
+          .toList.sortBy(_.id)
+
+        if (timing == Recent) games = games.reverse
+
+        val limit = limitCondition match {
+          case DefaultLimit => 5
+          case SpecificLimit(l) => l
+        }
+
+        val gl = games.take(limit)
+        val backLinkO = gl.lastOption.map { focusGame =>
+          val direction = if ( timing.isFirst ) LookupDirection.After else LookupDirection.Before
+          val title = if ( timing.isFirst ) "Next games" else "Previous games"
+          val url = controllers.routes.GamesApi.directedGames(
+            direction = direction,
+            id = GameId(focusGame.id),
+            queryCondition = queryCondition,
+            limit = limitCondition
+          )
+          s"""<$url>; rel="${direction.httpValue}" title="$title""""
+        }
+
+        val links = backLinkO.toList ++ List(
+          s"""<$liveGamesUrl>; rel="related"; title="Live game updates SSE stream"""",
+          s"""<$newGamesUrl>; rel="related"; title="New games SSE stream""""
+        )
+        Ok(JsArray(gl.map(g => Json.toJson(g.enhancedNativeJson)))).withHeaders("Link" -> links.mkString(", "))
+      }
+    }
 
   def gamesByIds(gameIds: gg.duel.query.MultipleByIdQuery) = Action.async {
     Async.async {
@@ -143,22 +128,20 @@ class GamesApi @Inject()(gamesService: GamesService)
     }
   }
 
-  def newGames(gameType: GameType, playerCondition: PlayerCondition,
-               tagFilter: TagFilter, serverFilter: ServerFilter) = Action {
+  def newGames(queryCondition: QueryCondition) = Action {
     Ok.feed(
       content = gamesService.newGamesEnum.flatMap {
-        case (sg, evt) if gameType(sg) && playerCondition(sg) && tagFilter(sg) && serverFilter(sg) =>
+        case (sg, evt) if queryCondition(sg) =>
           Enumerator(evt)
         case _ => Enumerator.empty[play.api.libs.EventSource.Event]
       }
     ).as("text/event-stream")
   }
 
-  def liveGames(gameType: GameType, playerCondition: PlayerCondition,
-                tagFilter: TagFilter, serverFilter: ServerFilter) = Action {
+  def liveGames(queryCondition: QueryCondition) = Action {
     Ok.feed(
       content = gamesService.liveGamesEnum.flatMap {
-        case (sg, evt) if gameType(sg) && playerCondition(sg) && tagFilter(sg) && serverFilter(sg) =>
+        case (sg, evt) if queryCondition(sg) =>
           Enumerator(evt)
         case _ => Enumerator.empty[play.api.libs.EventSource.Event]
       }
