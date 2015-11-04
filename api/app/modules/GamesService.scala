@@ -3,13 +3,14 @@ package modules
 import java.time.{ZoneId, ZonedDateTime}
 import javax.inject._
 
-import akka.actor.ActorSystem
+import akka.actor.{Scheduler, ActorSystem}
 import akka.agent.Agent
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import gcc.enrichment.{DemoLookup, Enricher, PlayerLookup}
 import gcc.game.GameReader
 import gg.duel.SimpleGame
+import lib.SucceedOnceFuture
 import org.joda.time.DateTime
 import play.api.{Configuration, Logger}
 import play.api.db.slick.DatabaseConfigProvider
@@ -28,6 +29,8 @@ import scala.util.{Try, Failure, Success}
 class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamGames: UpstreamGames, clansService: ClansService, demoCollectorModule: DemoCollection,
                              applicationLifecycle: ApplicationLifecycle, configuration: Configuration)
                             (implicit executionContext: ExecutionContext, actorSystem: ActorSystem) {
+
+  implicit val scheduler = actorSystem.scheduler
 
   applicationLifecycle.addStopHook(() => Future.successful(dbConfig.db.close()))
 
@@ -57,25 +60,38 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
     q
   }
 
-  val loadGamesFromDatabase = Async.async {
-    Logger.info("Loading games from database...")
-    Async.await {
-      Source(dbConfig.db.stream(allGamesQuery.result)).mapAsyncUnordered(8) { case (id, json) =>
-        Future(sseToGameOption(id = id, json = json).toList)
-      }.mapConcat(identity).mapAsyncUnordered(2){
-        game =>
-          val f = gamesAgt.alterOff(_.withNewGame(game))
-          f.onFailure{ case x => println(s"==> $x")}
-          f
-      }.runFold(0){case (n,_) => n+1}
+  def loadGamesFromDatabaseFuture = {
+    val f = Async.async {
+      Logger.info("Loading games from database...")
+      Async.await {
+        Source(dbConfig.db.stream(allGamesQuery.result)).mapAsyncUnordered(8) { case (id, json) =>
+          Future(sseToGameOption(id = id, json = json).toList)
+        }.mapConcat(identity).mapAsyncUnordered(2){
+          game =>
+            val f = gamesAgt.alterOff(_.withNewGame(game))
+            f.onFailure{ case x => println(s"==> $x")}
+            f
+        }.runFold(0){case (n,_) => n+1}
+      }
     }
+
+
+    f.onFailure { case reas: Throwable =>
+      Logger.error(s"Loading games from database failed due to $reas. Trying again.", reas)
+
+    }
+
+    f
   }
 
-  loadGamesFromDatabase.onComplete {
-    case Success(result) =>
-      Logger.info(s"Loading $result games from database completed.")
-    case Failure(reas) =>
-      Logger.error(s"Loading games from database failed due to $reas", reas)
+  import concurrent.duration._
+
+  val loadGamesFromDatabaseOnce = new SucceedOnceFuture(loadGamesFromDatabaseFuture)(_ => 5.seconds)
+
+  def loadGamesFromDatabase = loadGamesFromDatabaseOnce.value
+
+  loadGamesFromDatabaseOnce.finalValue.onSuccess{ case result =>
+    Logger.info(s"Loading $result games from database completed.")
   }
 
   val playerLookup = new PlayerLookup {
