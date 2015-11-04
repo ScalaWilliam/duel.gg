@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject._
 
+import gg.duel.WindowedSearch
 import gg.duel.query._
 import modules._
 import play.api.libs.iteratee.Enumerator
@@ -28,47 +29,59 @@ class GamesApi @Inject()(gamesService: GamesService)
 
   def directedGames(direction: LookupDirection, id: GameId, queryCondition: QueryCondition, limit: LimitCondition) =
     Action.async { implicit request =>
-      val liveGamesUrl = controllers.routes.GamesApi.liveGames(queryCondition).url
-      val newGamesUrl = controllers.routes.GamesApi.newGames(queryCondition).url
-      val xlinks = List(
-        s"""<$liveGamesUrl>; rel="related"; title="Live game updates SSE stream"""",
-        s"""<$newGamesUrl>; rel="related"; title="New games SSE stream""""
-      )
       Async.async {
         Async.await(gamesService.loadGamesFromDatabase)
-        val games = gamesService.gamesAgt.get().games.valuesIterator.filter(queryCondition).toList.sortBy(_.id)
-        games.indexWhere(_.id == id.gameId) match {
-          case -1 => NotFound("Focus game not found")
-          case index =>
-            games.splitAt(index) match {
-              case (previousGames, focusGame :: nextGames) =>
-                val n = limit match {
-                  case DefaultLimit => 5
-                  case SpecificLimit(l) => l
-                }
-                def fullLink(gameId: GameId, direction: LookupDirection, title: String) = {
-                  val url = controllers.routes.GamesApi.directedGames(
-                    direction = direction, id = gameId, queryCondition = queryCondition, limit = limit
-                  )
-                  s"""<$url>; rel="${direction.httpValue}"; title="$title""""
-                }
-                if (direction.isAfter) {
-                  val nextLinkO = nextGames.take(n).lastOption.map(sg =>
-                    fullLink(gameId = GameId(sg.id), direction = LookupDirection.After, title = "More recent set of games"))
-                  val previousLink = fullLink(gameId = id, direction = LookupDirection.Before, title = "Games before this one")
-                  val json = JsArray(nextGames.take(n).map(_.enhancedNativeJson))
-                  val links = xlinks ++ nextLinkO ++ List(previousLink)
-                  Ok(json).withHeaders("Link" -> links.mkString(", "))
-                } else {
-                  val nextLink = fullLink(gameId = id, direction = LookupDirection.After, title = "Games after this one")
-                  val previousLinkO = if ( previousGames.size > n ) previousGames.takeRight(n).headOption.map(sg =>
-                    fullLink(gameId = GameId(sg.id), direction =direction, title = "More recent set of games"))
-                  else Option.empty
-                  val json = JsArray(previousGames.takeRight(n).map(_.enhancedNativeJson).reverse)
-                  val links = List(nextLink) ++ previousLinkO ++ xlinks
-                  Ok(json).withHeaders("Link" -> links.mkString(", "))
-                }
-            }
+        val limitNo = limit match {
+          case DefaultLimit => 5
+          case SpecificLimit(l) => l
+        }
+        val ml = WindowedSearch(filterGames(queryCondition))
+          .FocusedLookup(sg => sg.id == id.gameId)
+          .MultipleLookup(limitNo)
+        val itemsSpecificLinksO = if (direction.isAfter) {
+          ml.AfterLookup.apply().map { afterLookup =>
+            val nextLinkO = afterLookup.laterGame.map(sg =>
+              controllers.routes.GamesApi.directedGames(
+                direction = LookupDirection.After,
+                id = GameId(sg.id),
+                queryCondition = queryCondition,
+                limit = limit
+              ).url)
+              .map(url => s"""<$url>; rel="next"; title="Next set of games"""")
+            val previousLinkO = afterLookup.laterGame.map(sg =>
+              controllers.routes.GamesApi.directedGames(
+                direction = LookupDirection.Before,
+                id = GameId(sg.id),
+                queryCondition = queryCondition,
+                limit = limit
+              ).url).map(url => s"""<$url>; rel="previous"; title="Previous set of games"""")
+            (afterLookup.next, nextLinkO.toList ++ previousLinkO)
+          }
+        } else {
+          ml.BeforeLookup.apply().map { beforeLookup =>
+            val previousLinkO = beforeLookup.earlierGame.map(sg =>
+              controllers.routes.GamesApi.directedGames(
+                direction = LookupDirection.Before,
+                id = GameId(sg.id),
+                queryCondition = queryCondition,
+                limit = limit
+              ).url).map(url => s"""<$url>; rel="previous"; title="Previous set of games"""")
+            val nextLinkO = beforeLookup.afterGame.map(sg =>
+              controllers.routes.GamesApi.directedGames(
+                direction = LookupDirection.After,
+                id = GameId(sg.id),
+                queryCondition = queryCondition,
+                limit = limit
+              ).url).map(url => s"""<$url>; rel="next"; title="Next set of games"""")
+            (beforeLookup.previous, previousLinkO.toList ++ nextLinkO)
+          }
+        }
+        itemsSpecificLinksO match {
+          case None => NotFound("Focus game not found")
+          case Some((items, specificLinksL)) =>
+            val links = qcLinks(queryCondition) ++ specificLinksL
+            Ok(JsArray(items.map(_.enhancedNativeJson)))
+              .withHeaders("Link" -> links.mkString(", "))
         }
       }
     }
@@ -78,37 +91,37 @@ class GamesApi @Inject()(gamesService: GamesService)
     Action.async { implicit req =>
       Async.async {
         Async.await(gamesService.loadGamesFromDatabase)
-        val liveGamesUrl = controllers.routes.GamesApi.liveGames(queryCondition).url
-        val newGamesUrl = controllers.routes.GamesApi.newGames(queryCondition).url
-        var games = gamesService.gamesAgt.get().games.valuesIterator
-          .filter(queryCondition)
-          .toList.sortBy(_.id)
-
-        if (timing == Recent) games = games.reverse
 
         val limit = limitCondition match {
           case DefaultLimit => 5
           case SpecificLimit(l) => l
         }
 
-        val gl = games.take(limit)
-        val backLinkO = if ( games.size > limit ) gl.lastOption.map { focusGame =>
-          val direction = if ( timing.isFirst ) LookupDirection.After else LookupDirection.Before
-          val title = if ( timing.isFirst ) "Next games" else "Previous games"
-          val url = controllers.routes.GamesApi.directedGames(
-            direction = direction,
-            id = GameId(focusGame.id),
-            queryCondition = queryCondition,
-            limit = limitCondition
-          )
-          s"""<$url>; rel="${direction.httpValue}"; title="$title""""
-        } else Option.empty
-
-        val links = backLinkO.toList ++ List(
-          s"""<$liveGamesUrl>; rel="related"; title="Live game updates SSE stream"""",
-          s"""<$newGamesUrl>; rel="related"; title="New games SSE stream""""
-        )
-        Ok(JsArray(gl.map(g => Json.toJson(g.enhancedNativeJson)))).withHeaders("Link" -> links.mkString(", "))
+        val ws = WindowedSearch(filterGames(queryCondition)).SideBiasedLookup(limit)
+        val (items, specificLinksO) = if (timing == First) {
+          val fbl = ws.FirstBiasedLookup.apply()
+          val fblLinks = fbl.laterFocus.map(sg =>
+            controllers.routes.GamesApi.directedGames(
+              direction = LookupDirection.After,
+              id = GameId(sg.id),
+              queryCondition = queryCondition,
+              limit = limitCondition
+            ).url).map(url => s"""<$url>; rel="next"; title="Next set of games"""")
+          (fbl.items, fblLinks)
+        } else {
+          val lbl = ws.LastBiasedLookup.apply()
+          val lblLinks = lbl.previousFocus.map(sg =>
+            controllers.routes.GamesApi.directedGames(
+              direction = LookupDirection.Before,
+              id = GameId(sg.id),
+              queryCondition = queryCondition,
+              limit = limitCondition
+            ).url).map(url => s"""<$url>; rel="previous"; title="Previous set of games"""")
+          (lbl.items, lblLinks)
+        }
+        val links = qcLinks(queryCondition) ++ specificLinksO
+        Ok(JsArray(items.map(_.enhancedNativeJson)))
+          .withHeaders("Link" -> links.mkString(", "))
       }
     }
 
@@ -122,30 +135,37 @@ class GamesApi @Inject()(gamesService: GamesService)
     }
   }
 
+  def qcLinks(queryCondition: QueryCondition) = {
+    List({
+      val liveGames = controllers.routes.GamesApi.liveGames(queryCondition).url
+      s"""<$liveGames>; rel="related"; title="Live games based on this query""""
+    }, {
+      val newGames = controllers.routes.GamesApi.newGames(queryCondition).url
+      s"""<$newGames>; rel="related"; title="New games based on this query""""
+    })
+  }
+
+  def filterGames(queryCondition: QueryCondition) =
+    gamesService.gamesAgt.get().games.valuesIterator.filter(queryCondition).toVector.sortBy(_.id)
+
   def gameById(gameId: GameId, queryCondition: QueryCondition) = Action.async {
     Async.async {
       Async.await(gamesService.loadGamesFromDatabase)
-      val games = gamesService.gamesAgt.get().games.valuesIterator.filter(queryCondition).toList.sortBy(_.id)
-      games.indexWhere(_.id == gameId.gameId) match {
-        case -1 => NotFound("Game not found.")
-        case index =>
-          games.splitAt(index) match {
-            case (previousGames, focusGame :: nextGames) =>
-              val liveGamesUrl = controllers.routes.GamesApi.liveGames(queryCondition).url
-              val newGamesUrl = controllers.routes.GamesApi.newGames(queryCondition).url
-              val nextLinkO = nextGames.headOption.map(sg =>
-                controllers.routes.GamesApi.gameById(gameId = GameId(sg.id), queryCondition = queryCondition).url)
-              .map(url => s"""<$url>; rel="next"; title="Next game"""")
-              val previousLinkO = previousGames.lastOption.map(sg =>
-                controllers.routes.GamesApi.gameById(gameId = GameId(sg.id), queryCondition = queryCondition).url)
-              .map(url => s"""<$url>; rel="previous"; title="Previous game"""")
 
-              val links = nextLinkO.toList ++ previousLinkO.toList ++ List(
-                s"""<$liveGamesUrl>; rel="related"; title="Live game updates SSE stream"""",
-                s"""<$newGamesUrl>; rel="related"; title="New games SSE stream""""
-              )
-              Ok(focusGame.enhancedNativeJson).withHeaders("Link" -> links.mkString(", "))
-          }
+      WindowedSearch(filterGames(queryCondition))
+        .FocusedLookup(_.id == gameId.gameId)
+        .SingleLookup.apply() match {
+        case None => NotFound("Game not found.")
+        case Some(result) =>
+          val nextGameLinkO = result.next.map(sg =>
+            controllers.routes.GamesApi.gameById(gameId = GameId(sg.id), queryCondition = queryCondition).url)
+            .map(url => s"""<$url>; rel="next"; title="Next game"""")
+          val previousGameLinkO = result.previous.map(sg =>
+            controllers.routes.GamesApi.gameById(gameId = GameId(sg.id), queryCondition = queryCondition).url)
+            .map(url => s"""<$url>; rel="previous"; title="Previous game"""")
+          val links = qcLinks(queryCondition) ++ nextGameLinkO ++ previousGameLinkO
+          Ok(result.focus.enhancedNativeJson)
+            .withHeaders("Link" -> links.mkString(", "))
       }
     }
   }
