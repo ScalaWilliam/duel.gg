@@ -3,8 +3,8 @@ name := "duelgg"
 lazy val root = Project(
     id = "duelgg",
     base = file("."))
-  .dependsOn(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore)
-  .aggregate(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore)
+  .dependsOn(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore, gamesClojureCore)
+  .aggregate(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore, gamesClojureCore)
 
 lazy val api = Project(
     id = "api",
@@ -44,13 +44,15 @@ lazy val gameEvaluator = Project(
     "org.json4s" %% "json4s-native" % "3.3.0"
   ))
 
+lazy val gamesClojureCore = Project(
+  id = "games-clojure-core",
+  base = file("games-clojure-core")
+)
+
 lazy val gamesCore = Project(
     id = "games-core",
     base = file("games-core"))
-  .settings(libraryDependencies ++= Seq(
-    "gcc" % "gcc" % "1.0.0-SNAPSHOT",
-    json
-  ))
+  .settings(libraryDependencies +=json).dependsOn(gamesClojureCore)
 
 lazy val pingerCore = Project(
     id = "pinger-core",
