@@ -27,6 +27,8 @@ class GamesApi @Inject()(gamesService: GamesService)
     }
   }
 
+
+
   def directedGames(direction: LookupDirection, id: GameId, queryCondition: QueryCondition, limit: LimitCondition) =
     Action.async { implicit request =>
       Async.async {
