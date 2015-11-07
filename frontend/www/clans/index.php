@@ -1,7 +1,7 @@
 <?php
 require("../render.inc.php");
 ?>
-    <?php show_api_endpoint("http://api.duel.gg/clans/"); ?>
+    <?php show_api_endpoint("$host/clans/"); ?>
     <div id="content" style="width:60em;margin-left:auto;margin-right:auto;">
 
         <?php

@@ -9,7 +9,8 @@ import play.api.libs.json.{JsObject, Json}
 
 case class JsonGameToSimpleGame(enricher: Enricher, gameReader: GameReader) {
   def apply(id: String, json: String): Option[SimpleGame] = {
-    val richJson = enricher.enrichJsonGame(json)
+    val richJson = try enricher.enrichJsonGame(json)
+    catch { case x: Throwable => println(s"Some strange fail. Me = $this, id = $id, json = $json"); throw x}
     val richNativeJson = Json.parse(richJson).asInstanceOf[JsObject]
     val gameType = (richNativeJson \ "type").get.as[String]
     val server = (richNativeJson \ "server").get.as[String]

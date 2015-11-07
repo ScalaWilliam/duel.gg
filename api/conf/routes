@@ -1,15 +1,14 @@
-GET        /                                  @controllers.GamesApi.index
+GET        /                             @controllers.GamesApi.index
 
-GET        /games/                            @controllers.GamesApi.gamesByIds(game: MultipleByIdQuery)
-GET        /games/:gameType/focus/:id/        @controllers.GamesApi.focusGames(focus: Focus, gameType: GameType, id: GameId, playerCondition: PlayerCondition, tagFilter: TagFilter, server: ServerFilter)
-GET        /games/:gameType/:timing/          @controllers.GamesApi.timedGames(gameType: GameType, timing: TimingCondition, playerCondition: PlayerCondition, limit: LimitCondition, tagFilter: TagFilter, server: ServerFilter)
-GET        /game/:id/                         @controllers.GamesApi.gameById(id: GameId)
+GET        /games/                       @controllers.GamesApi.gamesByIds(game: MultipleByIdQuery)
+GET        /games/new/                   @controllers.GamesApi.newGames(queryCondition: QueryCondition)
+GET        /games/live/                  @controllers.GamesApi.liveGames(queryCondition: QueryCondition)
+GET        /games/:timing/               @controllers.GamesApi.timedGames(timing: TimingCondition, queryCondition: QueryCondition, limit: LimitCondition)
+GET        /games/:direction/:id/        @controllers.GamesApi.directedGames(direction: LookupDirection, id: GameId, queryCondition: QueryCondition, limit: LimitCondition)
+GET        /game/:gameId/                    @controllers.GamesApi.gameById(gameId: GameId, queryCondition: QueryCondition)
 
-GET        /nicknames/                        @controllers.GamesApi.getNicknames
+GET        /nicknames/                   @controllers.GamesApi.getNicknames
 
-GET        /new-games/:gameType/              @controllers.GamesApi.newGames(gameType: GameType, playerCondition: PlayerCondition, tagFilter: TagFilter, server: ServerFilter)
-GET        /live-games/:gameType/             @controllers.GamesApi.liveGames(gameType: GameType, playerCondition: PlayerCondition, tagFilter: TagFilter, server: ServerFilter)
+GET        /version/                     controllers.Version.getVersion
 
-GET        /version/                          controllers.Version.getVersion
-
-GET        /clans/                            @controllers.ClansApi.getClans
+GET        /clans/                       @controllers.ClansApi.getClans
