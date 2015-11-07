@@ -29,6 +29,7 @@ lazy val api = Project(
       "com.typesafe.play" %% "play-slick" % "1.1.0",
       "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
       "mysql" % "mysql-connector-java" % "5.1.37",
+      "io.scalac" %% "reactive-rabbit" % "1.0.2",
       "com.typesafe.play" %% "play-slick-evolutions" % "1.1.0"
 ))
   .settings(includeGitStamp, dontDocument)

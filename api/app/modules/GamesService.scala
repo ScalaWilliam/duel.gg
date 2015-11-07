@@ -1,5 +1,6 @@
 package modules
 
+import java.io._
 import java.time.{ZoneId, ZonedDateTime}
 import javax.inject._
 
@@ -25,12 +26,34 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 import scala.util.{Try, Failure, Success}
 
+
+case class Games
+(games: Map[String, SimpleGame]) { me =>
+  def withNewGame(simpleGame: SimpleGame): Games = {
+    copy(games = games + (simpleGame.id -> simpleGame))
+  }
+
+  def +(simpleGame: SimpleGame): Games = withNewGame(simpleGame)
+
+  def ++(games: Games): Games = Games(
+    games = me.games ++ games.games
+  )
+}
+
+object Games {
+  def empty: Games = Games(
+    games = Map.empty
+  )
+}
+
 @Singleton
 class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamGames: UpstreamGames, clansService: ClansService, demoCollectorModule: DemoCollection,
                              applicationLifecycle: ApplicationLifecycle, configuration: Configuration)
                             (implicit executionContext: ExecutionContext, actorSystem: ActorSystem) {
 
   implicit val scheduler = actorSystem.scheduler
+
+  def dumpFile = new File("games.cache.dump")
 
   applicationLifecycle.addStopHook(() => Future.successful(dbConfig.db.close()))
 
@@ -52,27 +75,57 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
 
   val gamesAgt = Agent(Games.empty)
 
+  def useCache = false
+
   def allGamesQuery = {
     var q = gamesT.sortBy(_.id)
-    if ( configuration.getBoolean("gg.duel.limit-game-load") == Some(true) ) {
-      q = q.take(2000)
+    (configuration.getBoolean("gg.duel.limit-game-load"),
+      configuration.getInt("gg.duel.limit-game-load-size")) match {
+      case (Some(true), Some(number)) =>
+        q = q.sortBy(_.id.desc).take(number)
     }
     q
   }
 
   def loadGamesFromDatabaseFuture = {
     val f = Async.async {
+
+      val initialDbGamesO = if ( useCache && dumpFile.exists() ) {
+        Logger.info("Loading games from thingy.")
+        Async.await(Future(concurrent.blocking(Option(loadDbGames()))))
+      } else Option.empty
+
+      initialDbGamesO match {
+        case Some(dbGames) =>
+          Logger.info(s"Reloaded some ${dbGames.games.size} games!")
+          Async.await(gamesAgt.alter(_ ++ dbGames))
+        case _ =>
+          Logger.info("No file so no reload done.")
+      }
+
+      val qr = initialDbGamesO.map(_.games.keySet.max) match {
+        case Some(latest) =>
+          allGamesQuery.filter(_.id >= latest).result
+        case _ =>
+          allGamesQuery.result
+      }
+
       Logger.info("Loading games from database...")
-      Async.await {
-        Source(dbConfig.db.stream(allGamesQuery.result)).mapAsyncUnordered(8) { case (id, json) =>
+      val ng = Async.await {
+        Source(dbConfig.db.stream(qr)).mapAsyncUnordered(8) { case (id, json) =>
           Future(sseToGameOption(id = id, json = json).toList)
         }.mapConcat(identity).mapAsyncUnordered(2){
           game =>
             val f = gamesAgt.alterOff(_.withNewGame(game))
             f.onFailure{ case x => println(s"==> $x")}
             f
-        }.runFold(0){case (n,_) => n+1}
+        }.runFold(gamesAgt.get().games.size){case (n,_) => n+1}
       }
+      if ( useCache ) {
+        Async.await(Future(concurrent.blocking(saveGames(gamesAgt.get()))))
+        Logger.info(s"Saved $ng games into cache.")
+      }
+      ng
     }
 
 
@@ -90,8 +143,31 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
 
   def loadGamesFromDatabase = loadGamesFromDatabaseOnce.value
 
+  def loadDbGames(): Games = {
+    val fis = new FileInputStream(dumpFile)
+    try {
+      val ois = new ObjectInputStream(fis)
+      try {
+        Logger.info("Reading object...")
+        val gms = ois.readObject().asInstanceOf[Games]
+        Logger.info("Reading complete.")
+        gms
+      } finally ois.close()
+    } finally fis.close()
+  }
+
+  def saveGames(games: Games) = {
+    val fos = new FileOutputStream(dumpFile)
+    try {
+      val oos = new ObjectOutputStream(fos)
+      try oos.writeObject(games)
+      finally oos.close()
+    } finally fos.close()
+  }
+
   loadGamesFromDatabaseOnce.finalValue.onSuccess{ case result =>
     Logger.info(s"Loading $result games from database completed.")
+
   }
 
   val playerLookup = new PlayerLookup {
@@ -102,20 +178,6 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
     }
   }
 
-  case class Games
-  (games: Map[String, SimpleGame]) {
-    def withNewGame(simpleGame: SimpleGame): Games = {
-      copy(games = games + (simpleGame.id -> simpleGame))
-    }
-
-    def +(simpleGame: SimpleGame): Games = withNewGame(simpleGame)
-  }
-
-  object Games {
-    def empty: Games = Games(
-      games = Map.empty
-    )
-  }
 
   lazy val demoLookup = new DemoLookup {
     override def lookupDemoUrl(server: String, mode: String, map: String, atTime: org.joda.time.DateTime): String = {
