@@ -12,7 +12,7 @@ import scala.util.Failure
 
 object ReadGamesApp extends App {
 
-  val file = new File("")
+  val file = new File(args(1))
 //    .listFiles()
 //    .collect { case f if f.getName.endsWith("sblog.gz") =>
 //      f.getCanonicalFile
