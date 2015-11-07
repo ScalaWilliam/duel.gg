@@ -80,8 +80,14 @@ lazy val pingerService = Project(
     "mysql" % "mysql-connector-java" % "5.1.37",
     "com.typesafe.play" %% "play-slick-evolutions" % "1.1.0",
     filters,
-    "com.typesafe.akka" %% "akka-agent" % "2.4.0"))
-  .settings(includeGitStamp, dontDocument)
+    "com.typesafe.akka" %% "akka-agent" % "2.4.0",
+    "io.scalac" %% "reactive-rabbit" % "1.0.2",
+    "com.typesafe.akka" %% "akka-stream-experimental" % "1.0"
+  ))
+  .settings(
+    includeGitStamp,
+    dontDocument
+  )
 
 lazy val pongParser = Project(
     id = "pong-parser",
