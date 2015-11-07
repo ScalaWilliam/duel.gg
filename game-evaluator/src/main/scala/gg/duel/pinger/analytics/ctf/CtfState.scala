@@ -44,109 +44,49 @@ case class TransitionalCtf(gameHeader: GameHeader, isRunning: Boolean, timeRemai
     case ParsedMessage(_, time, info: ConvertedServerInfoReply) if BetterDuelState.isSwitch(gameHeader.startMessage, info) =>
       if (ctfAccumulation.players.isEmpty) Bad(One("Player log empty"))
       else if (ctfAccumulation.teams.isEmpty) Bad(One("Team log empty"))
-      else completeCtf(Option(info)).map(CtfFound(gameHeader, _))
+      else completeCtf(this)(Option(info)).map(CtfFound(gameHeader, _))
     case ParsedMessage(_, time, info: ConvertedServerInfoReply) =>
       Good(copy(isRunning = !info.gamepaused, timeRemaining = info.remain))
     case other => Good(this)
   }
-  def startedAppropriateNumberOfPlayersOR: Int Or Every[ErrorMessage] = {
-    val maxRemaining = if ( ctfAccumulation.players.nonEmpty ) ctfAccumulation.players.map(_.remaining.seconds).max
-    else if ( ctfAccumulation.teams.nonEmpty ) ctfAccumulation.teams.map(_.remaining.seconds).max
-    else -1
-    if ( maxRemaining == -1 )return Bad(One("No data found yet - 0 players."))
-      val activePlayersAtStart = ctfAccumulation.players.filter(_.remaining.seconds == maxRemaining)
-      val activeTeamsAtStart = activePlayersAtStart.groupBy(_.playerId.team)
-      val teamPlayerCounts = activeTeamsAtStart.map(_._2.size).toSet
-      if (activeTeamsAtStart.size != 2) {
-        Bad(One(s"Expected two teams at start, found ${activeTeamsAtStart.size}"))
-      } else if (teamPlayerCounts.size != 1) {
-        Bad(One(s"Expected two teams to start with same number of players, found ${teamPlayerCounts.size}"))
-      } else if (teamPlayerCounts.head < 2) {
-        Bad(One(s"1v1 CTF not supported, found ${teamPlayerCounts.head} players"))
-      } else {
-        Good(activePlayersAtStart.size)
-      }
-  }
 
-  def lastTimeOR: Int Or Every[ErrorMessage] = {
-    val lastTime = if ( ctfAccumulation.teams.nonEmpty ) ctfAccumulation.teams.map(_.remaining.seconds).min
-    else if ( ctfAccumulation.players.nonEmpty ) ctfAccumulation.players.map(_.remaining.seconds).min
-    else -1
-    if ( lastTime == -1 ) return Bad(One("Could not find last time."))
-    if (lastTime <= 4) Good(lastTime) else Bad(One(s"Last remaining time found was $lastTime, expected below 4."))
-  }
-
-  def teams = ctfAccumulation.teams.map(_.teamId).toSet
-
-  def maxRemainingByTeams = ctfAccumulation.teams.map(_.remaining.seconds).max
-  def bothTeamsStartedOR = {
-    val bothTeamsStarted = teams.forall(team =>
-      ctfAccumulation.teams.exists { logItem =>
-        logItem.teamId == team && logItem.remaining.seconds == maxRemainingByTeams
-      })
-    if (bothTeamsStarted) Good(Unit) else Bad(One("Could not find a team log item to say that both teams started the game"))
-  }
-
-  def maxRemainingByTeamsOrPlayersOrOverall =
-    if (ctfAccumulation.teams.nonEmpty) ctfAccumulation.teams.map(_.remaining.seconds).max
-    else if (ctfAccumulation.players.nonEmpty) ctfAccumulation.players.map(_.remaining.seconds).max
-    else gameHeader.startMessage.remain
-
-  def teamResults = {
-    val durationSeconds = maxRemainingByTeamsOrPlayersOrOverall
-    for {
-      team <- teams
-      teamStats = ctfAccumulation.teams.filter(_.teamId.name == team.name)
-      flagLog = {
-        val first = teamStats.groupBy(stat => Math.ceil((durationSeconds - stat.remaining.seconds) / 60.0)).mapValues(_.minBy(_.remaining.seconds)).toList.sortBy(_._1)
-        first.map(eh => eh._1.toInt -> eh._2.flags.flags).filterNot(_._1 == 0)
-      }
-      TeamLogItem(_, _, flags) <- ctfAccumulation.teams.filter(_.teamId == team).sortBy(_.remaining.seconds).headOption
-      teamPlayers = for {
-        (player, playerLogs) <- ctfAccumulation.players.filter(_.playerId.team == team.name).groupBy(_.playerId)
-        (favouriteWeapon, _) = playerLogs.groupBy(_.weapon).toList.sortBy(_._2.size).reverse.head
-      } yield SimplePlayer(player.name, player.ip, favouriteWeapon.weapon)
-      teamScore = SimpleTeamScore(name = team.name, flags = flags.flags, flagLog = flagLog, players = teamPlayers.toList)
-    } yield team.name -> teamScore
-  }
-  def playedAt = ctfAccumulation.teams.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted
-
-  def liveCtf: LiveCTF Or Every[ErrorMessage] = {
-    for {
-      startedAppropriateNumberOfPlayers <- startedAppropriateNumberOfPlayersOR
-      _ <- bothTeamsStartedOR
-      durationSeconds = gameHeader.startMessage.remain
-      durationMinutes = Math.ceil(durationSeconds / 60.0).toInt
-    } yield LiveCTF(
-      teamsize = startedAppropriateNumberOfPlayers / 2,
-      serverDescription = CleanupDescription(gameHeader.startMessage.description),
-      simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
-      duration = durationMinutes,
-      playedAt = playedAt,
-      startTimeText = gameHeader.startTimeText,
-      startTime = gameHeader.startTime,
-      map = gameHeader.map,
-      mode = gameHeader.mode,
-      server = gameHeader.server,
-      teams = teamResults.toMap, metaId = None)
-  }
-
-  def completeCtf(nextMessage: Option[ConvertedServerInfoReply]): SimpleCompletedCTF Or Every[ErrorMessage] = {
+  def completeCtf(transitionalCtf: TransitionalCtf)(nextMessage: Option[ConvertedServerInfoReply]): SimpleCompletedCTF Or Every[ErrorMessage] = {
     /**
      * Start with an even number of players of at least six.
      * Expect at least 1 player from each team to stay to the very end.
      */
     for {
-      startedAppropriateNumberOfPlayers <- startedAppropriateNumberOfPlayersOR
-      lastTime <- lastTimeOR
+      startedAppropriateNumberOfPlayers <- {
+        val maxRemaining = transitionalCtf.ctfAccumulation.players.map(_.remaining.seconds).max
+        val activePlayersAtStart = transitionalCtf.ctfAccumulation.players.filter(_.remaining.seconds == maxRemaining)
+        val activeTeamsAtStart = activePlayersAtStart.groupBy(_.playerId.team)
+        val teamPlayerCounts = activeTeamsAtStart.map(_._2.size).toSet
+        if (activeTeamsAtStart.size != 2) {
+          Bad(One(s"Expected two teams at start, found ${activeTeamsAtStart.size}"))
+        } else if (teamPlayerCounts.size != 1) {
+          Bad(One(s"Expected two teams to start with same number of players, found ${teamPlayerCounts.size}"))
+        } else if (teamPlayerCounts.head < 2) {
+          Bad(One(s"1v1 CTF not supported, found ${teamPlayerCounts.head} players"))
+        } else {
+          Good(activePlayersAtStart.size)
+        }
+      }
+      teams = transitionalCtf.ctfAccumulation.teams.map(_.teamId).toSet
+      maxRemainingPlayers = transitionalCtf.ctfAccumulation.players.map(_.remaining.seconds).max
+      maxRemainingTeams = transitionalCtf.ctfAccumulation.teams.map(_.remaining.seconds).max
+      bothTeamsStarted = teams.forall(team =>
+        transitionalCtf.ctfAccumulation.teams.exists { logItem =>
+          logItem.teamId == team && logItem.remaining.seconds == maxRemainingTeams
+        })
+      lastTime = transitionalCtf.ctfAccumulation.teams.map(_.remaining.seconds).min
+      _ <- if (lastTime <= 4) Good(Unit) else Bad(One(s"Last remaining time found was $lastTime, expected below 4."))
       bothTeamsFinished = teams.forall(team =>
-        ctfAccumulation.teams.exists { logItem =>
+        transitionalCtf.ctfAccumulation.teams.exists { logItem =>
           logItem.remaining.seconds == lastTime && logItem.teamId == team
         }
       )
       atMostTwoPlayersLeftAtTheEnd <- {
-        val maxRemainingPlayers = ctfAccumulation.players.map(_.remaining.seconds).max
-        val playersRemaining = ctfAccumulation.players.count { logItem =>
+        val playersRemaining = transitionalCtf.ctfAccumulation.players.count { logItem =>
           logItem.remaining.seconds == maxRemainingPlayers
         }
         if (playersRemaining > startedAppropriateNumberOfPlayers) {
@@ -157,28 +97,45 @@ case class TransitionalCtf(gameHeader: GameHeader, isRunning: Boolean, timeRemai
           Good(Unit)
         }
       }
-      _ <- bothTeamsStartedOR
+      _ <- if (bothTeamsStarted) Good(Unit) else Bad(One("Could not find a team log item to say that both teams started the game"))
       _ <- if (bothTeamsFinished) Good(Unit) else Bad(One(s"Could not find a team log item to stay that both teams finished the game ($nextMessage)"))
-      plays <- {
-        if (playedAt.size < 8) Bad(One(s"Game active at $playedAt, expected more")) else Good(playedAt)
+      playedAt <- {
+        val plays = transitionalCtf.ctfAccumulation.teams.map(_.remaining.seconds).map(t => (t / 60) + 1).toSet.toList.sorted
+        if (plays.size < 8) Bad(One(s"Game active at $plays, expected more")) else Good(plays)
       }
-      durationSeconds = maxRemainingByTeamsOrPlayersOrOverall
+      durationSeconds = maxRemainingTeams
       durationMinutes = Math.ceil(durationSeconds / 60.0).toInt
-      winner = {
-        if (teamResults.toList.map(_._2.flags).toSet.size == 1) None
-        else Option(teamResults.maxBy(_._2.flags)._1)
+      teamResults = {
+        for {
+          team <- teams
+          teamStats = transitionalCtf.ctfAccumulation.teams.filter(_.teamId.name == team.name)
+          flagLog = {
+            val first = teamStats.groupBy(stat => Math.ceil((durationSeconds - stat.remaining.seconds) / 60.0)).mapValues(_.minBy(_.remaining.seconds)).toList.sortBy(_._1)
+            first.map(eh => eh._1.toInt -> eh._2.flags.flags).filterNot(_._1 == 0)
+          }
+          TeamLogItem(_, _, flags) <- transitionalCtf.ctfAccumulation.teams.find(logItem => logItem.remaining.seconds == lastTime && logItem.teamId == team)
+          teamPlayers = for {
+            (player, playerLogs) <- transitionalCtf.ctfAccumulation.players.filter(_.playerId.team == team.name).groupBy(_.playerId)
+            (favouriteWeapon, _) = playerLogs.groupBy(_.weapon).toList.sortBy(_._2.size).reverse.head
+          } yield SimplePlayer(player.name, player.ip, favouriteWeapon.weapon)
+          teamScore = SimpleTeamScore(name = team.name, flags = flags.flags, flagLog = flagLog, players = teamPlayers.toList)
+        } yield team.name -> teamScore
+      }
+      winner = if (teamResults.map(_._2.flags).toSet.size == 1) None
+      else {
+        Option(teamResults.maxBy(_._2.flags)._1)
       }
     } yield SimpleCompletedCTF(
       teamsize = startedAppropriateNumberOfPlayers / 2,
-      serverDescription = CleanupDescription(gameHeader.startMessage.description),
-      simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
+      serverDescription = CleanupDescription(transitionalCtf.gameHeader.startMessage.description),
+      simpleId = s"${transitionalCtf.gameHeader.startTimeText}::${transitionalCtf.gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
       duration = durationMinutes,
-      playedAt = plays,
-      startTimeText = gameHeader.startTimeText,
-      startTime = gameHeader.startTime,
-      map = gameHeader.map,
-      mode = gameHeader.mode,
-      server = gameHeader.server,
+      playedAt = playedAt,
+      startTimeText = transitionalCtf.gameHeader.startTimeText,
+      startTime = transitionalCtf.gameHeader.startTime,
+      map = transitionalCtf.gameHeader.map,
+      mode = transitionalCtf.gameHeader.mode,
+      server = transitionalCtf.gameHeader.server,
       teams = teamResults.toMap, winner = winner, metaId = None)
   }
 }
