@@ -1,10 +1,8 @@
 package controllers
 
-import java.util.Base64
 import javax.inject._
-import gg.duel.pinger.data.journal.{SauerBytesBinary, SauerBytes}
+
 import modules.{GamesManager, ServerManager}
-import org.apache.commons.codec.binary.Hex
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.{JsArray, Json}
@@ -29,23 +27,26 @@ class Main @Inject()
     Ok(views.html.index())
   }
 
-  private def allGamesEnum = Enumerator.enumerate(
-    traversable = gamesManager.games.asCombined.games.sortBy(_.fold(_.startTime, _.startTime)).map(_.fold(scd =>
-      Event(
-        id = Option(scd.startTimeText),
-        name = Option("duel"),
-        data = scd.toJson), scc =>
-      Event(
-        id = Option(scc.startTimeText),
-        name = Option("ctf"),
-        data = scc.toJson
-      )))
-  )
+  private def allGamesEnum = Async.async {
+    Async.await(gamesManager.gamesLoadedF)
+    Enumerator.enumerate(
+      traversable = gamesManager.games.games.toList.sortBy(_._1).map { case (id, gameJson) =>
+        val gameType = if ( (gameJson \ "mode").asOpt[String].get.contains("ctf") ) "ctf" else "duel"
+        Event(
+          id = Option(id),
+          name = Option(gameType),
+          data = gameJson.toString
+        )
+      }
+    )
+  }
 
-  def allGames = Action {
+  def allGames = Action.async {
     implicit req =>
-      val endToken = Event(data = "end", id = Option("end"), name = Option("end"))
-      Ok.feed(content = allGamesEnum.andThen(Enumerator.apply(endToken))).as("text/event-stream")
+      Async.async {
+        val endToken = Event(data = "end", id = Option("end"), name = Option("end"))
+        Ok.feed(content = Async.await(allGamesEnum).andThen(Enumerator.apply(endToken))).as("text/event-stream")
+      }
   }
 
   def readParsed = Action.async {
@@ -58,11 +59,13 @@ class Main @Inject()
     }
   }
 
-  def allGamesAndNew = Action {
+  def allGamesAndNew = Action.async {
     implicit req =>
-      Ok.feed(
-        content = allGamesEnum.andThen(pingerService.enumerator)
-      ).as("text/event-stream")
+      Async.async {
+        Ok.feed(
+          content = Async.await(allGamesEnum).andThen(pingerService.enumerator)
+        ).as("text/event-stream")
+      }
   }
 
   def liveGames = Action {
@@ -80,8 +83,11 @@ class Main @Inject()
     Ok(serverProvider.servers)
   }
 
-  def recent = Action {
-    Ok(gamesManager.games.asCombined.latest(50).reverse)
+  def recent = Action.async {
+    Async.async {
+      Async.await(gamesManager.gamesLoadedF)
+      Ok(JsArray(gamesManager.games.latest(50).map(_._2)))
+    }
   }
 
   def currentStatus = Action {

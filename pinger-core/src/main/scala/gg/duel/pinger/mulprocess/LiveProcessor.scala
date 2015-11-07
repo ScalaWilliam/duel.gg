@@ -48,15 +48,7 @@ case class LiveProcessor(liveGames: Map[Server, Either[LiveDuel, LiveCTF]]) {
           Option(updateEvent) -> copy(liveGames = newLiveGames)
         }
       case ZInCtfState(_, ctfState: TransitionalCtf) =>
-        ctfState.liveCtf.toOption.map { liveCtf =>
-          val newLiveGames = liveGames.updated(server, Right(liveCtf))
-          val updateEvent = Event(
-            data = liveCtf.toJson,
-            id = Option(liveCtf.startTimeText),
-            name = Option("live-ctf")
-          )
-          Option(updateEvent) -> copy(liveGames = newLiveGames)
-        }
+        Option.empty
       case ZFoundDuel(_, scd) =>
         val newEvent = Event(
           data = scd.toJson,

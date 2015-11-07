@@ -3,8 +3,25 @@ name := "duelgg"
 lazy val root = Project(
     id = "duelgg",
     base = file("."))
-  .dependsOn(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore, pingerJournalReader)
-  .aggregate(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore, pingerJournalReader)
+  .dependsOn(
+    gameEvaluator,
+    pongParser,
+    api,
+    pingerCore,
+    pingerService,
+    gamesCore,
+    pingerJournalReader,
+    gamesClojureCore
+  ).aggregate(
+    gameEvaluator,
+    pongParser,
+    api,
+    pingerCore,
+    pingerService,
+    gamesCore,
+    pingerJournalReader,
+    gamesClojureCore
+  )
 
 lazy val api = Project(
     id = "api",
@@ -25,7 +42,11 @@ lazy val api = Project(
       "org.apache.httpcomponents" % "fluent-hc" % "4.5.1",
       "org.scalatest" %% "scalatest" % "2.2.5" % "test",
       "org.scalatestplus" %% "play" % "1.4.0-M4" % "test",
-      "org.jsoup" % "jsoup" % "1.8.3"
+      "org.jsoup" % "jsoup" % "1.8.3",
+      "com.typesafe.play" %% "play-slick" % "1.1.0",
+      "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
+      "mysql" % "mysql-connector-java" % "5.1.37",
+      "com.typesafe.play" %% "play-slick-evolutions" % "1.1.0"
 ))
   .settings(includeGitStamp, dontDocument)
   .dependsOn(gameEvaluator % "test->test")
@@ -40,13 +61,15 @@ lazy val gameEvaluator = Project(
     "org.json4s" %% "json4s-native" % "3.3.0"
   ))
 
+lazy val gamesClojureCore = Project(
+  id = "games-clojure-core",
+  base = file("games-clojure-core")
+)
+
 lazy val gamesCore = Project(
     id = "games-core",
     base = file("games-core"))
-  .settings(libraryDependencies ++= Seq(
-    "gcc" % "gcc" % "1.0.0-SNAPSHOT",
-    json
-  ))
+  .settings(libraryDependencies +=json).dependsOn(gamesClojureCore)
 
 lazy val pingerCore = Project(
     id = "pinger-core",
@@ -81,6 +104,11 @@ lazy val pingerService = Project(
   .settings(name := "pingerservice")
   .settings(libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-async" % "0.9.5",
+    "com.h2database" % "h2" % "1.4.190",
+    "com.typesafe.play" %% "play-slick" % "1.1.0",
+    "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
+    "mysql" % "mysql-connector-java" % "5.1.37",
+    "com.typesafe.play" %% "play-slick-evolutions" % "1.1.0",
     filters,
     "com.typesafe.akka" %% "akka-agent" % "2.4.0",
     "org.scalatest" %% "scalatest" % "2.2.5" % "test",

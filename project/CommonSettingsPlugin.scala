@@ -12,7 +12,8 @@ object CommonSettingsPlugin extends AutoPlugin {
       "-language:existentials", "-language:implicitConversions",
       "-language:reflectiveCalls"
     ),
-    resolvers += Resolver.mavenLocal
+    resolvers += Resolver.mavenLocal,
+    libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
   )
   object autoImport {
     val includeGitStamp = com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings

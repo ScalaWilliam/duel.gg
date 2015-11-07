@@ -30,25 +30,6 @@ package object controllers {
       JsObject(o.servers.mapValues(_.getAddress).mapValues(JsString.apply))
   }
 
-  implicit val writesCombinedGames: Writes[CombinedGames] = new Writes[CombinedGames] {
-    override def writes(o: CombinedGames): JsValue = {
-      JsArray {
-        o.games.map(_.fold(g => Json.toJson(g), g => Json.toJson(g)))
-      }
-    }
-  }
-
-  implicit val writesGames = Json.writes[Games]
-  implicit val writesGamesIndex = Json.writes[GamesIndex]
-  implicit val writesCtfs = Json.writes[Ctfs]
-  implicit val writesDuels = Json.writes[Duels]
-
   implicit val httpWritesServers = implicitly[Writeable[JsValue]].map(Json.toJson(_: Servers))
-
-  implicit val httpWritesGames = implicitly[Writeable[JsValue]].map(Json.toJson(_: Games))
-  implicit val httpWritesGamesIndex = implicitly[Writeable[JsValue]].map(Json.toJson(_: GamesIndex))
-  implicit val httpWritesCombinedGames = implicitly[Writeable[JsValue]].map(Json.toJson(_: CombinedGames))
-  implicit val httpWritesCtfs = implicitly[Writeable[JsValue]].map(Json.toJson(_: Ctfs))
-  implicit val httpWritesDuels = implicitly[Writeable[JsValue]].map(Json.toJson(_: Duels))
 
 }
