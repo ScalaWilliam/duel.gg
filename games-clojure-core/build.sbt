@@ -1,6 +1,6 @@
 lazy val buildClojure = taskKey[String]("Compile Clojure")
-lazy val clojureNamespaces = SettingKey[List[String]]("Clojure namespaces to compile")
-lazy val clojureTarget = SettingKey[File]("Clojure target")
+lazy val clojureNamespaces = settingKey[List[String]]("Clojure namespaces to compile")
+lazy val clojureTarget = settingKey[File]("Clojure target")
 
 resolvers += "clojars" at "http://clojars.org/repo"
 
@@ -23,7 +23,8 @@ buildClojure := {
 	val dstPath = clojureTarget.value.getCanonicalPath
 	val depJars = (dependencyClasspath in Compile).value.map(_.data).map(_.getCanonicalPath)
 	val fullCp = List(srcPath, dstPath) ++ depJars
-	val theCallN = List("java", "-Dclojure.compile.path=" + clojureTarget.value.getCanonicalPath, "-cp", fullCp.mkString(":"), "clojure.lang.Compile") ++ clojureNamespaces.value
+	val cpVal = fullCp.mkString(java.io.File.pathSeparatorChar.toString)
+	val theCallN = List("java", "-Dclojure.compile.path=" + clojureTarget.value.getCanonicalPath, "-cp", cpVal, "clojure.lang.Compile") ++ clojureNamespaces.value
   val logger = streams.value.log
 	Process(theCallN) ! logger
 	"K"
