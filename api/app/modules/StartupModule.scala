@@ -10,9 +10,9 @@ class StartupModule extends Module {
       case Some(true) => classOf[DemoCollectorLive]
       case _ =>  classOf[DemoCollectorEmpty]
     }}.eagerly(),
-    bind[UpstreamGames].to{configuration.getBoolean("gg.duel.live-games.active") match {
-      case Some(true) => classOf[UpstreamGamesLive]
-      case _ => classOf[UpstreamGamesNone]
-    }}
+    bind[RabbitSource].to{configuration.getBoolean("gg.duel.live-games.active") match {
+      case Some(true) => classOf[RabbitSourceRunning]
+      case _ => classOf[NoRabbitSource]
+    }}.eagerly()
   )
 }

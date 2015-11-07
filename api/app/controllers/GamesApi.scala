@@ -14,7 +14,7 @@ import scala.language.implicitConversions
 
 
 @Singleton
-class GamesApi @Inject()(gamesService: GamesService)
+class GamesApi @Inject()(gamesService: GamesService, rabbitSource: RabbitSource)
                         (implicit executionContext: ExecutionContext) extends Controller {
 
   def index = TODO

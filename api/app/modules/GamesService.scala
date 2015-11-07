@@ -7,10 +7,11 @@ import javax.inject._
 import akka.actor.{Scheduler, ActorSystem}
 import akka.agent.Agent
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl._
 import gcc.enrichment.{DemoLookup, Enricher, PlayerLookup}
 import gcc.game.GameReader
 import gg.duel.SimpleGame
+import io.scalac.amqp.{Delivery, Connection}
 import lib.SucceedOnceFuture
 import org.joda.time.DateTime
 import play.api.{Configuration, Logger}
@@ -28,7 +29,8 @@ import scala.util.{Try, Failure, Success}
 
 
 case class Games
-(games: Map[String, SimpleGame]) { me =>
+(games: Map[String, SimpleGame]) {
+  me =>
   def withNewGame(simpleGame: SimpleGame): Games = {
     copy(games = games + (simpleGame.id -> simpleGame))
   }
@@ -47,13 +49,11 @@ object Games {
 }
 
 @Singleton
-class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamGames: UpstreamGames, clansService: ClansService, demoCollectorModule: DemoCollection,
+class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansService: ClansService, demoCollectorModule: DemoCollection,
                              applicationLifecycle: ApplicationLifecycle, configuration: Configuration)
                             (implicit executionContext: ExecutionContext, actorSystem: ActorSystem) {
 
   implicit val scheduler = actorSystem.scheduler
-
-  def dumpFile = new File("games.cache.dump")
 
   applicationLifecycle.addStopHook(() => Future.successful(dbConfig.db.close()))
 
@@ -75,14 +75,14 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
 
   val gamesAgt = Agent(Games.empty)
 
-  def useCache = false
-
   def allGamesQuery = {
     var q = gamesT.sortBy(_.id)
     (configuration.getBoolean("gg.duel.limit-game-load"),
       configuration.getInt("gg.duel.limit-game-load-size")) match {
       case (Some(true), Some(number)) =>
         q = q.sortBy(_.id.desc).take(number)
+      case _ =>
+
     }
     q
   }
@@ -90,42 +90,19 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
   def loadGamesFromDatabaseFuture = {
     val f = Async.async {
 
-      val initialDbGamesO = if ( useCache && dumpFile.exists() ) {
-        Logger.info("Loading games from thingy.")
-        Async.await(Future(concurrent.blocking(Option(loadDbGames()))))
-      } else Option.empty
-
-      initialDbGamesO match {
-        case Some(dbGames) =>
-          Logger.info(s"Reloaded some ${dbGames.games.size} games!")
-          Async.await(gamesAgt.alter(_ ++ dbGames))
-        case _ =>
-          Logger.info("No file so no reload done.")
-      }
-
-      val qr = initialDbGamesO.map(_.games.keySet.max) match {
-        case Some(latest) =>
-          allGamesQuery.filter(_.id >= latest).result
-        case _ =>
-          allGamesQuery.result
-      }
+      var qr = allGamesQuery.result
 
       Logger.info("Loading games from database...")
-      val ng = Async.await {
+      Async.await {
         Source(dbConfig.db.stream(qr)).mapAsyncUnordered(8) { case (id, json) =>
           Future(sseToGameOption(id = id, json = json).toList)
-        }.mapConcat(identity).mapAsyncUnordered(2){
+        }.mapConcat(identity).mapAsyncUnordered(2) {
           game =>
             val f = gamesAgt.alterOff(_.withNewGame(game))
-            f.onFailure{ case x => println(s"==> $x")}
+            f.onFailure { case x => println(s"==> $x") }
             f
-        }.runFold(gamesAgt.get().games.size){case (n,_) => n+1}
+        }.runFold(gamesAgt.get().games.size) { case (n, _) => n + 1 }
       }
-      if ( useCache ) {
-        Async.await(Future(concurrent.blocking(saveGames(gamesAgt.get()))))
-        Logger.info(s"Saved $ng games into cache.")
-      }
-      ng
     }
 
 
@@ -143,29 +120,7 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
 
   def loadGamesFromDatabase = loadGamesFromDatabaseOnce.value
 
-  def loadDbGames(): Games = {
-    val fis = new FileInputStream(dumpFile)
-    try {
-      val ois = new ObjectInputStream(fis)
-      try {
-        Logger.info("Reading object...")
-        val gms = ois.readObject().asInstanceOf[Games]
-        Logger.info("Reading complete.")
-        gms
-      } finally ois.close()
-    } finally fis.close()
-  }
-
-  def saveGames(games: Games) = {
-    val fos = new FileOutputStream(dumpFile)
-    try {
-      val oos = new ObjectOutputStream(fos)
-      try oos.writeObject(games)
-      finally oos.close()
-    } finally fos.close()
-  }
-
-  loadGamesFromDatabaseOnce.finalValue.onSuccess{ case result =>
+  loadGamesFromDatabaseOnce.finalValue.onSuccess { case result =>
     Logger.info(s"Loading $result games from database completed.")
 
   }
@@ -196,8 +151,6 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
 
   val demosAgt = Agent(DemosListing.empty)
 
-  upstreamGames.newClient.createStream(sseToGameOption.createFlow.to(Sink.foreach { game => gamesAgt.sendOff(_.withNewGame(game)) }))
-
 
   val kr = demoCollectorModule.demoFetching.to(Sink.foreach { demosFetched =>
     demosAgt.alterOff(_ ++ demosFetched).map { _ =>
@@ -208,21 +161,15 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
     }
   }).run()
 
-  applicationLifecycle.addStopHook(() => Future.successful{
+  applicationLifecycle.addStopHook(() => Future.successful {
     kr.cancel()
-    xs.success(())
-    xl.success(())
   })
 
+  // push to:
   val (newGamesEnum, newGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
-
-  val xs = upstreamGames.newClient.createStream(sseToGameOption.createFlow.to(Sink.foreach(game => newGamesChan.push(game -> game.toEvent))))
-
   val (liveGamesEnum, liveGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
+  // and also the agent
 
-  val xl = upstreamGames.liveGames.createStream(UpstreamGames.flw.mapConcat(sse =>
-    sseToGameOption.apply(sse).toList.map(sg => sse -> sg)
-  ).map { case (sse, sg) => sg -> sg.toEvent.copy(name = sse.eventType) }.to(Sink.foreach(event => liveGamesChan.push(event))))
 
 }
 
