@@ -7,7 +7,7 @@ cache:
     - $HOME/.sbt/boot/
     - resources/
 script:
-  - ./download-resources.sh
+  - bash download-resources.sh
   - sbt buildClojure test dist
 jdk:
   - oraclejdk8
