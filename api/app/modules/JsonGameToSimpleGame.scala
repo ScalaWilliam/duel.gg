@@ -2,8 +2,8 @@ package modules
 
 import de.heikoseeberger.akkasse.ServerSentEvent
 import gg.duel.SimpleGame
-import gg.duel.transformer.GameNode
-import gg.duel.transformer.lookup.LookingUp
+import gg.duel.enricher.GameNode
+import gg.duel.enricher.lookup.LookingUp
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 

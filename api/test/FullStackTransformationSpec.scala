@@ -1,6 +1,6 @@
 import gg.duel.pinger.analytics.duel.StubGenerator
-import gg.duel.transformer.GameNode
-import gg.duel.transformer.lookup.BasicLookingUp
+import gg.duel.enricher.GameNode
+import gg.duel.enricher.lookup.BasicLookingUp
 import lib.GeoLookup
 import modules.JsonGameToSimpleGame
 import org.scalatest.{Matchers, OptionValues, WordSpec}

@@ -9,21 +9,23 @@ lazy val root = Project(
     api,
     pingerCore,
     pingerService,
-    gamesCore
+    gamesQuery,
+    gameEnricher
   ).aggregate(
   gameEvaluator,
   pongParser,
   api,
   pingerCore,
   pingerService,
-  gamesCore
+  gamesQuery,
+gameEnricher
 )
 
 lazy val api = Project(
     id = "api",
     base = file("api"))
   .enablePlugins(PlayScala)
-  .dependsOn(gamesCore)
+  .dependsOn(gamesQuery, gameEnricher)
   .settings(
     routesImport ++= Seq("binders._", "gg.duel.query._"),
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
@@ -59,14 +61,17 @@ lazy val gameEvaluator = Project(
     json
   ))
 
+lazy val gamesQuery = Project(
+    id = "games-query",
+    base = file("games-query"))
+  .settings(
+    libraryDependencies += json
+  )
 
-lazy val gamesCore = Project(
-    id = "games-core",
-    base = file("games-core"))
-  .settings(libraryDependencies ++= Seq(
-    json,
-    "com.fasterxml.jackson.core" % "jackson-core" % "2.6.3"
-  )).dependsOn(gameEvaluator)
+lazy val gameEnricher = Project(
+    id = "game-enricher",
+    base = file("game-enricher"))
+  .dependsOn(gameEvaluator)
 
 lazy val pingerCore = Project(
     id = "pinger-core",

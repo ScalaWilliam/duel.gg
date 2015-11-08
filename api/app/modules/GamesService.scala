@@ -7,7 +7,7 @@ import akka.agent.Agent
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import gg.duel.SimpleGame
-import gg.duel.transformer.lookup.BasicLookingUp
+import gg.duel.enricher.lookup.BasicLookingUp
 import lib.{GeoLookup, SucceedOnceFuture}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.ApplicationLifecycle
