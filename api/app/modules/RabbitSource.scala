@@ -64,7 +64,6 @@ class RabbitSourceRunning @Inject()(gamesService: GamesService,
       import FlowGraph.Implicits._
       val deliveryToGame = Flow[Delivery].mapConcat { delivery =>
         gamesService.sseToGameOption.apply(
-          id = delivery.message.headers("game-id"),
           json = delivery.message.body.decodeString("UTF-8")
         ).map { sseGame => delivery -> sseGame }.toList
 

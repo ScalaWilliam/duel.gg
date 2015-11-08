@@ -3,8 +3,8 @@ name := "duelgg"
 lazy val root = Project(
     id = "duelgg",
     base = file("."))
-  .dependsOn(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore, gamesClojureCore)
-  .aggregate(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore, gamesClojureCore)
+  .dependsOn(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore)
+  .aggregate(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore)
 
 lazy val api = Project(
     id = "api",
@@ -30,7 +30,8 @@ lazy val api = Project(
       "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
       "mysql" % "mysql-connector-java" % "5.1.37",
       "io.scalac" %% "reactive-rabbit" % "1.0.2",
-      "com.typesafe.play" %% "play-slick-evolutions" % "1.1.0"
+      "com.typesafe.play" %% "play-slick-evolutions" % "1.1.0",
+      "com.maxmind.geoip" % "geoip-api" % "1.2.14"
 ))
   .settings(includeGitStamp, dontDocument)
   .dependsOn(gameEvaluator % "test->test")
@@ -46,15 +47,14 @@ lazy val gameEvaluator = Project(
     json
   ))
 
-lazy val gamesClojureCore = Project(
-  id = "games-clojure-core",
-  base = file("games-clojure-core")
-)
 
 lazy val gamesCore = Project(
     id = "games-core",
     base = file("games-core"))
-  .settings(libraryDependencies +=json).dependsOn(gamesClojureCore)
+  .settings(libraryDependencies ++= Seq(
+    json,
+    "com.fasterxml.jackson.core" % "jackson-core" % "2.6.3"
+  )).dependsOn(gameEvaluator)
 
 lazy val pingerCore = Project(
     id = "pinger-core",

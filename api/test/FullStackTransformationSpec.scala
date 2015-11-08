@@ -1,36 +1,50 @@
-import gcc.enrichment.{DemoLookup, Enricher, PlayerLookup}
 import gg.duel.pinger.analytics.duel.StubGenerator
-import org.joda.time.DateTime
-import org.scalatest.{Matchers, WordSpec}
+import gg.duel.transformer.GameNode
+import gg.duel.transformer.lookup.BasicLookingUp
+import lib.GeoLookup
+import modules.JsonGameToSimpleGame
+import org.scalatest.{Matchers, OptionValues, WordSpec}
 import play.api.libs.json.Json
 
-class FullStackTransformationSpec extends WordSpec with Matchers {
+class FullStackTransformationSpec extends WordSpec with Matchers with OptionValues {
 
   val fD = StubGenerator.validSequenceCompletedDuel
-  val enricher = new Enricher(new PlayerLookup {
-    override def lookupUserId(s: String, dateTime: DateTime): String = if (s == "w00p|Drakas") "drakas" else null
+  val testEnricher = new BasicLookingUp(
+    demoLookup = _ => Option("http://test.dmo"),
+    clanLookup = name => if ( name.startsWith("w00p|") ) Option("woop") else Option.empty,
+    countryLookup = GeoLookup.apply
+  )
+  val gameNode = GameNode(
+    jsonString = fD.toJson,
+    plainGameEnricher = testEnricher
+  )
 
-    override def lookupClanId(s: String, dateTime: DateTime): String = if (s.startsWith("w00p|")) "woop" else null
-  }, new DemoLookup {
-    override def lookupDemoUrl(server: String, mode: String, map: String, atTime: DateTime): String = {
-      "http://test.dmo"
-    }
-  })
-
-  "full stack" must {
+  "Full stack" must {
     "do it" in {
-
-      val enrichedGame = enricher.enrichJsonGame(fD.toJson)
-
-      val enrichedGamePretty = Json.prettyPrint(Json.parse(enrichedGame))
+      gameNode.enrich()
+      val enrichedGamePretty = gameNode.asPrettyJson
       val expectedGamePretty = Json.prettyPrint(Json.parse(getClass.getResourceAsStream("test-output.json")))
-
       enrichedGamePretty shouldBe expectedGamePretty
     }
     "ensure it is idempotent" in {
-      val enrichedGame = enricher.enrichJsonGame(fD.toJson)
-      val secondlyEnrichedGame = enricher.enrichJsonGame(enrichedGame)
+      val enrichedGame = gameNode.asPrettyJson
+      gameNode.enrich()
+      val secondlyEnrichedGame = gameNode.asPrettyJson
       enrichedGame shouldBe secondlyEnrichedGame
+    }
+    "extract correctly" in {
+      val k = JsonGameToSimpleGame(
+        enricher = testEnricher
+      ).apply(json = fD.toJson).value
+      k.clans should contain only ("woop")
+      k.demo.value shouldBe "http://test.dmo"
+      k.gameType shouldBe "duel"
+      k.id shouldBe "1970-01-01T03:25:12Z"
+      k.map shouldBe "academy"
+      k.players should contain only ("w00p|Art", "w00p|Drakas")
+      k.server shouldBe "123.2.2.22:2134"
+      k.tags should contain only ("duel")
+      k.users shouldBe empty
     }
   }
 }

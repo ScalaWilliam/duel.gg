@@ -1,39 +1,35 @@
 package modules
 
 import de.heikoseeberger.akkasse.ServerSentEvent
-import gcc.enrichment.Enricher
-import gcc.game.GameReader
 import gg.duel.SimpleGame
+import gg.duel.transformer.GameNode
+import gg.duel.transformer.lookup.LookingUp
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 
-case class JsonGameToSimpleGame(enricher: Enricher, gameReader: GameReader) {
-  def apply(id: String, json: String): Option[SimpleGame] = {
-    val richJson = try enricher.enrichJsonGame(json)
-    catch { case x: Throwable => println(s"Some strange fail. Me = $this, id = $id, json = $json"); throw x}
-    val richNativeJson = Json.parse(richJson).asInstanceOf[JsObject]
-    val gameType = (richNativeJson \ "type").get.as[String]
-    val server = (richNativeJson \ "server").get.as[String]
-    import collection.JavaConverters._
+case class JsonGameToSimpleGame(enricher: LookingUp) {
+  def apply(json: String): Option[SimpleGame] = {
+    val gn = GameNode(jsonString = json, plainGameEnricher = enricher)
+    gn.enrich()
     Option {
       SimpleGame(
-        id = id,
+        id = gn.startTimeText.get,
         gameJson = json,
-        server = server,
-        enhancedJson = richJson,
-        enhancedNativeJson = richNativeJson,
-        gameType = gameType,
-        users = gameReader.getUsers(richJson).asScala.collect { case x: String => x }.toSet,
-        clans = gameReader.getClans(richJson).asScala.collect { case x: String => x }.toSet,
-        players = gameReader.getPlayers(richJson).asScala.collect { case x: String => x }.toSet,
-        tags = gameReader.getTags(richJson).asScala.collect { case x: String => x }.toSet,
-        demo = (richNativeJson \ "demo").asOpt[String],
-        map = (richNativeJson \ "map").get.as[String]
+        server = gn.server.get,
+        enhancedJson = gn.asJson,
+        enhancedNativeJson = Json.parse(gn.asPrettyJson).asInstanceOf[JsObject],
+        gameType = gn.gameType.get,
+        users = Set.empty,
+        clans = gn.allPlayers.flatMap(_.clan).toSet,
+        players = gn.allPlayers.flatMap(_.name).toSet,
+        tags = gn.tags,
+        demo = gn.demo,
+        map = gn.map.get
       )
     }
   }
   def apply(sse: ServerSentEvent): Option[SimpleGame] = {
-    sse.id.flatMap { id => apply(id = id, json = sse.data) }
+    sse.id.flatMap { id => apply(json = sse.data) }
   }
 
   import akka.stream.scaladsl._
