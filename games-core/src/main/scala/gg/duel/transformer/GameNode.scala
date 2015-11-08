@@ -122,12 +122,12 @@ case class GameNode(om: ObjectMapper, gameNode: ObjectNode, plainGameEnricher: L
     transformLogs()
     addGameType()
     removeUnnecessaryNodes()
-    attachTags()
     addEndTime()
     allPlayers.foreach(_.attachClan())
     allPlayers.foreach(_.attachGeo())
     teams.foreach(_.attachClan())
     attachDemo()
+    attachTags()
   }
 
 }
