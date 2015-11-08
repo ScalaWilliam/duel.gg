@@ -5,9 +5,9 @@ cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
-    - $HOME/ScalaWilliam/duel.gg/resources
+    - resources/
 script:
-  - download-resources.sh
+  - ./download-resources.sh
   - sbt buildClojure test dist
 jdk:
   - oraclejdk8
