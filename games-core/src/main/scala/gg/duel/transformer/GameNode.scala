@@ -68,9 +68,9 @@ case class GameNode(om: ObjectMapper, gameNode: ObjectNode, plainGameEnricher: L
     /** MUTATIONS **/
     def attachClan(): Unit = {
       if ( players.size >= 2 ) {
-        val clans = players.flatMap(_.clan).toSet
-        if ( clans.size == 1 ) {
-          clans.foreach(clanName => teamNode.put("clan", clanName))
+        val clanOptions = players.map(_.clan).toSet
+        if ( clanOptions.size == 1 ) {
+          clanOptions.flatten.foreach(clanName => teamNode.put("clan", clanName))
         }
       }
     }
