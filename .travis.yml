@@ -6,8 +6,6 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
     - api/resources/
-install:
-  - bash download-resources.sh
 script:
   - sbt buildClojure test dist
 jdk:
