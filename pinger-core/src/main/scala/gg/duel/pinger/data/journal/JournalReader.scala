@@ -1,6 +1,7 @@
 package gg.duel.pinger.data.journal
 
 import java.io.{BufferedInputStream, File, FileInputStream}
+import java.net.URL
 import java.util.zip.{GZIPInputStream, InflaterInputStream, Deflater, DeflaterInputStream}
 
 import gg.duel.pinger.analytics.MultiplexedReader.{CompletedGame, SFoundGame, SIteratorState}
@@ -12,9 +13,9 @@ object JournalReader {
   type Game = Either[SimpleCompletedDuel, SimpleCompletedCTF]
 }
 
-class JournalReader(file: File) {
-
-  val fis = new FileInputStream(file)
+class JournalReader(url: URL) {
+  def this(file: File) = this(file.toURI.toURL)
+  val fis = url.openStream()
   val gis = new GZIPInputStream(fis)
   val is = new BufferedInputStream(gis)
 

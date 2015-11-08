@@ -3,8 +3,21 @@ name := "duelgg"
 lazy val root = Project(
     id = "duelgg",
     base = file("."))
-  .dependsOn(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore)
-  .aggregate(gameEvaluator, pongParser, api, pingerCore, pingerService, gamesCore)
+  .dependsOn(
+    gameEvaluator,
+    pongParser,
+    api,
+    pingerCore,
+    pingerService,
+    gamesCore
+  ).aggregate(
+  gameEvaluator,
+  pongParser,
+  api,
+  pingerCore,
+  pingerService,
+  gamesCore
+)
 
 lazy val api = Project(
     id = "api",
@@ -66,6 +79,18 @@ lazy val pingerCore = Project(
     "org.scalatest" %% "scalatest" % "2.2.5" % "test"
   ))
   .dependsOn(pongParser, gameEvaluator)
+
+lazy val pingerJournalReader = Project(
+  id = "pinger-journal-reader",
+  base = file("pinger-journal-reader")
+).settings(libraryDependencies ++= Seq(
+  "com.typesafe.slick" %% "slick" % "3.1.0",
+  "org.scala-lang.modules" %% "scala-async" % "0.9.5",
+  "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
+  "mysql" % "mysql-connector-java" % "5.1.37",
+  "com.typesafe.akka" %% "akka-stream-experimental" % "1.0"
+))
+.dependsOn(pingerCore)
 
 lazy val pingerService = Project(
     id = "pinger-service",
