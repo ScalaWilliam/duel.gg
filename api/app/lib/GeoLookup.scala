@@ -21,5 +21,4 @@ object GeoLookup {
       countryName <- Option(location.countryName)
     } yield (countryCode, countryName)
   }
-  
 }

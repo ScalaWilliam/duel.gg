@@ -13,9 +13,9 @@ import gg.duel.transformer.lookup.LookingUp
 
 object GameNode {
   def stubSource = StubGenerator.validSequenceCompletedDuel.toJson
+  lazy val om = new ObjectMapper()
 
   def apply(jsonString: String, plainGameEnricher: LookingUp): GameNode = {
-    val om = new ObjectMapper()
     val rootNode = om.readTree(jsonString)
     GameNode(
       om = om,
