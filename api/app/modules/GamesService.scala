@@ -150,10 +150,19 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansServ
   })
 
   // push to:
-  val (newGamesEnum, newGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
-  val (liveGamesEnum, liveGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
+  val (newGamesEnum, newGamesChan) = Concurrent.broadcast[(Option[SimpleGame], Event)]
+  val (liveGamesEnum, liveGamesChan) = Concurrent.broadcast[(Option[SimpleGame], Event)]
   // and also the agent
 
+  val keepAliveEveryTenSeconds = actorSystem.scheduler.schedule(5.seconds, 10.seconds){
+    val emptyEvent = Event(
+      data = "",
+      id = Option.empty,
+      name = Option.empty
+    )
+    newGamesChan.push(None -> emptyEvent)
+    liveGamesChan.push(None -> emptyEvent)
+  }
 
 }
 

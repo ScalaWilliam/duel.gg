@@ -46,11 +46,11 @@ class RabbitSourceRunning @Inject()(gamesService: GamesService,
 
   import gamesService.sgToEvent
   val toNewGamesSink = Sink.foreach[SimpleGame] { sg =>
-    gamesService.newGamesChan.push(sg -> sg.toEvent)
+    gamesService.newGamesChan.push(Option(sg) -> sg.toEvent)
   }
 
   val toLiveGamesSink = Sink.foreach[(SimpleGame, Event)] {
-    sg => gamesService.liveGamesChan.push(sg)
+    case (sg, event) => gamesService.liveGamesChan.push(Option(sg) -> event)
   }
 
   val toAgentSink = Sink.foreach[SimpleGame] { sg =>
