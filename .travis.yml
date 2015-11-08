@@ -5,7 +5,7 @@ cache:
   directories:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot/
-    - resources/
+    - api/resources/
 install:
   - bash download-resources.sh
 script:
