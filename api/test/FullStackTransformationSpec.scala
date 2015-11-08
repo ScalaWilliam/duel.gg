@@ -30,7 +30,7 @@ class FullStackTransformationSpec extends WordSpec with Matchers with OptionValu
       val enrichedGame = gameNode.asPrettyJson
       gameNode.enrich()
       val secondlyEnrichedGame = gameNode.asPrettyJson
-      enrichedGame shouldBe secondlyEnrichedGame
+      secondlyEnrichedGame shouldBe enrichedGame
     }
     "extract correctly" in {
       val k = JsonGameToSimpleGame(

@@ -1,6 +1,6 @@
 package gg.duel
 
-import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
+import com.fasterxml.jackson.databind.node.{IntNode, TextNode, ArrayNode, ObjectNode}
 
 package object transformer {
   import collection.JavaConverters._
@@ -17,5 +17,7 @@ package object transformer {
     def getArrayL(name: String) = Option(objectNode.get(name)).toList.collect { case ob: ArrayNode =>
       ob.elements().asScala
     }.flatten
+    def getStringO(name: String) = Option(objectNode.get(name)).collect{ case tn: TextNode => tn.textValue() }
+    def getIntO(name: String) = Option(objectNode.get(name)).collect{ case tn: IntNode => tn.intValue()  }
   }
 }
