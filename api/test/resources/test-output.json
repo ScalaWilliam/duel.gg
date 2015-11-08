@@ -32,7 +32,7 @@
   },
   "winner": "w00p|Drakas",
   "type": "duel",
-  "tags": [ "duel" ],
   "endTime": "1970-01-01T03:35:12Z",
-  "demo": "http://test.dmo"
+  "demo": "http://test.dmo",
+  "tags": [ "duel" ]
 }
