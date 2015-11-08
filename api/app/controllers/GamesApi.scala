@@ -14,7 +14,7 @@ import scala.language.implicitConversions
 
 
 @Singleton
-class GamesApi @Inject()(gamesService: GamesService)
+class GamesApi @Inject()(gamesService: GamesService, rabbitSource: RabbitSource)
                         (implicit executionContext: ExecutionContext) extends Controller {
 
   def index = TODO
@@ -153,8 +153,9 @@ class GamesApi @Inject()(gamesService: GamesService)
   def newGames(queryCondition: QueryCondition) = Action {
     Ok.feed(
       content = gamesService.newGamesEnum.flatMap {
-        case (sg, evt) if queryCondition(sg) =>
+        case (Some(sg), evt) if queryCondition(sg) =>
           Enumerator(evt)
+        case (None, evt) => Enumerator(evt)
         case _ => Enumerator.empty[play.api.libs.EventSource.Event]
       }
     ).as("text/event-stream")
@@ -163,8 +164,9 @@ class GamesApi @Inject()(gamesService: GamesService)
   def liveGames(queryCondition: QueryCondition) = Action {
     Ok.feed(
       content = gamesService.liveGamesEnum.flatMap {
-        case (sg, evt) if queryCondition(sg) =>
+        case (Some(sg), evt) if queryCondition(sg) =>
           Enumerator(evt)
+        case (None, evt) => Enumerator(evt)
         case _ => Enumerator.empty[play.api.libs.EventSource.Event]
       }
     ).as("text/event-stream")

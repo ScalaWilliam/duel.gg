@@ -1,46 +1,39 @@
 {
-  "map": "academy",
-  "server": "123.2.2.22:2134",
-  "endTimeText": "1970-01-01T03:35:12Z",
-  "playedAt": [
-    1,
-    11
-  ],
-  "tags": [ "duel" ],
+  "duration": 10,
+  "playedAt": [ 1, 11 ],
   "startTimeText": "1970-01-01T03:25:12Z",
+  "map": "academy",
+  "mode": "instagib",
+  "serverDescription": "test",
+  "server": "123.2.2.22:2134",
   "players": {
     "w00p|Drakas": {
-      "countryCode": "GB",
-      "frags": 40,
-      "clan": "woop",
-      "user": "drakas",
-      "countryName": "United Kingdom",
-      "weapon": "shotgun",
       "name": "w00p|Drakas",
       "ip": "213.171.195.x",
-      "fragLog": [
-        40
-      ],
-      "accuracy": 25
+      "frags": 40,
+      "weapon": "shotgun",
+      "accuracy": 25,
+      "fragLog": [ 40 ],
+      "clan": "woop",
+      "countryCode": "GB",
+      "countryName": "United Kingdom"
     },
     "w00p|Art": {
-      "countryCode": "BA",
-      "frags": 30,
-      "clan": "woop",
-      "countryName": "Bosnia and Herzegovina",
-      "weapon": "shotgun",
       "name": "w00p|Art",
       "ip": "80.65.161.x",
-      "fragLog": [
-        30
-      ],
-      "accuracy": 25
+      "frags": 30,
+      "weapon": "shotgun",
+      "accuracy": 25,
+      "fragLog": [ 30 ],
+      "clan": "woop",
+      "countryCode": "BA",
+      "countryName": "Bosnia and Herzegovina"
     }
   },
-  "mode": "instagib",
   "winner": "w00p|Drakas",
-  "duration": 10,
   "type": "duel",
-  "endTime": 12912000,
-  "demo": "http://test.dmo"
+  "endTime": "1970-01-01T03:35:12Z",
+  "demo": "http://test.dmo",
+  "tags": [ "duel" ],
+  "startTime": "1970-01-01T03:25:12Z"
 }

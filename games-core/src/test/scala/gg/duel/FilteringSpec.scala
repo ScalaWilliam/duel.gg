@@ -54,11 +54,5 @@ class FilteringSpec
     }
   }
 
-  "Directed filter" must {
-    "Work properly" in {
-      fail("K")
-    }
-  }
-
 
 }

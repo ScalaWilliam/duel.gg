@@ -20,7 +20,8 @@ class Main @Inject()
  journallingService: JournallingService,
  readJournalledService: ReadJournalledService,
  loadJournalledIntoCore: LoadJournalledIntoCore,
- serveLiveSauerBytesService: ServeLiveSauerBytesService)
+ serveLiveSauerBytesService: ServeLiveSauerBytesService,
+  rabbitMQSinkService: RabbitMQSinkService)
 (implicit executionContext: ExecutionContext) extends Controller {
 
   def index = Action {

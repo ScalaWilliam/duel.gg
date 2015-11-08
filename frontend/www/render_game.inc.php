@@ -12,8 +12,8 @@ function render_duel($duel) {
         <header>
             <h3 class="mode-map"><?php echo $duel['mode']; ?> @ <?php echo $duel['map']; ?></h3>
             <h2 class="date-time"><a href="/game/?id=<?php echo $duel['startTimeText']; ?>">
-                    <time is="relative-time" datetime="<?php echo $duel['endTimeText']; ?>"
-                        ><?php echo $duel['endTimeText']; ?></time></a></h2>
+                    <time is="relative-time" datetime="<?php echo $duel['endTime']; ?>"
+                        ><?php echo $duel['endTime']; ?></time></a></h2>
         </header>
         <section class="score score-left">
             <?php $player = $duel['players'][array_keys($duel['players'])[0]]; ?>
@@ -48,8 +48,8 @@ function render_ctf($ctf) {
         <header>
             <h3 class="mode-map"><?php echo $ctf['mode']; ?> @ <?php echo $ctf['map']; ?></h3>
             <h2 class="date-time"><a href="/game/?id=<?php echo $ctf['startTimeText']; ?>">
-                    <time is="relative-time" datetime="<?php echo $ctf['endTimeText']; ?>"
-                        ><?php echo $ctf['endTimeText']; ?></time></a></h2>
+                    <time is="relative-time" datetime="<?php echo $ctf['endTime']; ?>"
+                        ><?php echo $ctf['endTime']; ?></time></a></h2>
         </header>
         <section class="score score-left">
             <?php $team = $ctf['teams'][array_keys($ctf['teams'])[0]]; ?>

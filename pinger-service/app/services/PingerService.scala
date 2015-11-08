@@ -5,9 +5,6 @@ import javax.inject.{Inject, Singleton}
 import akka.actor.ActorDSL._
 import akka.actor.{ActorSystem, Kill}
 import akka.agent.Agent
-import gg.duel.pinger.analytics.MultiplexedReader._
-import gg.duel.pinger.analytics.duel.{TransitionalBetterDuel, LiveDuel}
-import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZIteratorState, ZFoundDuel, ZInDuelState}
 import gg.duel.pinger.mulprocess.{NewProcessor, LiveProcessor}
 import gg.duel.pinger.service.PingPongProcessor.{Ping, Ready, ReceivedBytes}
 import gg.duel.pinger.service.{PingPongProcessorActor, PingPongProcessorState}
@@ -63,13 +60,16 @@ class PingerService @Inject()
       case Ready(_) =>
         import concurrent.duration._
         actorSystem.scheduler.schedule(0.seconds, 3.seconds, self, 'Ping)
+//        actorSystem.scheduler.schedule(0.seconds, 3.seconds)(context.system.event, 'Ping)
         become {
           case 'Ping =>
             serverProvider.servers.servers.values.foreach(pingPong ! Ping(_))
           case CleanUpLiveDuels =>
             liveDuelsState.cleanUp.foreach { case (events, nextState) =>
               events.foreach { event =>
-                liveGameChannel.push(event) }
+                liveGameChannel.push(event)
+                push(event)
+              }
               liveDuelsState = nextState
             }
           case r: ReceivedBytes =>
@@ -89,11 +89,14 @@ class PingerService @Inject()
                     liveDuelsState = liveProcessor
                       eventO.foreach{ event =>
                         liveGameChannel.push(event)
+                        push(event)
                       }
                   }
                 }
 
-                events.foreach(e => channel.push(e))
+                events.foreach { e => channel.push(e)
+                  push(e)
+                }
                 duelO.foreach(duel => gamesManager.addDuel(duel))
                 ctfO.foreach(ctf => gamesManager.addCtf(ctf))
                 currentState = nextNewProcessor
@@ -108,4 +111,7 @@ class PingerService @Inject()
   applicationLifecycle.addStopHook(() => Future {
     conactor ! Kill
   })
+  def push(e: gg.duel.pinger.mulprocess.Event): Unit = {
+    actorSystem.eventStream.publish(e)
+  }
 }

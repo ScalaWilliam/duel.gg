@@ -1,32 +1,49 @@
 package modules
 
-import java.time.{ZoneId, ZonedDateTime}
 import javax.inject._
 
-import akka.actor.{Scheduler, ActorSystem}
+import akka.actor.ActorSystem
 import akka.agent.Agent
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Sink, Source}
-import gcc.enrichment.{DemoLookup, Enricher, PlayerLookup}
-import gcc.game.GameReader
+import akka.stream.scaladsl._
 import gg.duel.SimpleGame
-import lib.SucceedOnceFuture
-import org.joda.time.DateTime
-import play.api.{Configuration, Logger}
+import gg.duel.transformer.lookup.BasicLookingUp
+import lib.{GeoLookup, SucceedOnceFuture}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Concurrent
+import play.api.{Configuration, Logger}
 import slick.driver.JdbcProfile
 import slick.driver.PostgresDriver.api._
 
 import scala.async.Async
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
-import scala.util.{Try, Failure, Success}
+
+
+case class Games
+(games: Map[String, SimpleGame]) {
+  me =>
+  def withNewGame(simpleGame: SimpleGame): Games = {
+    copy(games = games + (simpleGame.id -> simpleGame))
+  }
+
+  def +(simpleGame: SimpleGame): Games = withNewGame(simpleGame)
+
+  def ++(games: Games): Games = Games(
+    games = me.games ++ games.games
+  )
+}
+
+object Games {
+  def empty: Games = Games(
+    games = Map.empty
+  )
+}
 
 @Singleton
-class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamGames: UpstreamGames, clansService: ClansService, demoCollectorModule: DemoCollection,
+class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansService: ClansService, demoCollectorModule: DemoCollection,
                              applicationLifecycle: ApplicationLifecycle, configuration: Configuration)
                             (implicit executionContext: ExecutionContext, actorSystem: ActorSystem) {
 
@@ -46,7 +63,7 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
     )
 
     def reEnrich: SimpleGame = {
-      sseToGameOption.apply(id = simpleGame.id, json = simpleGame.enhancedJson).getOrElse(simpleGame)
+      sseToGameOption.apply(json = simpleGame.enhancedJson).getOrElse(simpleGame)
     }
   }
 
@@ -54,24 +71,31 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
 
   def allGamesQuery = {
     var q = gamesT.sortBy(_.id)
-    if ( configuration.getBoolean("gg.duel.limit-game-load") == Some(true) ) {
-      q = q.take(2000)
+    (configuration.getBoolean("gg.duel.limit-game-load"),
+      configuration.getInt("gg.duel.limit-game-load-size")) match {
+      case (Some(true), Some(number)) =>
+        q = q.sortBy(_.id.desc).take(number)
+      case _ =>
+
     }
     q
   }
 
   def loadGamesFromDatabaseFuture = {
     val f = Async.async {
+
+      var qr = allGamesQuery.result
+
       Logger.info("Loading games from database...")
       Async.await {
-        Source(dbConfig.db.stream(allGamesQuery.result)).mapAsyncUnordered(8) { case (id, json) =>
-          Future(sseToGameOption(id = id, json = json).toList)
-        }.mapConcat(identity).mapAsyncUnordered(2){
+        Source(dbConfig.db.stream(qr)).mapAsyncUnordered(8) { case (id, json) =>
+          Future(sseToGameOption(json = json).toList)
+        }.mapConcat(identity).mapAsyncUnordered(2) {
           game =>
             val f = gamesAgt.alterOff(_.withNewGame(game))
-            f.onFailure{ case x => println(s"==> $x")}
+            f.onFailure { case x => println(s"==> $x") }
             f
-        }.runFold(0){case (n,_) => n+1}
+        }.runFold(gamesAgt.get().games.size) { case (n, _) => n + 1 }
       }
     }
 
@@ -90,51 +114,26 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
 
   def loadGamesFromDatabase = loadGamesFromDatabaseOnce.value
 
-  loadGamesFromDatabaseOnce.finalValue.onSuccess{ case result =>
+  loadGamesFromDatabaseOnce.finalValue.onSuccess { case result =>
     Logger.info(s"Loading $result games from database completed.")
+
   }
-
-  val playerLookup = new PlayerLookup {
-    override def lookupUserId(nickname: String, atTime: DateTime): String = null
-
-    override def lookupClanId(nickname: String, atTime: DateTime): String = {
-      clansService.clans.collectFirst { case (id, clan) if clan.nicknameIsInClan(nickname) => id }.orNull
-    }
-  }
-
-  case class Games
-  (games: Map[String, SimpleGame]) {
-    def withNewGame(simpleGame: SimpleGame): Games = {
-      copy(games = games + (simpleGame.id -> simpleGame))
-    }
-
-    def +(simpleGame: SimpleGame): Games = withNewGame(simpleGame)
-  }
-
-  object Games {
-    def empty: Games = Games(
-      games = Map.empty
-    )
-  }
-
-  lazy val demoLookup = new DemoLookup {
-    override def lookupDemoUrl(server: String, mode: String, map: String, atTime: org.joda.time.DateTime): String = {
-      demosAgt.get().lookupFromGame(
+  lazy val enricher = new BasicLookingUp(
+    game => for { server <- game.server; mode <- game.mode; map <- game.map; st <- game.startTime
+    demo <- demosAgt.get().lookupFromGame(
         server = server,
         mode = mode,
         map = map,
-        atTime = ZonedDateTime.ofInstant(java.time.Instant.ofEpochMilli(atTime.toInstant.getMillis), ZoneId.of("UTC"))
-      ).orNull
-    }
-  }
-  lazy val gameReader = new GameReader()
-  lazy val enricher = new Enricher(playerLookup, demoLookup)
+        atTime = st
+      )
+    } yield demo,
+    clanLookup = nickname => clansService.clans.collectFirst { case (id, clan) if clan.nicknameIsInClan(nickname) => id },
+    countryLookup = GeoLookup.apply
+  )
 
-  def sseToGameOption = JsonGameToSimpleGame(enricher = enricher, gameReader = gameReader)
+  def sseToGameOption = JsonGameToSimpleGame(enricher = enricher)
 
   val demosAgt = Agent(DemosListing.empty)
-
-  upstreamGames.newClient.createStream(sseToGameOption.createFlow.to(Sink.foreach { game => gamesAgt.sendOff(_.withNewGame(game)) }))
 
 
   val kr = demoCollectorModule.demoFetching.to(Sink.foreach { demosFetched =>
@@ -146,21 +145,24 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, upstreamG
     }
   }).run()
 
-  applicationLifecycle.addStopHook(() => Future.successful{
+  applicationLifecycle.addStopHook(() => Future.successful {
     kr.cancel()
-    xs.success(())
-    xl.success(())
   })
 
-  val (newGamesEnum, newGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
+  // push to:
+  val (newGamesEnum, newGamesChan) = Concurrent.broadcast[(Option[SimpleGame], Event)]
+  val (liveGamesEnum, liveGamesChan) = Concurrent.broadcast[(Option[SimpleGame], Event)]
+  // and also the agent
 
-  val xs = upstreamGames.newClient.createStream(sseToGameOption.createFlow.to(Sink.foreach(game => newGamesChan.push(game -> game.toEvent))))
-
-  val (liveGamesEnum, liveGamesChan) = Concurrent.broadcast[(SimpleGame, Event)]
-
-  val xl = upstreamGames.liveGames.createStream(UpstreamGames.flw.mapConcat(sse =>
-    sseToGameOption.apply(sse).toList.map(sg => sse -> sg)
-  ).map { case (sse, sg) => sg -> sg.toEvent.copy(name = sse.eventType) }.to(Sink.foreach(event => liveGamesChan.push(event))))
+  val keepAliveEveryTenSeconds = actorSystem.scheduler.schedule(5.seconds, 10.seconds){
+    val emptyEvent = Event(
+      data = "",
+      id = Option.empty,
+      name = Option.empty
+    )
+    newGamesChan.push(None -> emptyEvent)
+    liveGamesChan.push(None -> emptyEvent)
+  }
 
 }
 

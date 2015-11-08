@@ -2,6 +2,7 @@ package gg.duel.pinger.analytics.ctf.data
 
 import org.joda.time.DateTimeZone
 import org.joda.time.format.ISODateTimeFormat
+import play.api.libs.json._
 
 case class PlayerId(name: String, ip: String, team: String)
 
@@ -46,29 +47,33 @@ case class SimpleCompletedCTF
  serverDescription: String, server: String, teams: Map[String, SimpleTeamScore],
  winner: Option[String], metaId: Option[String]) {
   def toPrettyJson = {
-    import org.json4s._
-    import org.json4s.native.Serialization
-    import org.json4s.native.Serialization.{read, writePretty}
-    implicit val formats = Serialization.formats(NoTypeHints)
-    writePretty(this)
+    Json.prettyPrint(Json.toJson(this)(SimpleCompletedCTF.fmts))
   }
   def toJson = {
-    import org.json4s._
-    import org.json4s.native.Serialization
-    import org.json4s.native.Serialization.{read, write}
-    implicit val formats = Serialization.formats(NoTypeHints)
-    write(this)
+    Json.toJson(this)(SimpleCompletedCTF.fmts).toString()
   }
 }
 
 object SimpleCompletedCTF {
 
+  implicit val iifmt: Format[(Int, Int)] = new Format[(Int, Int)] {
+    override def writes(o: (Int, Int)): JsValue = {
+      JsObject(Map("_1" -> JsNumber(o._1), "_2" -> JsNumber(o._2)))
+    }
+
+    override def reads(json: JsValue): JsResult[(Int, Int)] = {
+      for {
+        a <- (json \ "_1").validate[Int]
+        b <- (json \ "_2").validate[Int]
+      } yield (a, b)
+    }
+  }
+  implicit val fmtsP = Json.format[SimplePlayer]
+  implicit val fmtsTS = Json.format[SimpleTeamScore]
+  implicit val fmts = Json.format[SimpleCompletedCTF]
+
   def fromPrettyJson(json: String): SimpleCompletedCTF = {
-    import org.json4s._
-    import org.json4s.native.Serialization
-    import org.json4s.native.Serialization.{read, writePretty}
-    implicit val formats = Serialization.formats(NoTypeHints)
-    read[SimpleCompletedCTF](json)
+    Json.fromJson[SimpleCompletedCTF](Json.parse(json))(SimpleCompletedCTF.fmts).get
   }
   def test = {
     val t = System.currentTimeMillis

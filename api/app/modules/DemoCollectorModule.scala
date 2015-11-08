@@ -7,7 +7,6 @@ import javax.inject._
 import akka.actor.{Cancellable, ActorSystem}
 import akka.stream.scaladsl._
 import modules.OgroDemoParser.Demo
-import modules.sse.CancellableServerSentEventClient
 import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.{Future, ExecutionContext}
