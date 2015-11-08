@@ -5,8 +5,7 @@ import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
 import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZFoundCtf, ZFoundDuel, ZIteratorState, ZOutOfGameState}
 import gg.duel.pinger.data.ParsedPongs.ParsedMessage
-import gg.duel.pinger.data.journal.SauerBytes
-import gg.duel.pinger.data.{Extractor, Server}
+import gg.duel.pinger.data.{SauerBytes, Extractor, Server}
 
 import scala.util.Try
 

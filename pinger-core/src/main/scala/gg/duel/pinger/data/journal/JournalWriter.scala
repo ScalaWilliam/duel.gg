@@ -3,6 +3,8 @@ package gg.duel.pinger.data.journal
 import java.io.{FileOutputStream, File}
 import java.util.zip.{GZIPOutputStream, Deflater, DeflaterOutputStream}
 
+import gg.duel.pinger.data.SauerBytes
+
 class JournalWriter(target: File) {
 
   def write(sauerBytes: SauerBytes): Unit = {

@@ -5,7 +5,7 @@ import javax.inject._
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
-import gg.duel.SimpleGame
+import gg.duel.query.QueryableGame
 import io.scalac.amqp.{Connection, Delivery}
 import lib.StopperFlow
 import play.api.inject.ApplicationLifecycle
@@ -32,15 +32,15 @@ class RabbitSourceRunning @Inject()(gamesService: GamesService,
     queue = configuration.getString("gg.duel.queue-name").getOrElse("Whoops, 'gg.duel.queue-name' missing.")
   )
   import GamesService.sgToEvent
-  val toNewGamesSink = Sink.foreach[SimpleGame] { sg =>
+  val toNewGamesSink = Sink.foreach[QueryableGame] { sg =>
     gamesService.newGamesChan.push(Option(sg) -> sg.toEvent)
   }
 
-  val toLiveGamesSink = Sink.foreach[(SimpleGame, Event)] {
+  val toLiveGamesSink = Sink.foreach[(QueryableGame, Event)] {
     case (sg, event) => gamesService.liveGamesChan.push(Option(sg) -> event)
   }
 
-  val toAgentSink = Sink.foreach[SimpleGame] { sg =>
+  val toAgentSink = Sink.foreach[QueryableGame] { sg =>
     gamesService.gamesAgt.send(_ + sg)
   }
 
@@ -56,15 +56,14 @@ class RabbitSourceRunning @Inject()(gamesService: GamesService,
 
       }
 
-      val collectNew = Flow[(Delivery, SimpleGame)].collect {
+      val collectNew = Flow[(Delivery, QueryableGame)].collect {
         case (del, sg) if Set("ctf", "duel") contains del.routingKey => sg
       }
-      val processLiveGame = Flow[(Delivery, SimpleGame)].collect {
+      val processLiveGame = Flow[(Delivery, QueryableGame)].collect {
         case (del, sg) => sg -> sg.toEvent.copy(name = Option(del.routingKey))
       }
 
-
-      val bcast = builder.add(Broadcast[(Delivery, SimpleGame)](3))
+      val bcast = builder.add(Broadcast[(Delivery, QueryableGame)](3))
       qsrc ~> deliveryToGame ~> bcast
       bcast ~> collectNew ~> ngs
       bcast ~> processLiveGame ~> lgs

@@ -1,12 +1,12 @@
 package gg.duel.query
 
-import gg.duel.SimpleGame
 import gg.duel.query.GameType.{All, Ctf, Duel}
+import gg.duel.query.QueryableGame$
 
 /**
  * Created on 30/10/2015.
  */
-sealed trait GameType extends (SimpleGame => Boolean) {
+sealed trait GameType extends (QueryableGame => Boolean) {
   def stringValue: String
   def toMap: Map[String, Seq[String]] = {
     this match {
@@ -14,7 +14,7 @@ sealed trait GameType extends (SimpleGame => Boolean) {
       case other => Map("type" -> List(stringValue))
     }
   }
-  override def apply(simpleGame: SimpleGame): Boolean =
+  override def apply(simpleGame: QueryableGame): Boolean =
     this match {
       case All => true
       case Ctf => simpleGame.gameType == "ctf"

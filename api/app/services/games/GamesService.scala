@@ -6,8 +6,8 @@ import akka.actor.ActorSystem
 import akka.agent.Agent
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
-import gg.duel.SimpleGame
 import gg.duel.enricher.lookup.BasicLookingUp
+import gg.duel.query.{QueryableGame, QueryableGame$}
 import lib.{GeoLookup, JsonGameToSimpleGame, OgroDemoParser, SucceedOnceFuture}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.ApplicationLifecycle
@@ -38,9 +38,9 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansServ
   val gamesT = TableQuery[GamesTable]
   implicit val am = ActorMaterializer()
 
-  implicit class sgToEvents(simpleGame: SimpleGame) {
+  implicit class sgToEvents(simpleGame: QueryableGame) {
 
-    def reEnrich: SimpleGame = {
+    def reEnrich: QueryableGame = {
       sseToGameOption.apply(json = simpleGame.enhancedJson).getOrElse(simpleGame)
     }
   }
@@ -128,8 +128,8 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansServ
   })
 
   // push to:
-  val (newGamesEnum, newGamesChan) = Concurrent.broadcast[(Option[SimpleGame], Event)]
-  val (liveGamesEnum, liveGamesChan) = Concurrent.broadcast[(Option[SimpleGame], Event)]
+  val (newGamesEnum, newGamesChan) = Concurrent.broadcast[(Option[QueryableGame], Event)]
+  val (liveGamesEnum, liveGamesChan) = Concurrent.broadcast[(Option[QueryableGame], Event)]
   // and also the agent
 
   val keepAliveEveryTenSeconds = actorSystem.scheduler.schedule(5.seconds, 10.seconds){
@@ -144,16 +144,10 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansServ
 
 }
 
-class GamesTable(tag: Tag) extends Table[(String, String)](tag, "GAMES") {
-  def id = column[String]("ID", O.PrimaryKey)
 
-  def json = column[String]("JSON")
-
-  def * = (id, json)
-}
 object GamesService {
 
-  implicit class sgToEvent(simpleGame: SimpleGame) {
+  implicit class sgToEvent(simpleGame: QueryableGame) {
     def toEvent = Event(
       name = Option(simpleGame.gameType),
       id = Option(simpleGame.id),

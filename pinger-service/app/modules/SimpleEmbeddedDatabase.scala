@@ -8,7 +8,6 @@ import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
 @Singleton
 class SimpleEmbeddedDatabase @Inject() (implicit
                                         applicationLifecycle: ApplicationLifecycle,

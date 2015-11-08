@@ -3,6 +3,7 @@ package gg.duel.pinger.data.journal
 import java.nio.ByteOrder
 
 import akka.util.ByteStringBuilder
+import gg.duel.pinger.data.{SauerBytesBinary, SauerBytes}
 
 trait SauerBytesWriter {
 

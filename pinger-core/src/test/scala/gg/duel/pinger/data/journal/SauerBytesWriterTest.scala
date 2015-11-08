@@ -1,7 +1,7 @@
 package gg.duel.pinger.data.journal
 import akka.util.ByteString
 import org.scalatest.{Matchers, WordSpec}
-import gg.duel.pinger.data.Server
+import gg.duel.pinger.data.{SauerBytes, Server}
 import scala.collection.mutable.ArrayBuffer
 
 class SauerBytesWriterTest extends WordSpec with Matchers {

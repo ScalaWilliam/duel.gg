@@ -1,13 +1,13 @@
 package gg.duel.query
 
-import gg.duel.SimpleGame
+import gg.duel.query.QueryableGame$
 
 /**
   * Created by William on 03/11/2015.
   */
 case class QueryCondition(gameType: GameType, playerCondition: PlayerCondition,
-                          tag: TagFilter, server: ServerFilter) extends (SimpleGame => Boolean) {
-  override def apply(simpleGame: SimpleGame): Boolean = {
+                          tag: TagFilter, server: ServerFilter) extends (QueryableGame => Boolean) {
+  override def apply(simpleGame: QueryableGame): Boolean = {
     gameType(simpleGame) && playerCondition(simpleGame) && tag(simpleGame) && server(simpleGame)
   }
 

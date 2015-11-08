@@ -8,7 +8,7 @@ import akka.agent.Agent
 import gg.duel.pinger.mulprocess.{NewProcessor, LiveProcessor}
 import gg.duel.pinger.service.PingPongProcessor.{Ping, Ready, ReceivedBytes}
 import gg.duel.pinger.service.{PingPongProcessorActor, PingPongProcessorState}
-import modules.{GamesManager, ServerManager}
+import modules.ServerManager
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Concurrent
@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class PingerService @Inject()
 (serverProvider: ServerManager,
-  gamesManager: GamesManager)(
+  gamesManager: GamesManagerService)(
   implicit executionContext: ExecutionContext,
   actorSystem: ActorSystem,
   applicationLifecycle: ApplicationLifecycle

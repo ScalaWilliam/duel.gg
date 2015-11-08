@@ -1,9 +1,7 @@
 package gg.duel
 
-import gg.duel.query.GameId
-import org.scalatest.{Matchers, Inside, OptionValues, WordSpec}
-
-import scala.concurrent.{ExecutionContext, Future}
+import gg.duel.query.{GameId, QueryableGame}
+import org.scalatest.{Inside, Matchers, OptionValues, WordSpec}
 
 class FilteringSpec
   extends WordSpec
@@ -13,12 +11,12 @@ class FilteringSpec
 {
 
   val games = List(
-    SimpleGame.stub(id = "a"),
-    SimpleGame.stub(id = "b"),
-    SimpleGame.stub(id = "c"),
-    SimpleGame.stub(id = "d"),
-    SimpleGame.stub(id = "e"),
-    SimpleGame.stub(id = "f")
+    QueryableGame.stub(id = "a"),
+    QueryableGame.stub(id = "b"),
+    QueryableGame.stub(id = "c"),
+    QueryableGame.stub(id = "d"),
+    QueryableGame.stub(id = "e"),
+    QueryableGame.stub(id = "f")
   )
 
   object SingleFilter {
@@ -41,7 +39,7 @@ class FilteringSpec
   case class SingleFilteringResult
   (previousGame: Option[GameId],
     nextGame: Option[GameId],
-    game: SimpleGame)
+    game: QueryableGame)
 
   "Filterer" must {
     "Work properly" in {

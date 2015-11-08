@@ -7,8 +7,7 @@ import akka.actor.{Props, ActorLogging, ActorRef}
 import akka.io
 import akka.io.Udp
 import akka.util.ByteString
-import gg.duel.pinger.data.journal.{SauerBytesBinary, SauerBytes}
-import gg.duel.pinger.data.Server
+import gg.duel.pinger.data.{SauerBytesBinary, SauerBytes, Server}
 import gg.duel.pinger.service.PingPongProcessor._
 
 import scala.util.Random

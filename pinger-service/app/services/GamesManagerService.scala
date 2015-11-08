@@ -1,4 +1,4 @@
-package modules
+package services
 
 import javax.inject.{Inject, Singleton}
 
@@ -11,12 +11,13 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.Json
 import slick.driver.JdbcProfile
-import scala.concurrent.{Future, ExecutionContext}
-import scala.util.{Failure, Success}
 import slick.driver.PostgresDriver.api._
 
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
+
 @Singleton
-class GamesManager @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit executionContext: ExecutionContext, applicationLifecycle: ApplicationLifecycle) {
+class GamesManagerService @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit executionContext: ExecutionContext, applicationLifecycle: ApplicationLifecycle) {
   val dbConfig = dbConfigProvider.get[JdbcProfile]
 
   val gamesT = TableQuery[GamesTable]
@@ -47,10 +48,3 @@ class GamesManager @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit 
 
 }
 
-class GamesTable(tag: Tag) extends Table[(String, String)](tag, "GAMES") {
-  def id = column[String]("ID", O.PrimaryKey)
-
-  def json = column[String]("JSON")
-
-  def * = (id, json)
-}

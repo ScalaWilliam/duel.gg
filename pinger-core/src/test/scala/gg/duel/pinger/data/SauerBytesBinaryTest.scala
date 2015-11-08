@@ -2,7 +2,6 @@ package gg.duel.pinger.data
 
 import akka.util.ByteString
 import org.scalatest.{Matchers, WordSpecLike}
-import gg.duel.pinger.data.journal.{SauerBytesBinary, SauerBytes}
 
 class SauerBytesBinaryTest extends WordSpecLike with Matchers {
   "Received bytes binary converter" must {

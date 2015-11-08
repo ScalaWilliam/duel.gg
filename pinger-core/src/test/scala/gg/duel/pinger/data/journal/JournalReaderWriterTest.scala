@@ -3,7 +3,7 @@ package gg.duel.pinger.data.journal
 import java.io.{BufferedInputStream, FileInputStream, FileOutputStream, File}
 import java.util.zip.{DeflaterInputStream, GZIPInputStream, GZIPOutputStream}
 
-import gg.duel.pinger.data.Server
+import gg.duel.pinger.data.{SauerBytes, Server}
 import org.scalatest.{Matchers, WordSpec}
 
 class JournalReaderWriterTest extends WordSpec with Matchers {

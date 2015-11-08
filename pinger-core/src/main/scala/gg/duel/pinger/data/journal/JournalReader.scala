@@ -7,6 +7,7 @@ import java.util.zip.{GZIPInputStream, InflaterInputStream, Deflater, DeflaterIn
 import gg.duel.pinger.analytics.MultiplexedReader.{CompletedGame, SFoundGame, SIteratorState}
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
+import gg.duel.pinger.data.SauerBytes
 import gg.duel.pinger.data.journal.JournalReader.Game
 
 object JournalReader {

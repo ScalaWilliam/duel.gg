@@ -6,7 +6,8 @@ import java.util.zip.{Deflater, DeflaterOutputStream}
 import javax.inject._
 
 import akka.actor.{Kill, ActorSystem}
-import gg.duel.pinger.data.journal.{JournalWriter, SauerBytesWriter, SauerBytesBinary, SauerBytes}
+import gg.duel.pinger.data.SauerBytes
+import gg.duel.pinger.data.journal.{JournalWriter, SauerBytesWriter}
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 

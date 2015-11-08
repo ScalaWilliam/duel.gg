@@ -1,6 +1,6 @@
 package services.games
 
-import gg.duel.SimpleGame
+import gg.duel.query.QueryableGame
 
 /**
   * Created by William on 08/11/2015.
@@ -12,13 +12,13 @@ object Games {
 }
 
 case class Games
-(games: Map[String, SimpleGame]) {
+(games: Map[String, QueryableGame]) {
   me =>
-  def withNewGame(simpleGame: SimpleGame): Games = {
+  def withNewGame(simpleGame: QueryableGame): Games = {
     copy(games = games + (simpleGame.id -> simpleGame))
   }
 
-  def +(simpleGame: SimpleGame): Games = withNewGame(simpleGame)
+  def +(simpleGame: QueryableGame): Games = withNewGame(simpleGame)
 
   def ++(games: Games): Games = Games(
     games = me.games ++ games.games

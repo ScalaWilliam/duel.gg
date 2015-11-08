@@ -1,15 +1,15 @@
-package gg.duel
+package gg.duel.query
 
 import java.time.ZonedDateTime
 
 import play.api.libs.json.JsObject
 
-case class SimpleGame(id: String, gameJson: String, server: String, enhancedJson: String, enhancedNativeJson: JsObject, gameType: String,
-                     map: String, users: Set[String], clans: Set[String], players: Set[String], tags: Set[String], demo: Option[String]) {
+case class QueryableGame(id: String, gameJson: String, server: String, enhancedJson: String, enhancedNativeJson: JsObject, gameType: String,
+                         map: String, users: Set[String], clans: Set[String], players: Set[String], tags: Set[String], demo: Option[String]) {
   def dateTime = ZonedDateTime.parse(id)
 }
-object SimpleGame {
-  def stub(id: String) = SimpleGame(
+object QueryableGame {
+  def stub(id: String) = QueryableGame(
     id = id,
     gameJson = "{}",
     server = "",

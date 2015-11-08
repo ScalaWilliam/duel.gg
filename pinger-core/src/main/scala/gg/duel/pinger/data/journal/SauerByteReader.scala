@@ -2,6 +2,8 @@ package gg.duel.pinger.data.journal
 
 import java.nio.{ByteOrder, ByteBuffer}
 
+import gg.duel.pinger.data.{SauerBytesBinary, SauerBytes}
+
 /**
  * Created by William on 27/10/2015.
  */
