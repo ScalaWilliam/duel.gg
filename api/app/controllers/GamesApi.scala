@@ -3,10 +3,11 @@ package controllers
 import javax.inject._
 
 import gg.duel.query._
-import modules._
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json._
 import play.api.mvc.{Action, Controller}
+import services.games.GamesService
+import services.live.RabbitSource
 
 import scala.async.Async
 import scala.concurrent.ExecutionContext

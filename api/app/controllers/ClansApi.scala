@@ -1,10 +1,12 @@
 package controllers
 
-import modules.ClansService
-import modules.ClansService.Clan
+import services.ClansService
+import ClansService.Clan
 import play.api.libs.json.Json
 import play.api.mvc._
 import javax.inject._
+
+import services.ClansService
 
 @Singleton
 class ClansApi @Inject()(clansService: ClansService) extends Controller {

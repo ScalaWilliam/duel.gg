@@ -1,7 +1,6 @@
 import java.time.ZonedDateTime
-
-import modules.AuthenticationService
 import play.api.mvc.{ActionBuilder, Request, Result, Results}
+import services.AuthenticationService
 import scala.concurrent.Future
 
 /**

@@ -1,10 +1,24 @@
-package modules
+package services
+
 import javax.inject._
 
+import lib.NicknameMatcher
 import org.apache.http.client.fluent.Request
-import play.api.{Logger, Configuration}
 import play.api.libs.json.{JsSuccess, Json}
-import ClansService._
+import play.api.{Configuration, Logger}
+import services.ClansService._
+
+object ClansService {
+  case class Clan
+  (id: String, tag: Option[String], name: String,
+   website: Option[String], irc: Option[String],
+   tags: Option[List[String]]) {
+    def clanTags: List[String] = tag.toList ++ tags.toList.flatten
+    def nicknameIsInClan(nickname: String): Boolean = {
+      clanTags.exists(clanTag => NicknameMatcher(format = clanTag)(nickname = nickname))
+    }
+  }
+}
 
 @Singleton
 class ClansService @Inject()(configuration: Configuration) {
@@ -20,15 +34,4 @@ class ClansService @Inject()(configuration: Configuration) {
   }
 
   Logger.info(s"Got list of clans: ${clans.keySet}")
-}
-object ClansService {
-  case class Clan
-  (id: String, tag: Option[String], name: String,
-   website: Option[String], irc: Option[String],
-   tags: Option[List[String]]) {
-    def clanTags: List[String] = tag.toList ++ tags.toList.flatten
-    def nicknameIsInClan(nickname: String): Boolean = {
-      clanTags.exists(clanTag => NicknameMatcher(format = clanTag)(nickname = nickname))
-    }
-  }
 }

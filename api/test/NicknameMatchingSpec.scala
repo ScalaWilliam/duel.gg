@@ -1,4 +1,4 @@
-import modules.NicknameMatcher
+import lib.NicknameMatcher
 import org.scalatest.{Matchers, WordSpec}
 
 class NicknameMatchingSpec extends WordSpec with Matchers {

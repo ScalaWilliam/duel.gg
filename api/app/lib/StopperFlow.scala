@@ -1,4 +1,4 @@
-package modules.sse
+package lib
 
 import akka.stream.FanInShape.{Init, Name}
 import akka.stream.scaladsl.{FlexiMerge, Flow, Source}

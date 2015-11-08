@@ -1,36 +1,25 @@
-package modules
+package services.live
 
-/**
-  * Created by William on 07/11/2015.
-  */
 import javax.inject._
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import gg.duel.SimpleGame
-import io.scalac.amqp.Connection
-import io.scalac.amqp.Delivery
-import modules.sse.StopperFlow
+import io.scalac.amqp.{Connection, Delivery}
+import lib.StopperFlow
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
-import play.api.{Logger, Configuration}
+import play.api.{Configuration, Logger}
+import services.games.GamesService
 
-import scala.concurrent.{Future, ExecutionContext}
-import scala.util.{Success, Failure}
-
-trait RabbitSource {
-
-}
-
-class NoRabbitSource @Inject()() extends RabbitSource {
-  Logger.info("Rabbit games not active")
-}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 @Singleton
 class RabbitSourceRunning @Inject()(gamesService: GamesService,
                                     configuration: Configuration,
-                                   applicationLifecycle: ApplicationLifecycle)(
+                                    applicationLifecycle: ApplicationLifecycle)(
   implicit executionContext: ExecutionContext,
   actorSystem: ActorSystem
 ) extends RabbitSource{
@@ -42,8 +31,7 @@ class RabbitSourceRunning @Inject()(gamesService: GamesService,
   val queue = connection.consume(
     queue = configuration.getString("gg.duel.queue-name").getOrElse("Whoops, 'gg.duel.queue-name' missing.")
   )
-
-  import gamesService.sgToEvent
+  import GamesService.sgToEvent
   val toNewGamesSink = Sink.foreach[SimpleGame] { sg =>
     gamesService.newGamesChan.push(Option(sg) -> sg.toEvent)
   }

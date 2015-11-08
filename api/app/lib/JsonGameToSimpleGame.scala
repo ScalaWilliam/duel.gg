@@ -1,4 +1,4 @@
-package modules
+package lib
 
 import de.heikoseeberger.akkasse.ServerSentEvent
 import gg.duel.SimpleGame
@@ -7,6 +7,14 @@ import gg.duel.enricher.lookup.LookingUp
 import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 
+object JsonGameToSimpleGame {
+
+  def theCatch: PartialFunction[Throwable, Nothing] = {
+    case x: Throwable =>
+      Logger.error("K, inside enricher loop this problem happened", x)
+      throw x
+  }
+}
 case class JsonGameToSimpleGame(enricher: LookingUp) {
   def apply(json: String): Option[SimpleGame] = {
     val gn = GameNode(jsonString = json, plainGameEnricher = enricher)
@@ -38,12 +46,4 @@ case class JsonGameToSimpleGame(enricher: LookingUp) {
     Flow.apply[ServerSentEvent].mapConcat(sse => try apply(sse).toList catch JsonGameToSimpleGame.theCatch)
   }
 
-}
-object JsonGameToSimpleGame {
-
-  def theCatch: PartialFunction[Throwable, Nothing] = {
-    case x: Throwable =>
-      Logger.error("K, inside enricher loop this problem happened", x)
-      throw x
-  }
 }

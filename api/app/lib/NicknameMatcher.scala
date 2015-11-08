@@ -1,4 +1,4 @@
-package modules
+package lib
 
 object NicknameMatcher {
   def apply(format: String)(nickname: String): Boolean = {

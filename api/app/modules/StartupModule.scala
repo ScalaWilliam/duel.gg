@@ -2,6 +2,9 @@ package modules
 
 import play.api.{Configuration, Environment}
 import play.api.inject._
+import services.demos.{DemoCollectorLive, DemoCollectorEmpty, DemoCollection}
+import services.games.GamesService
+import services.live.{RabbitSourceRunning, NoRabbitSource, RabbitSource}
 
 class StartupModule extends Module {
   override def bindings(environment: Environment, configuration: Configuration) = {

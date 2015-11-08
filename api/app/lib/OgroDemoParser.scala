@@ -1,10 +1,10 @@
-package modules
+package lib
 
 import java.time.format.DateTimeFormatter
-import java.time.{ZoneId, LocalDateTime, ZonedDateTime}
+import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 import javax.inject._
 
-import modules.OgroDemoParser.Demo
+import lib.OgroDemoParser.Demo
 import org.jsoup.Jsoup
 import play.api.Logger
 import play.api.libs.ws.WSClient

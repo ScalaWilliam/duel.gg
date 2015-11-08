@@ -1,8 +1,7 @@
 import gg.duel.pinger.analytics.duel.StubGenerator
 import gg.duel.enricher.GameNode
 import gg.duel.enricher.lookup.BasicLookingUp
-import lib.GeoLookup
-import modules.JsonGameToSimpleGame
+import lib.{JsonGameToSimpleGame, GeoLookup}
 import org.scalatest.{Matchers, OptionValues, WordSpec}
 import play.api.libs.json.Json
 

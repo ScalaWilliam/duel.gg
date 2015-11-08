@@ -1,4 +1,4 @@
-package modules
+package services.games
 
 import javax.inject._
 
@@ -8,12 +8,14 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import gg.duel.SimpleGame
 import gg.duel.enricher.lookup.BasicLookingUp
-import lib.{GeoLookup, SucceedOnceFuture}
+import lib.{GeoLookup, JsonGameToSimpleGame, OgroDemoParser, SucceedOnceFuture}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Concurrent
 import play.api.{Configuration, Logger}
+import services.ClansService
+import services.demos.{DemoCollection, DemosListing}
 import slick.driver.JdbcProfile
 import slick.driver.PostgresDriver.api._
 
@@ -22,25 +24,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 
 
-case class Games
-(games: Map[String, SimpleGame]) {
-  me =>
-  def withNewGame(simpleGame: SimpleGame): Games = {
-    copy(games = games + (simpleGame.id -> simpleGame))
-  }
-
-  def +(simpleGame: SimpleGame): Games = withNewGame(simpleGame)
-
-  def ++(games: Games): Games = Games(
-    games = me.games ++ games.games
-  )
-}
-
-object Games {
-  def empty: Games = Games(
-    games = Map.empty
-  )
-}
 
 @Singleton
 class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansService: ClansService, demoCollectorModule: DemoCollection,
@@ -55,12 +38,7 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansServ
   val gamesT = TableQuery[GamesTable]
   implicit val am = ActorMaterializer()
 
-  implicit class sgToEvent(simpleGame: SimpleGame) {
-    def toEvent = Event(
-      name = Option(simpleGame.gameType),
-      id = Option(simpleGame.id),
-      data = simpleGame.enhancedJson
-    )
+  implicit class sgToEvents(simpleGame: SimpleGame) {
 
     def reEnrich: SimpleGame = {
       sseToGameOption.apply(json = simpleGame.enhancedJson).getOrElse(simpleGame)
@@ -172,4 +150,14 @@ class GamesTable(tag: Tag) extends Table[(String, String)](tag, "GAMES") {
   def json = column[String]("JSON")
 
   def * = (id, json)
+}
+object GamesService {
+
+  implicit class sgToEvent(simpleGame: SimpleGame) {
+    def toEvent = Event(
+      name = Option(simpleGame.gameType),
+      id = Option(simpleGame.id),
+      data = simpleGame.enhancedJson
+    )
+  }
 }
