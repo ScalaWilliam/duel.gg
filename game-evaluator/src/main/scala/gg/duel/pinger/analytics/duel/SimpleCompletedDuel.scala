@@ -1,16 +1,14 @@
 package gg.duel.pinger.analytics.duel
 
-import scala.xml.UnprefixedAttribute
-
-
+import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
+import play.api.libs.json.Json
 
 object SimpleCompletedDuel {
+  import SimpleCompletedCTF.iifmt
+  implicit val formats2 = Json.format[SimplePlayerStatistics]
+  implicit val formats = Json.format[SimpleCompletedDuel]
   def fromPrettyJson(json: String): SimpleCompletedDuel = {
-    import org.json4s._
-    import org.json4s.native.Serialization
-    import org.json4s.native.Serialization.{read, writePretty}
-    implicit val formats = Serialization.formats(NoTypeHints)
-    read[SimpleCompletedDuel](json)
+    Json.fromJson[SimpleCompletedDuel](Json.parse(json)).get
   }
 }
 case class SimpleCompletedDuel
@@ -27,18 +25,11 @@ case class SimpleCompletedDuel
   players: Map[String, SimplePlayerStatistics],
   winner: Option[String], metaId: Option[String]) {
   def toJson = {
-    import org.json4s._
-    import org.json4s.native.Serialization
-    import org.json4s.native.Serialization.{read, write}
-    implicit val formats = Serialization.formats(NoTypeHints)
-    write(this)
+    import SimpleCompletedDuel._
+    Json.prettyPrint(Json.toJson(this))
   }
   def toPrettyJson = {
-    import org.json4s._
-    import org.json4s.native.Serialization
-    import org.json4s.native.Serialization.{read, writePretty}
-    implicit val formats = Serialization.formats(NoTypeHints)
-    writePretty(this)
+    s"${Json.toJson(this)}"
   }
 
 }
