@@ -7,14 +7,12 @@ import javax.inject._
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Broadcast
-import akka.stream.scaladsl.Flow
-import akka.stream.scaladsl.FlowGraph
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl._
 import gg.duel.SimpleGame
 import io.scalac.amqp.Connection
 import io.scalac.amqp.Delivery
+import modules.sse.StopperFlow
+import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
 import play.api.{Logger, Configuration}
 
@@ -31,7 +29,8 @@ class NoRabbitSource @Inject()() extends RabbitSource {
 
 @Singleton
 class RabbitSourceRunning @Inject()(gamesService: GamesService,
-                                    configuration: Configuration)(
+                                    configuration: Configuration,
+                                   applicationLifecycle: ApplicationLifecycle)(
   implicit executionContext: ExecutionContext,
   actorSystem: ActorSystem
 ) extends RabbitSource{
@@ -57,7 +56,7 @@ class RabbitSourceRunning @Inject()(gamesService: GamesService,
     gamesService.gamesAgt.send(_ + sg)
   }
 
-  val qs = Source(queue)
+  val qs = Source(queue).viaMat(StopperFlow())(Keep.both)
 
   val fg = FlowGraph.closed(qs, toNewGamesSink, toLiveGamesSink, toAgentSink)((_, _, _, _)) { implicit builder =>
     (qsrc, ngs, lgs, as) =>
@@ -86,7 +85,7 @@ class RabbitSourceRunning @Inject()(gamesService: GamesService,
   }
 
   // not sure how to shut this one down :-O
-  val (_, a, b, c) = fg.run()
+  val ((_, stopPromise), a, b, c) = fg.run()
 
   def completeF(f: Future[_]): Unit = {
     f.onComplete {
@@ -97,4 +96,9 @@ class RabbitSourceRunning @Inject()(gamesService: GamesService,
   completeF(a)
   completeF(b)
   completeF(c)
+
+  applicationLifecycle.addStopHook(() =>
+
+  Future.successful(stopPromise.success(())))
+
 }
