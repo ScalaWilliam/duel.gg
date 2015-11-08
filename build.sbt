@@ -42,7 +42,8 @@ lazy val gameEvaluator = Project(
   .settings(libraryDependencies ++= Seq(
     "org.scalatest" %% "scalatest" % "2.2.5" % "test",
     "org.scalactic" %% "scalactic" % "2.2.5",
-    "org.json4s" %% "json4s-native" % "3.3.0"
+    "org.json4s" %% "json4s-native" % "3.3.0",
+    json
   ))
 
 lazy val gamesClojureCore = Project(
