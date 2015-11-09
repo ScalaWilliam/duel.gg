@@ -56,7 +56,11 @@ class GamesService @Inject()(clansService: ClansService, demoCollectorModule: De
 
     val f = Async.async {
       Logger.info("Loading games...")
-      val lines = Async.await(wSClient.url(s"$pingerPath/games/all/").get()).body.split("\n")
+      val res = Async.await(wSClient.url(s"$pingerPath/games/all/").get())
+      require(res.status == 200, s"Response status should be 200, got ${res.status}")
+      val ctype = res.header("Content-Type")
+      require(ctype.contains("text/plain"), s"Returned content should be plaintext, got $ctype")
+      val lines = res.body.split("\n")
       Logger.info(s"Received file; ${lines.size} lines.")
       val parseLine = "([^\t]+)\t(.*)".r
       val flow = Source(() => lines.toIterator).collect { case parseLine(id, json) => json }
