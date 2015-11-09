@@ -31,19 +31,19 @@ class GamesManagerService @Inject()(dbConfigProvider: DatabaseConfigProvider)(im
   def games: GamesContainer = gamesA.get()
 
   def addDuel(duel: SimpleCompletedDuel): Unit = {
-    dbConfig.db.run(gamesT.insertOrUpdate(duel.startTimeText, duel.toPrettyJson)).onComplete {
+    dbConfig.db.run(gamesT.insertOrUpdate(duel.startTimeText, duel.toJson)).onComplete {
       case Success(good) => Logger.info(s"Saved duel ${duel.startTimeText} successfully.")
       case Failure(reason) => Logger.error(s"Failed to save duel ${duel.toJson}", reason)
     }
-    gamesA.alter(_.withGame(duel.startTimeText, Json.parse(duel.toPrettyJson)))
+    gamesA.alter(_.withGame(duel.startTimeText, Json.parse(duel.toJson)))
   }
 
   def addCtf(ctf: SimpleCompletedCTF): Unit = {
-    dbConfig.db.run(gamesT.insertOrUpdate(ctf.startTimeText, ctf.toPrettyJson)).onComplete {
+    dbConfig.db.run(gamesT.insertOrUpdate(ctf.startTimeText, ctf.toJson)).onComplete {
       case Success(good) => Logger.info(s"Saved ctf ${ctf.startTimeText} successfully.")
       case Failure(reason) => Logger.error(s"Failed to save ctf ${ctf.toJson}", reason)
     }
-    gamesA.alter(_.withGame(ctf.startTimeText, Json.parse(ctf.toPrettyJson)))
+    gamesA.alter(_.withGame(ctf.startTimeText, Json.parse(ctf.toJson)))
   }
 
 }

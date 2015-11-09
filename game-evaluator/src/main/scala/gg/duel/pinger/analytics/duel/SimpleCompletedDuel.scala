@@ -24,11 +24,11 @@ case class SimpleCompletedDuel
   server: String,
   players: Map[String, SimplePlayerStatistics],
   winner: Option[String], metaId: Option[String]) {
-  def toJson = {
+  def toPrettyJson = {
     import SimpleCompletedDuel._
     Json.prettyPrint(Json.toJson(this))
   }
-  def toPrettyJson = {
+  def toJson = {
     s"${Json.toJson(this)}"
   }
 
