@@ -1,7 +1,7 @@
 <?php
 require("../render.inc.php");
 require("../render_game.inc.php");
-$uri = "$host/games/recent/?tag=clanwar&limit=5";
+$uri = "$host/games/recent/?type=clanctf&limit=5";
 if (isset($_GET['before'])) {
     $uri = "$host/games/before/" . rawurlencode((string)$_GET['before']) . "/?type=clanctf&limit=10";
 }
