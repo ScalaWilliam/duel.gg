@@ -3,7 +3,7 @@ require("../render.inc.php");
 require("../render_game.inc.php");
 $uri = "$host/games/recent/?tag=clanwar&limit=5";
 if (isset($_GET['before'])) {
-    $uri = "$host/games/before/" . rawurlencode((string)$_GET['before']) . "/?tag=clanwar&limit=10";
+    $uri = "$host/games/before/" . rawurlencode((string)$_GET['before']) . "/?type=clanctf&limit=10";
 }
 require_once("../parse_link.inc.php");
 $clanwars = json_decode(file_get_contents($uri), true);
