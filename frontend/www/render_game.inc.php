@@ -16,12 +16,12 @@ function render_duel($duel) {
                         ><?php echo $duel['endTime']; ?></time></a></h2>
         </header>
         <section class="score score-left">
-            <?php $player = $duel['players'][array_keys($duel['players'])[0]]; ?>
+            <?php $player = $duel['players'][0]; ?>
             <p class="score"><?php echo $player['frags']; ?></p>
             <p class="name"><a href="/player/?name=<?php echo rawurlencode($player['name']); ?>"><?php echo htmlspecialchars($player['name']); ?></a></p>
         </section>
         <section class="score score-right">
-            <?php $player = $duel['players'][array_keys($duel['players'])[1]]; ?>
+            <?php $player = $duel['players'][1]; ?>
             <p class="score"><?php echo $player['frags']; ?></p>
             <p class="name"><a href="/player/?name=<?php echo rawurlencode($player['name']); ?>"><?php echo htmlspecialchars($player['name']); ?></a></p>
         </section>

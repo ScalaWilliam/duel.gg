@@ -9,7 +9,7 @@ import play.api.libs.json.{JsObject, Json}
 case class JsonGameToSimpleGame(enricher: LookingUp) {
   def apply(json: String): Option[QueryableGame] = {
     val gn = GameNode(jsonString = json, plainGameEnricher = enricher)
-    gn.enrich()
+    gn.Mutations.enrich()
     Option {
       QueryableGame(
         id = gn.startTimeText.get,

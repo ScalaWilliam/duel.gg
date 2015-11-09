@@ -20,15 +20,15 @@ class FullStackTransformationSpec extends WordSpec with Matchers with OptionValu
 
   "Full stack" must {
     "do it" in {
-      gameNode.enrich()
-      val enrichedGamePretty = gameNode.asPrettyJson
+      gameNode.Mutations.enrich()
+      val enrichedGamePretty = Json.prettyPrint(Json.parse(gameNode.asJson))
       val expectedGamePretty = Json.prettyPrint(Json.parse(getClass.getResourceAsStream("test-output.json")))
       enrichedGamePretty shouldBe expectedGamePretty
     }
     "ensure it is idempotent" in {
-      val enrichedGame = gameNode.asPrettyJson
-      gameNode.enrich()
-      val secondlyEnrichedGame = gameNode.asPrettyJson
+      val enrichedGame = Json.prettyPrint(Json.parse(gameNode.asJson))
+      gameNode.Mutations.enrich()
+      val secondlyEnrichedGame = Json.prettyPrint(Json.parse(gameNode.asPrettyJson))
       secondlyEnrichedGame shouldBe enrichedGame
     }
     "extract correctly" in {

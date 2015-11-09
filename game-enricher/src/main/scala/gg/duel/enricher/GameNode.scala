@@ -26,6 +26,9 @@ object GameNode {
 }
 
 case class GameNode(om: ObjectMapper, gameNode: ObjectNode, plainGameEnricher: LookingUp) {
+  gameNodeV =>
+
+
   def server = gameNode.getStringO("server")
 
   def map = gameNode.getStringO("map")
@@ -44,24 +47,26 @@ case class GameNode(om: ObjectMapper, gameNode: ObjectNode, plainGameEnricher: L
     def clan = playerNode.getStringO("clan")
 
     /** MUTATIONS **/
-    def attachClan(): Unit = {
-      name.flatMap(plainGameEnricher.lookupClan).foreach {
-        clanName => playerNode.put("clan", clanName)
-      }
-    }
-
-    def attachGeo(): Unit = {
-      ip.map(_.replaceAllLiterally("x", "1")).flatMap(plainGameEnricher.lookupCountryCodeAndName)
-        .foreach { case (code, name) =>
-          playerNode.put("countryCode", code)
-          playerNode.put("countryName", name)
+    object Mutations {
+      def attachClan(): Unit = {
+        name.flatMap(plainGameEnricher.lookupClan).foreach {
+          clanName => playerNode.put("clan", clanName)
         }
+      }
+
+      def attachGeo(): Unit = {
+        ip.map(_.replaceAllLiterally("x", "1")).flatMap(plainGameEnricher.lookupCountryCodeAndName)
+          .foreach { case (code, name) =>
+            playerNode.put("countryCode", code)
+            playerNode.put("countryName", name)
+          }
+      }
     }
   }
 
   def teams = gameNode.safeGetObjectValueObjects("teams").map(TeamNode)
 
-  def players = gameNode.safeGetObjectValueObjects("players").map(PlayerNode)
+  def players = gameNode.safeGetArrayObjects("players").map(PlayerNode)
 
   def allPlayers: List[AnyPlayerNode] = players ++ teams.flatMap(_.players)
 
@@ -87,11 +92,13 @@ case class GameNode(om: ObjectMapper, gameNode: ObjectNode, plainGameEnricher: L
     def clan = teamNode.getStringO("clan")
 
     /** MUTATIONS **/
-    def attachClan(): Unit = {
-      if (players.size >= 2) {
-        val clanOptions = players.map(_.clan).toSet
-        if (clanOptions.size == 1) {
-          clanOptions.flatten.foreach(clanName => teamNode.put("clan", clanName))
+    object Mutations {
+      def attachClan(): Unit = {
+        if (players.size >= 2) {
+          val clanOptions = players.map(_.clan).toSet
+          if (clanOptions.size == 1) {
+            clanOptions.flatten.foreach(clanName => teamNode.put("clan", clanName))
+          }
         }
       }
     }
@@ -106,57 +113,68 @@ case class GameNode(om: ObjectMapper, gameNode: ObjectNode, plainGameEnricher: L
   def gameType = gameNode.getStringO("type")
 
   /** MUTATIONS **/
+  object Mutations {
 
-  def transformLogs(): Unit = {
-    players.flatMap(_.fragLog).foreach(_.transform())
-    teams.flatMap(_.flagLog).foreach(_.transform())
-  }
-
-  def addGameType(): Unit = {
-    gameNode.put("type", if (teams.nonEmpty) "ctf" else "duel")
-  }
-
-  def removeUnnecessaryNodes(): Unit = {
-    gameNode.remove("simpleId")
-    gameNode.remove("startTime")
-  }
-
-  def attachDemo(): Unit = {
-    plainGameEnricher.lookupDemo(this).foreach(demoUrl =>
-      gameNode.put("demo", demoUrl)
-    )
-  }
-
-  def attachTags(): Unit = {
-    val newArray = gameNode.putArray("tags")
-    if (isClanWar) newArray.add("clanwar")
-    gameType.foreach(gt => newArray.add(gt))
-  }
-
-  def addEndTime(): Unit = {
-    for {
-      startTime <- startTime
-      duration <- duration
-    } gameNode.put("endTime", startTime.plusMinutes(duration).toString())
-  }
-
-  def addStartTime(): Unit = {
-    startTime.foreach { st =>
-      gameNode.put("startTime", s"$st")
+    private def transformPlayersIndex(): Unit = {
+      val players = gameNode.safeGetObjectValueObjects("players").map(PlayerNode)
+      if ( players.nonEmpty ) {
+        val playersArray = gameNode.putArray("players")
+        players.foreach(player => playersArray.add(player.playerNode))
+      }
     }
-  }
 
-  def enrich(): Unit = {
-    transformLogs()
-    addGameType()
-    removeUnnecessaryNodes()
-    addEndTime()
-    allPlayers.foreach(_.attachClan())
-    allPlayers.foreach(_.attachGeo())
-    teams.foreach(_.attachClan())
-    attachDemo()
-    attachTags()
-    addStartTime()
+    private def transformLogs(): Unit = {
+      players.flatMap(_.fragLog).foreach(_.transform())
+      teams.flatMap(_.flagLog).foreach(_.transform())
+    }
+
+    private def addGameType(): Unit = {
+      gameNode.put("type", if (teams.nonEmpty) "ctf" else "duel")
+    }
+
+    private def removeUnnecessaryNodes(): Unit = {
+      gameNode.remove("simpleId")
+      gameNode.remove("startTime")
+    }
+
+    private def attachDemo(): Unit = {
+      plainGameEnricher.lookupDemo(gameNodeV).foreach(demoUrl =>
+        gameNode.put("demo", demoUrl)
+      )
+    }
+
+    private def attachTags(): Unit = {
+      val newArray = gameNode.putArray("tags")
+      if (isClanWar) newArray.add("clanwar")
+      gameType.foreach(gt => newArray.add(gt))
+    }
+
+    private def addEndTime(): Unit = {
+      for {
+        startTime <- startTime
+        duration <- duration
+      } gameNode.put("endTime", startTime.plusMinutes(duration).toString())
+    }
+
+    private def addStartTime(): Unit = {
+      startTime.foreach { st =>
+        gameNode.put("startTime", s"$st")
+      }
+    }
+
+    def enrich(): Unit = {
+      transformPlayersIndex()
+      transformLogs()
+      addGameType()
+      removeUnnecessaryNodes()
+      addEndTime()
+      allPlayers.foreach(_.Mutations.attachClan())
+      allPlayers.foreach(_.Mutations.attachGeo())
+      teams.foreach(_.Mutations.attachClan())
+      attachDemo()
+      attachTags()
+      addStartTime()
+    }
   }
 
 }
