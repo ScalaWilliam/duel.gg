@@ -7,35 +7,28 @@ import akka.agent.Agent
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import gg.duel.enricher.lookup.BasicLookingUp
-import gg.duel.query.{QueryableGame, QueryableGame$}
+import gg.duel.query.QueryableGame
 import lib.{GeoLookup, JsonGameToSimpleGame, OgroDemoParser, SucceedOnceFuture}
-import play.api.db.slick.DatabaseConfigProvider
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Concurrent
+import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
 import services.ClansService
 import services.demos.{DemoCollection, DemosListing}
-import slick.driver.JdbcProfile
-import slick.driver.PostgresDriver.api._
-
 import scala.async.Async
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 
 
-
 @Singleton
-class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansService: ClansService, demoCollectorModule: DemoCollection,
-                             applicationLifecycle: ApplicationLifecycle, configuration: Configuration)
+class GamesService @Inject()(clansService: ClansService, demoCollectorModule: DemoCollection,
+                             applicationLifecycle: ApplicationLifecycle, configuration: Configuration,
+                             wSClient: WSClient)
                             (implicit executionContext: ExecutionContext, actorSystem: ActorSystem) {
 
   implicit val scheduler = actorSystem.scheduler
 
-  applicationLifecycle.addStopHook(() => Future.successful(dbConfig.db.close()))
-
-  private val dbConfig = dbConfigProvider.get[JdbcProfile]
-  val gamesT = TableQuery[GamesTable]
   implicit val am = ActorMaterializer()
 
   implicit class sgToEvents(simpleGame: QueryableGame) {
@@ -47,36 +40,36 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansServ
 
   val gamesAgt = Agent(Games.empty)
 
-  def allGamesQuery = {
-    var q = gamesT.sortBy(_.id)
-    (configuration.getBoolean("gg.duel.limit-game-load"),
-      configuration.getInt("gg.duel.limit-game-load-size")) match {
-      case (Some(true), Some(number)) =>
-        q = q.sortBy(_.id.desc).take(number)
-      case _ =>
+  def limitLoad: Option[Int] = {
+    for {
+      ll <- configuration.getBoolean("gg.duel.limit-game-load")
+      if ll
+      n <- configuration.getInt("gg.duel.limit-game-load-size")
+    } yield n
+  }
 
-    }
-    q
+  def pingerPath = configuration.getString("gg.duel.api.pinger-service.url").getOrElse {
+    throw new RuntimeException("Config option 'gg.duel.api.pinger-service.url' not set!")
   }
 
   def loadGamesFromDatabaseFuture = {
+
     val f = Async.async {
-
-      var qr = allGamesQuery.result
-
-      Logger.info("Loading games from database...")
-      Async.await {
-        Source(dbConfig.db.stream(qr)).mapAsyncUnordered(8) { case (id, json) =>
+      Logger.info("Loading games...")
+      val lines = Async.await(wSClient.url(s"$pingerPath/games/all/").get()).body.split("\n")
+      Logger.info(s"Received file; ${lines.size} lines.")
+      val parseLine = "([^\t]+)\t(.*)".r
+      val flow = Source(() => lines.toIterator).collect { case parseLine(id, json) => json }
+        .mapAsyncUnordered(8) { json =>
           Future(sseToGameOption(json = json).toList)
-        }.mapConcat(identity).mapAsyncUnordered(2) {
-          game =>
-            val f = gamesAgt.alterOff(_.withNewGame(game))
-            f.onFailure { case x => println(s"==> $x") }
-            f
-        }.runFold(gamesAgt.get().games.size) { case (n, _) => n + 1 }
+        }.mapConcat(identity).mapAsyncUnordered(2) { game =>
+        val f = gamesAgt.alterOff(_.withNewGame(game))
+        f.onFailure { case x => println(s" ==> $x") }
+        f
       }
-    }
 
+      Async.await(flow.runFold(gamesAgt.get().games.size) { case (n, _) => n + 1 })
+    }
 
     f.onFailure { case reas: Throwable =>
       Logger.error(s"Loading games from database failed due to $reas. Trying again.", reas)
@@ -97,13 +90,13 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansServ
 
   }
   lazy val enricher = new BasicLookingUp(
-    game => for { server <- game.server; mode <- game.mode; map <- game.map; st <- game.startTime
-    demo <- demosAgt.get().lookupFromGame(
-        server = server,
-        mode = mode,
-        map = map,
-        atTime = st
-      )
+    game => for {server <- game.server; mode <- game.mode; map <- game.map; st <- game.startTime
+                 demo <- demosAgt.get().lookupFromGame(
+                   server = server,
+                   mode = mode,
+                   map = map,
+                   atTime = st
+                 )
     } yield demo,
     clanLookup = nickname => clansService.clans.collectFirst { case (id, clan) if clan.nicknameIsInClan(nickname) => id },
     countryLookup = GeoLookup.apply
@@ -132,7 +125,7 @@ class GamesService @Inject()(dbConfigProvider: DatabaseConfigProvider, clansServ
   val (liveGamesEnum, liveGamesChan) = Concurrent.broadcast[(Option[QueryableGame], Event)]
   // and also the agent
 
-  val keepAliveEveryTenSeconds = actorSystem.scheduler.schedule(5.seconds, 10.seconds){
+  val keepAliveEveryTenSeconds = actorSystem.scheduler.schedule(5.seconds, 10.seconds) {
     val emptyEvent = Event(
       data = "",
       id = Option.empty,
@@ -154,4 +147,5 @@ object GamesService {
       data = simpleGame.enhancedJson
     )
   }
+
 }

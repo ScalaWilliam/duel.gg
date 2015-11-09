@@ -3,3 +3,4 @@ GET        /servers/             @controllers.Main.servers
 GET        /status/              @controllers.Main.currentStatus
 GET        /games/recent/        @controllers.Main.recent
 GET        /version/             controllers.Version.getVersion
+GET        /games/all/           @controllers.Main.getAllGames

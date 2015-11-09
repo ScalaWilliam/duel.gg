@@ -42,5 +42,8 @@ class Main @Inject()
   def currentStatus = Action {
     Ok(pingerService.ourState.get().toString)
   }
+  def getAllGames = Action {
+    Ok.sendFile(gamesManager.f)
+  }
 
 }

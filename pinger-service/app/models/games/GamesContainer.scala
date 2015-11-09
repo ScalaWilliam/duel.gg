@@ -9,6 +9,8 @@ import play.api.libs.json.JsValue
 case class GamesContainer(games: Map[String, JsValue]) {
   def withGame(id: String, json: JsValue) = GamesContainer(games = games + (id -> json))
   def latest(n: Int): List[(String, JsValue)] = games.toList.sortBy(_._1).takeRight(n).toList
+  def ++(gamesContainer: GamesContainer): GamesContainer =
+    GamesContainer(games = games ++ gamesContainer.games)
 }
 object GamesContainer {
   def empty = GamesContainer(games = Map.empty)

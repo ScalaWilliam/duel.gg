@@ -37,15 +37,14 @@ lazy val api = Project(
       "org.scala-lang.modules" %% "scala-async" % "0.9.5",
       "de.heikoseeberger" %% "akka-sse" % "1.1.0",
       "org.scalatest" %% "scalatest" % "2.2.5" % "test",
+//      "com.typesafe.play" %% "play-slick" % "1.1.0",
+//      "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
       filters,
       "org.apache.httpcomponents" % "fluent-hc" % "4.5.1",
       "org.scalatestplus" %% "play" % "1.4.0-M4" % "test",
       "org.jsoup" % "jsoup" % "1.8.3",
-      "com.typesafe.play" %% "play-slick" % "1.1.0",
-      "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
       "mysql" % "mysql-connector-java" % "5.1.37",
       "io.scalac" %% "reactive-rabbit" % "1.0.2",
-      "com.typesafe.play" %% "play-slick-evolutions" % "1.1.0",
       "com.maxmind.geoip" % "geoip-api" % "1.2.14"
 ))
   .settings(includeGitStamp, dontDocument)
@@ -89,11 +88,11 @@ lazy val pingerJournalReader = Project(
   id = "pinger-journal-reader",
   base = file("pinger-journal-reader")
 ).settings(libraryDependencies ++= Seq(
-  "com.typesafe.slick" %% "slick" % "3.1.0",
   "org.scala-lang.modules" %% "scala-async" % "0.9.5",
   "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
-  "mysql" % "mysql-connector-java" % "5.1.37",
-  "com.typesafe.akka" %% "akka-stream-experimental" % "1.0"
+  "com.typesafe.play" %% "play-slick" % "1.1.0",
+  "com.typesafe.akka" %% "akka-stream-experimental" % "1.0",
+  json
 ))
 .dependsOn(pingerCore)
 
@@ -106,10 +105,6 @@ lazy val pingerService = Project(
   .settings(libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-async" % "0.9.5",
     "com.h2database" % "h2" % "1.4.190",
-    "com.typesafe.play" %% "play-slick" % "1.1.0",
-    "org.postgresql" % "postgresql" % "9.4-1204-jdbc42",
-    "mysql" % "mysql-connector-java" % "5.1.37",
-    "com.typesafe.play" %% "play-slick-evolutions" % "1.1.0",
     filters,
     "com.typesafe.akka" %% "akka-agent" % "2.4.0",
     "io.scalac" %% "reactive-rabbit" % "1.0.2",

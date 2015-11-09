@@ -52,6 +52,7 @@ case class SimpleCompletedCTF
   def toJson = {
     Json.toJson(this)(SimpleCompletedCTF.fmts).toString()
   }
+  def toPlayJson = Json.toJson(this).asInstanceOf[JsObject]
 }
 
 object SimpleCompletedCTF {

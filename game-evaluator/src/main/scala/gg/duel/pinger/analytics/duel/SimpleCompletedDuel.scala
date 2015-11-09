@@ -1,7 +1,7 @@
 package gg.duel.pinger.analytics.duel
 
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 
 object SimpleCompletedDuel {
   import SimpleCompletedCTF.iifmt
@@ -28,6 +28,7 @@ case class SimpleCompletedDuel
     import SimpleCompletedDuel._
     Json.prettyPrint(Json.toJson(this))
   }
+  def toPlayJson = Json.toJson(this).asInstanceOf[JsObject]
   def toJson = {
     s"${Json.toJson(this)}"
   }
