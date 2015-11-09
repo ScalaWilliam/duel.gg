@@ -43,7 +43,7 @@ class Main @Inject()
     Ok(pingerService.ourState.get().toString)
   }
   def getAllGames = Action {
-    Ok.sendFile(gamesManager.f)
+    Ok.sendFile(content = gamesManager.f, inline = true)
   }
 
 }
