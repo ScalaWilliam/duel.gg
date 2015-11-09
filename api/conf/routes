@@ -1,5 +1,6 @@
 GET        /                             @controllers.GamesApi.index
 
+GET        /games/raw/                   @controllers.GamesApi.getAllGames(queryCondition: QueryCondition)
 GET        /games/                       @controllers.GamesApi.gamesByIds(game: MultipleByIdQuery)
 GET        /games/new/                   @controllers.GamesApi.newGames(queryCondition: QueryCondition)
 GET        /games/live/                  @controllers.GamesApi.liveGames(queryCondition: QueryCondition)

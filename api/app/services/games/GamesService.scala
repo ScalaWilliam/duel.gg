@@ -1,5 +1,6 @@
 package services.games
 
+import java.io.{File, FileInputStream}
 import javax.inject._
 
 import akka.actor.ActorSystem
@@ -18,6 +19,7 @@ import services.ClansService
 import services.demos.{DemoCollection, DemosListing}
 import scala.async.Async
 import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Codec
 import scala.language.implicitConversions
 
 
@@ -52,15 +54,31 @@ class GamesService @Inject()(clansService: ClansService, demoCollectorModule: De
     throw new RuntimeException("Config option 'gg.duel.api.pinger-service.url' not set!")
   }
 
+  def loadFromLocalPath: Option[String] = {
+    for {
+      gamesPath <- configuration.getString("gg.duel.pinger-service.games.path")
+      loadLocal <- configuration.getBoolean("gg.duel.api.load-local-games")
+      if loadLocal
+    } yield gamesPath
+  }
+
   def loadGamesFromDatabaseFuture = {
 
     val f = Async.async {
       Logger.info("Loading games...")
-      val res = Async.await(wSClient.url(s"$pingerPath/games/all/").get())
-      require(res.status == 200, s"Response status should be 200, got ${res.status}")
-      val ctype = res.header("Content-Type")
-      require(ctype.contains("text/plain"), s"Returned content should be plaintext, got $ctype")
-      val lines = res.body.split("\n")
+      val lines = loadFromLocalPath match {
+        case Some(path) =>
+          Logger.info(s"Loading games from $path")
+          scala.io.Source.fromFile(new File(path))(Codec.UTF8).getLines().toArray
+        case None =>
+          val url = s"$pingerPath/games/all/"
+          Logger.info(s"Loading games from $url")
+          val res = Async.await(wSClient.url(url).get())
+          require(res.status == 200, s"Response status should be 200, got ${res.status}")
+          val ctype = res.header("Content-Type")
+          require(ctype.contains("text/plain"), s"Returned content should be plaintext, got $ctype")
+          res.body.split("\n")
+      }
       Logger.info(s"Received file; ${lines.size} lines.")
       val parseLine = "([^\t]+)\t(.*)".r
       val flow = Source(() => lines.toIterator).collect { case parseLine(id, json) => json }

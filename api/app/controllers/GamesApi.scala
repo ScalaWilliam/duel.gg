@@ -27,6 +27,15 @@ class GamesApi @Inject()(gamesService: GamesService, rabbitSource: RabbitSource)
     }
   }
 
+  def getAllGames(queryCondition: QueryCondition) = Action.async {
+    Async.async {
+      Async.await(gamesService.loadGamesFromDatabase)
+      val enum = Enumerator.enumerate(gamesService.gamesAgt.get().games.filter{case (_, g) => queryCondition(g)}.toList.sortBy(_._1))
+      val enumStrs = enum.map { case (id, qg) => s"$id\t${qg.enhancedNativeJson}\n" }
+      Ok.chunked(enumStrs)
+    }
+  }
+
   def directedGames(direction: LookupDirection, id: GameId, queryCondition: QueryCondition, limit: LimitCondition) =
     Action.async { implicit request =>
       val liveGamesUrl = controllers.routes.GamesApi.liveGames(queryCondition).url
@@ -62,8 +71,8 @@ class GamesApi @Inject()(gamesService: GamesService, rabbitSource: RabbitSource)
                   Ok(json).withHeaders("Link" -> links.mkString(", "))
                 } else {
                   val nextLink = fullLink(gameId = id, direction = LookupDirection.After, title = "Games after this one")
-                  val previousLinkO = if ( previousGames.size > n ) previousGames.takeRight(n).headOption.map(sg =>
-                    fullLink(gameId = GameId(sg.id), direction =direction, title = "More recent set of games"))
+                  val previousLinkO = if (previousGames.size > n) previousGames.takeRight(n).headOption.map(sg =>
+                    fullLink(gameId = GameId(sg.id), direction = direction, title = "More recent set of games"))
                   else Option.empty
                   val json = JsArray(previousGames.takeRight(n).map(_.enhancedNativeJson).reverse)
                   val links = List(nextLink) ++ previousLinkO ++ xlinks
@@ -93,9 +102,9 @@ class GamesApi @Inject()(gamesService: GamesService, rabbitSource: RabbitSource)
         }
 
         val gl = games.take(limit)
-        val backLinkO = if ( games.size > limit ) gl.lastOption.map { focusGame =>
-          val direction = if ( timing.isFirst ) LookupDirection.After else LookupDirection.Before
-          val title = if ( timing.isFirst ) "Next games" else "Previous games"
+        val backLinkO = if (games.size > limit) gl.lastOption.map { focusGame =>
+          val direction = if (timing.isFirst) LookupDirection.After else LookupDirection.Before
+          val title = if (timing.isFirst) "Next games" else "Previous games"
           val url = controllers.routes.GamesApi.directedGames(
             direction = direction,
             id = GameId(focusGame.id),
@@ -136,10 +145,10 @@ class GamesApi @Inject()(gamesService: GamesService, rabbitSource: RabbitSource)
               val newGamesUrl = controllers.routes.GamesApi.newGames(queryCondition).url
               val nextLinkO = nextGames.headOption.map(sg =>
                 controllers.routes.GamesApi.gameById(gameId = GameId(sg.id), queryCondition = queryCondition).url)
-              .map(url => s"""<$url>; rel="next"; title="Next game"""")
+                .map(url => s"""<$url>; rel="next"; title="Next game"""")
               val previousLinkO = previousGames.lastOption.map(sg =>
                 controllers.routes.GamesApi.gameById(gameId = GameId(sg.id), queryCondition = queryCondition).url)
-              .map(url => s"""<$url>; rel="previous"; title="Previous game"""")
+                .map(url => s"""<$url>; rel="previous"; title="Previous game"""")
 
               val links = nextLinkO.toList ++ previousLinkO.toList ++ List(
                 s"""<$liveGamesUrl>; rel="related"; title="Live game updates SSE stream"""",
