@@ -1,15 +1,19 @@
-GET        /                             @controllers.GamesApi.index
+GET        /games/new/               @controllers.EventStreamController.newGames(queryCondition: QueryCondition)
+GET        /games/live/              @controllers.EventStreamController.liveGames(queryCondition: QueryCondition)
 
-GET        /games/raw/                   @controllers.GamesApi.getAllGames(queryCondition: QueryCondition)
-GET        /games/                       @controllers.GamesApi.gamesByIds(game: MultipleByIdQuery)
-GET        /games/new/                   @controllers.GamesApi.newGames(queryCondition: QueryCondition)
-GET        /games/live/                  @controllers.GamesApi.liveGames(queryCondition: QueryCondition)
-GET        /games/:timing/               @controllers.GamesApi.timedGames(timing: TimingCondition, queryCondition: QueryCondition, limit: LimitCondition)
-GET        /games/:direction/:id/        @controllers.GamesApi.directedGames(direction: LookupDirection, id: GameId, queryCondition: QueryCondition, limit: LimitCondition)
-GET        /game/:gameId/                @controllers.GamesApi.gameById(gameId: GameId, queryCondition: QueryCondition)
+GET        /games/game/:id/          @controllers.GamesController.gameById(id: GameId)
+GET        /games/                   @controllers.GamesController.gamesByIds(id: MultipleByIdQuery)
 
-GET        /nicknames/                   @controllers.GamesApi.getNicknames
+GET        /duels/raw/               @controllers.DuelsController.getAllGames(queryCondition: QueryCondition)
+GET        /duels/recent/            @controllers.DuelsController.recentGames(queryCondition: QueryCondition, limit: LimitCondition)
+GET        /duels/before/:id/        @controllers.DuelsController.gamesBefore(id: GameId, queryCondition: QueryCondition, limit: LimitCondition)
 
-GET        /version/                     controllers.Version.getVersion
+GET        /ctf/raw/                 @controllers.CtfController.getAllGames(queryCondition: QueryCondition)
+GET        /ctf/recent/              @controllers.CtfController.recentGames(queryCondition: QueryCondition, limit: LimitCondition)
+GET        /ctf/before/:id/          @controllers.CtfController.gamesBefore(id: GameId, queryCondition: QueryCondition, limit: LimitCondition)
 
-GET        /clans/                       @controllers.ClansApi.getClans
+GET        /nicknames/               @controllers.NicknamesController.getNicknames
+
+GET        /version/                 controllers.VersionController.getVersion
+
+GET        /clans/                   @controllers.ClansController.getClans

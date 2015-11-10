@@ -3,9 +3,9 @@ require("../render.inc.php");
 if (!isset($_GET['name'])) {
     $_GET['name'] = "w00p|Drakas";
 }
-$url = "$host/games/recent/?type=duel&limit=5&player=" . rawurlencode($_GET['name']);
+$url = "$host/duels/recent/?limit=5&player=" . rawurlencode($_GET['name']);
 if (isset($_GET['before'])) {
-    $url = "$host/games/before/".rawurlencode((string)$_GET['before'])."/?type=duel&limit=10&player=" . rawurlencode($_GET['name']);
+    $url = "$host/duels/before/".rawurlencode((string)$_GET['before'])."/?limit=10&player=" . rawurlencode($_GET['name']);
 }
 $recentduels = json_decode(file_get_contents($url), true);
 require_once("../parse_link.inc.php");
@@ -22,7 +22,7 @@ foreach ($links as $link) {
     }
 }
 
-show_api_endpoint($url, $live_link);
+show_api_endpoint($url, null);
 
 ?>
     <div id="content">
@@ -35,11 +35,11 @@ show_api_endpoint($url, $live_link);
             }
 
             ?>
-            <?php if (isset($duel) && $has_more) { ?>
+            <?php if (isset($duel)) { ?>
                 <div id="rest">
 
                     <p>
-                        <a href="?name=<?php echo rawurlencode($_GET['name']) ?>&amp;before=<?php echo rawurlencode($duel['startTimeText']); ?>">Older
+                        <a href="?name=<?php echo rawurlencode($_GET['name']) ?>&amp;before=<?php echo rawurlencode($duel['startTime']); ?>">Older
                             games...</a></p>
 
 

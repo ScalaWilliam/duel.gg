@@ -8,6 +8,7 @@ function get_links() {
             return parse_link($lnkv);
         }
     }
+    return [];
 }
 function parse_link($link) {
     $ret = [];

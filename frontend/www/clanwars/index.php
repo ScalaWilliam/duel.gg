@@ -1,25 +1,15 @@
 <?php
 require("../render.inc.php");
 require("../render_game.inc.php");
-$uri = "$host/games/recent/?type=clanctf&limit=5";
+$uri = "$host/ctf/recent/?type=clanctf&limit=5";
 if (isset($_GET['before'])) {
-    $uri = "$host/games/before/" . rawurlencode((string)$_GET['before']) . "/?type=clanctf&limit=10";
+    $uri = "$host/ctf/before/" . rawurlencode((string)$_GET['before']) . "/?type=clanctf&limit=10";
 }
 require_once("../parse_link.inc.php");
 $clanwars = json_decode(file_get_contents($uri), true);
 $links = get_links();
-$has_more = false;
-foreach ($links as $link) {
-    if ($link->title == 'Live game updates SSE stream') {
-        $live_link = $host . $link->path;
-        ?><span id="live-games-url" data-path="<?php echo $live_link; ?>"/><?php
-    }
-    if ( $link->rel == 'previous') {
-        $has_more = true;
-    }
-}
 
-show_api_endpoint($uri, $live_link);
+show_api_endpoint($uri, null);
 
 ?>
     <div id="content" style="width:60em;margin-left:auto;margin-right:auto;"><?php
@@ -27,10 +17,10 @@ show_api_endpoint($uri, $live_link);
         foreach ($clanwars as $ctf) {
             render_ctf($ctf);
         }
-        ?>        <?php if ($has_more && isset($ctf)) { ?>
+        ?>        <?php if (isset($ctf)) { ?>
             <div id="rest">
 
-                <p><a href="?before=<?php echo rawurlencode($ctf['startTimeText']); ?>">Older wars...</a></p>
+                <p><a href="?before=<?php echo rawurlencode($ctf['startTime']); ?>">Older wars...</a></p>
 
             </div>
 

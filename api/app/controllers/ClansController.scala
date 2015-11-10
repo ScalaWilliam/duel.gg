@@ -9,7 +9,7 @@ import javax.inject._
 import services.ClansService
 
 @Singleton
-class ClansApi @Inject()(clansService: ClansService) extends Controller {
+class ClansController @Inject()(clansService: ClansService) extends Controller {
   implicit val clansWrites = Json.writes[Clan]
   def getClans = Action {
     Ok(Json.toJson(clansService.clans))
