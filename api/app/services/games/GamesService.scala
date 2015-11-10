@@ -132,7 +132,7 @@ class GamesService @Inject()(clansService: ClansService, demoCollectorModule: De
 
   }
   lazy val enricher = new BasicLookingUp(
-    game => for {server <- game.server; mode <- game.mode; map <- game.map; st <- game.startTime
+    game => for {server <- game.server; mode <- game.mode; map <- game.map; st <- game.startTimeDate
                  demo <- demosAgt.get().lookupFromGame(
                    server = server,
                    mode = mode,

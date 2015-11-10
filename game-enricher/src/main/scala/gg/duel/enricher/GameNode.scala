@@ -1,6 +1,7 @@
 package gg.duel.enricher
 
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 import com.fasterxml.jackson.databind.{ObjectWriter, ObjectMapper}
 import com.fasterxml.jackson.databind.node.{TextNode, ObjectNode}
@@ -70,9 +71,13 @@ case class GameNode(om: ObjectMapper, gameNode: ObjectNode, plainGameEnricher: L
 
   def allPlayers: List[AnyPlayerNode] = players ++ teams.flatMap(_.players)
 
-  def startTime = gameNode.getStringO("startTimeText").map(stt => ZonedDateTime.parse(stt))
+  def startTimeTextDate = gameNode.getStringO("startTimeText").map(stt => ZonedDateTime.parse(stt))
+
+  def startTimeDate = gameNode.getStringO("startTime").map(stt => ZonedDateTime.parse(stt))
 
   def startTimeText = gameNode.getStringO("startTimeText")
+
+  def startTime = gameNode.getStringO("startTime")
 
   def duration = gameNode.getIntO("duration")
 
@@ -134,7 +139,6 @@ case class GameNode(om: ObjectMapper, gameNode: ObjectNode, plainGameEnricher: L
 
     private def removeUnnecessaryNodes(): Unit = {
       gameNode.remove("simpleId")
-      gameNode.remove("startTime")
     }
 
     private def attachDemo(): Unit = {
@@ -151,14 +155,14 @@ case class GameNode(om: ObjectMapper, gameNode: ObjectNode, plainGameEnricher: L
 
     private def addEndTime(): Unit = {
       for {
-        startTime <- startTime
+        startTime <- startTimeTextDate
         duration <- duration
-      } gameNode.put("endTime", startTime.plusMinutes(duration).toString())
+      } gameNode.put("endTime", startTime.plusMinutes(duration).format(DateTimeFormatter.ISO_INSTANT))
     }
 
     private def addStartTime(): Unit = {
-      startTime.foreach { st =>
-        gameNode.put("startTime", s"$st")
+      startTimeTextDate.foreach { st =>
+        gameNode.put("startTime", st.format(DateTimeFormatter.ISO_INSTANT))
       }
     }
 

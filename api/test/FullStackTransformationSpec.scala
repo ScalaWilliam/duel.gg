@@ -45,5 +45,10 @@ class FullStackTransformationSpec extends WordSpec with Matchers with OptionValu
       k.tags should contain only ("duel")
       k.users shouldBe empty
     }
+    "not ignore seconds" in {
+      val g = GameNode(jsonString = """{"startTimeText": "1970-01-01T03:25Z"}""", plainGameEnricher = testEnricher)
+      g.Mutations.enrich()
+      g.startTime.value shouldBe "1970-01-01T03:25:00Z"
+    }
   }
 }

@@ -2,6 +2,7 @@
   "duration": 10,
   "playedAt": [ 1, 11 ],
   "startTimeText": "1970-01-01T03:25:12Z",
+  "startTime": "1970-01-01T03:25:12Z",
   "map": "academy",
   "mode": "instagib",
   "serverDescription": "test",
@@ -31,6 +32,5 @@
   "type": "duel",
   "endTime": "1970-01-01T03:35:12Z",
   "demo": "http://test.dmo",
-  "tags": [ "duel" ],
-  "startTime": "1970-01-01T03:25:12Z"
+  "tags": [ "duel" ]
 }
