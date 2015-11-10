@@ -1,8 +1,8 @@
 <?php
 require("render.inc.php");
-$uri = "$host/games/recent/?limit=5&type=duel";
+$uri = "$host/duels/recent/?limit=5";
 if ( isset($_GET['before']) ) {
-    $uri = "$host/games/before/".rawurlencode((string)$_GET['before'])."/?limit=20&type=duel";
+    $uri = "$host/duels/before/".rawurlencode((string)$_GET['before'])."/?limit=20";
 }
 
 $recentgames = json_decode(file_get_contents($uri), true);
@@ -20,7 +20,7 @@ foreach($links as $link) {
         $has_more = true;
     }
 }
-show_api_endpoint($uri, $live_link);
+show_api_endpoint($uri);
 
 ?>
         <div id="content" style="width:60em;margin-left:auto;margin-right:auto;">
@@ -39,11 +39,9 @@ show_api_endpoint($uri, $live_link);
                 }
                 ?>
 
-                <?php if ( $has_more ) { ?>
                 <div id="rest">
-                    <p><a href="?before=<?php echo rawurlencode($game['startTimeText']);?>">Older games...</a></p>
+                    <p><a href="?before=<?php echo rawurlencode($game['startTime']);?>">Older games...</a></p>
                 </div>
-    <?php } ?>
 
             </div>
         </div>

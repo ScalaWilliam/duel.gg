@@ -1,6 +1,5 @@
 package gg.duel.query
 
-import gg.duel.query.QueryableGame$
 
 /**
   * Created by William on 03/11/2015.

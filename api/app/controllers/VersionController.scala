@@ -2,7 +2,7 @@ package controllers
 
 import play.api.mvc.{Action, Controller}
 
-object Version extends Controller {
+object VersionController extends Controller {
   def getVersion = Action {
     {
       for {

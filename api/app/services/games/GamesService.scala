@@ -8,11 +8,11 @@ import akka.agent.Agent
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import gg.duel.enricher.lookup.BasicLookingUp
-import gg.duel.query.QueryableGame
+import gg.duel.query.{QueryCondition, QueryableGame}
 import lib.{GeoLookup, JsonGameToSimpleGame, OgroDemoParser, SucceedOnceFuture}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
-import play.api.libs.iteratee.Concurrent
+import play.api.libs.iteratee.{Enumerator, Concurrent}
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
 import services.ClansService
@@ -28,6 +28,24 @@ class GamesService @Inject()(clansService: ClansService, demoCollectorModule: De
                              applicationLifecycle: ApplicationLifecycle, configuration: Configuration,
                              wSClient: WSClient)
                             (implicit executionContext: ExecutionContext, actorSystem: ActorSystem) {
+  import scala.async.Async._
+
+  def awaitSorted = async {
+    await(loadGamesFromDatabase)
+    sorted
+  }
+
+  def awaitEnumeratedFilter(queryCondition: QueryCondition) = async {
+    Enumerator.enumerate {
+      await(awaitSorted).filter{case (_, g) => queryCondition(g)}.toVector.sortBy(_._1)
+    }.map { case (id, qg) => s"$id\t${qg.enhancedNativeJson}\n" }
+  }
+
+  def awaitFilter(queryCondition: QueryCondition) = async {
+    await(awaitSorted).filter{case (_, g) => queryCondition(g)}.toVector.sortBy(_._1).map(_._2)
+  }
+
+  def sorted = gamesAgt.get().games.toVector.sortBy(_._1)
 
   implicit val scheduler = actorSystem.scheduler
 
@@ -66,10 +84,10 @@ class GamesService @Inject()(clansService: ClansService, demoCollectorModule: De
 
     val f = Async.async {
       Logger.info("Loading games...")
-      val lines = loadFromLocalPath match {
+      var linesI = loadFromLocalPath match {
         case Some(path) =>
           Logger.info(s"Loading games from $path")
-          scala.io.Source.fromFile(new File(path))(Codec.UTF8).getLines().toArray
+          scala.io.Source.fromFile(new File(path))(Codec.UTF8).getLines()
         case None =>
           val url = s"$pingerPath/games/all/"
           Logger.info(s"Loading games from $url")
@@ -77,11 +95,13 @@ class GamesService @Inject()(clansService: ClansService, demoCollectorModule: De
           require(res.status == 200, s"Response status should be 200, got ${res.status}")
           val ctype = res.header("Content-Type")
           require(ctype.contains("text/plain"), s"Returned content should be plaintext, got $ctype")
-          res.body.split("\n")
+          res.body.split("\n").toIterator
       }
+      limitLoad.foreach{ n => linesI = linesI.take(n) }
+      val lines = linesI.toVector
       Logger.info(s"Received file; ${lines.size} lines.")
       val parseLine = "([^\t]+)\t(.*)".r
-      val flow = Source(() => lines.toIterator).collect { case parseLine(id, json) => json }
+      val flow = Source(lines).collect { case parseLine(id, json) => json }
         .mapAsyncUnordered(8) { json =>
           Future(sseToGameOption(json = json).toList)
         }.mapConcat(identity).mapAsyncUnordered(2) { game =>
