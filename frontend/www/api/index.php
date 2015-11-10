@@ -17,6 +17,10 @@ require("../render.inc.php");
         <h3>Example use of Query Parameters and Limit</h3>
         <?php $link = $host . '/ctf/recent/?clan=rb&clan=woop&operator=and&type=clanctf&limit=10'; ?>
         <pre><code><a href="<?php echo htmlspecialchars($link); ?>"><?php echo htmlspecialchars($link); ?></a></code></pre>
+        <h3>Duels JSON Schema</h3>
+        <p>Using the <a target="_blank" href="http://json-schema.org/">JSON Schema standard</a>, you can use the
+            <a target="_blank" href="https://github.com/ScalaWilliam/duel.gg/blob/master/api/test/resources/schema.json">Duel JSON Schema</a>
+            .</p>
 
         <h3><code>QueryCondition</code></h3>
         <p>A list of query string parameters to narrow down your search results:</p>
