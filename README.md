@@ -4,7 +4,7 @@
 
 ## Technology choices
 * __Scala__ for back-end with Play: strong typing, rich ecosystem and robustness.
-* __ClojureScript__ for front-end with Reagent: live reload and superior to JavaScript.
+* __PHP__ for server-side frontend: dynamic typing, rapid prototyping, instant deployment.
 
 ## Aims, objectives, expectations
 
