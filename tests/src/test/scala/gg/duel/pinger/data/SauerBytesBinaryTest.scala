@@ -9,7 +9,7 @@ class SauerBytesBinaryTest extends WordSpecLike with Matchers {
       val byteString = ByteString(1, 1, 1, 5, 5, -128, 3, 1, 3, -128, -61, 1, 17,
         1, 102, 114, 111, 122, 101, 110, 0, 115, 97, 117, 101, 114, 46, 119, 111, 111, 112, 46, 117, 115, 0
       )
-      val receivedBytes = SauerBytes(Server("127.1.1.1", 1234), 12314, byteString.toVector)
+      val receivedBytes = SauerBytes(Server("127.1.1.1", 1234), 12314, byteString)
       val byteArray = SauerBytesBinary.toBytes(receivedBytes)
 
       val expectedByteArraySize = 4 + 4 + 8 + byteString.size
@@ -28,7 +28,7 @@ class SauerBytesBinaryTest extends WordSpecLike with Matchers {
       val deLonghy = SauerBytes(
         server = Server.stub,
         time = 123912389,
-        message = Vector.fill(9000)(17.toByte)
+        message = ByteString(Vector.fill(9000)(17.toByte).toArray)
       )
 
       val tehBytes = SauerBytesBinary

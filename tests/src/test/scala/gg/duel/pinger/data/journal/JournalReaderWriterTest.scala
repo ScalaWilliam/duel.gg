@@ -1,8 +1,9 @@
 package gg.duel.pinger.data.journal
 
-import java.io.{BufferedInputStream, FileInputStream, FileOutputStream, File}
-import java.util.zip.{DeflaterInputStream, GZIPInputStream, GZIPOutputStream}
+import java.io.{File, FileInputStream, FileOutputStream}
+import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 
+import akka.util.ByteString
 import gg.duel.pinger.data.{SauerBytes, Server}
 import org.scalatest.{Matchers, WordSpec}
 
@@ -11,13 +12,13 @@ class JournalReaderWriterTest extends WordSpec with Matchers {
   def sb = SauerBytes(
     server = Server("127.0.0.1", 1234),
     time = System.currentTimeMillis(),
-    message = (1 to 900).map(_.toByte).toVector
+    message = ByteString((1 to 900).map(_.toByte).toArray)
   )
   val A = sb
   val B = A.copy(
     server = Server("23.41.22.2", 8821),
     time = A.time + 514123,
-    message = (1 to 900).map(_.toByte).toVector ++ sb.message
+    message = ByteString((1 to 900).map(_.toByte).toArray ++ sb.message)
   )
 
   "Journal reader and writer" must {

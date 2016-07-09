@@ -5,7 +5,7 @@ import java.nio.{ByteBuffer, ByteOrder}
 import akka.util.{ByteString, ByteStringBuilder}
 import org.joda.time.format.ISODateTimeFormat
 
-case class SauerBytes(server: Server, time: Long, message: Vector[Byte]) {
+case class SauerBytes(server: Server, time: Long, message: ByteString) {
   def stringTime = ISODateTimeFormat.dateTimeNoMillis().print(time)
   override def toString = s"SauerBytes($server, $stringTime, $message)"
 }
@@ -26,7 +26,7 @@ object SauerBytesOld {
     SauerBytes(
       server = Server(ip, port),
       time = time,
-      message = receivedBytes.toVector
+      message = ByteString(receivedBytes)
     )
   }
 }
@@ -60,17 +60,13 @@ object SauerBytesBinary {
         .map(_.toInt & 0xFF)
         .mkString(".")
     val port = byteBuffer.getInt
-    val receivedBytes =
-      Iterator
-        .continually(byteBuffer.hasRemaining)
-        .takeWhile(identity)
-        .map(_ => byteBuffer.get())
-        .toArray
+
+    val receivedBytes = byteBuffer.array().drop(byteBuffer.position)
 
     SauerBytes(
       server = Server(ip, port),
       time = time,
-      message = receivedBytes.toVector
+      message = ByteString(receivedBytes)
     )
   }
 

@@ -13,7 +13,7 @@ object Duel {
       case ParsedMessage(s, time, message: ConvertedServerInfoReply) =>
         beginDuelCSIR(s, time, message)
       case other =>
-        Bad(One(s"Input not a ConvertedServerInfoReply, found ${other.message.getClass.getName} = ${other.message}"))
+        Bad(One("Input not a ConvertedServerInfoReply"))
     }
   }
 

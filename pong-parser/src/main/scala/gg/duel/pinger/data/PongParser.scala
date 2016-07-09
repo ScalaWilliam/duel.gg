@@ -35,20 +35,51 @@ object PongParser {
   object ##:: {
     def unapply(from: ByteString): Option[(Byte, ByteString)] =
       if ( from.isEmpty ) None
-      else Some(from.head -> from.tail)
+      else Some(from.head,from.tail)
   }
 
   object GetInt {
-    def unapply(bytes: ByteString): Option[(Int, ByteString)] = bytes match {
-      case n ##:: rest if n != -127 && n != -128 =>
-        Option((n.toInt, rest))
-      case -128 ##:: GetUChar(m) ##:: n ##:: rest =>
-        Option(m | (n << 8), rest)
-      case -127 ##:: GetUChar(m) ##:: GetUChar(n) ##:: GetUChar(o) ##:: GetUChar(p) ##:: rest =>
-        Option(((m | (n << 8)) | o << 16) | (p << 24), rest)
-      case ByteString.empty =>
-        None
+    /**
+      * Do the logic and return info on where to do the split
+      */
+    def fast(array: Array[Byte], position: Int): (Boolean, Int, Int) = {
+      if (array.length > position) {
+        val first = array(position)
+        if (first == -128 && array.length > position + 2) {
+          val second = UChar(array(position + 1))
+          val third = array(position + 2)
+          val r = second | (third << 8)
+          (true, r, position + 3)
+        } else if (first == -127 && array.length > position + 4) {
+          val m = UChar(array(position  +1 ))
+          val n = UChar(array(position  +2 ))
+          val o = UChar(array(position  +3 ))
+          val p = UChar(array(position  +4 ))
+          val r = ((m | (n << 8)) | o << 16) | (p << 24)
+          (true, r, position + 5)
+        } else {
+          (true, first.toInt, position + 1)
+        }
+      } else {
+        (false, 0, 0)
+      }
     }
+    def unapply(bytes: ByteString): Option[(Int, ByteString)] = {
+      val a = bytes.toArray
+      val (found, i, p) = fast(a, 0)
+        if ( found) Some((i, ByteString(a.drop(p))))
+        else None
+      }
+//      bytes match {
+//        case n ##:: rest if n != -127 && n != -128 =>
+//          Some((n.toInt, rest))
+//        case -128 ##:: GetUChar(m) ##:: n ##:: rest =>
+//          Some(m | (n << 8), rest)
+//        case -127 ##:: GetUChar(m) ##:: GetUChar(n) ##:: GetUChar(o) ##:: GetUChar(p) ##:: rest =>
+//          Some(((m | (n << 8)) | o << 16) | (p << 24), rest)
+//        case ByteString.empty =>
+//          None
+//      }
   }
 
   object GetInts {
@@ -93,6 +124,25 @@ object PongParser {
   }
 
   object GetString {
+    private def ucharsFast(bytes: ByteString): (String, ByteString) = {
+      var position = 0
+      val arr = bytes.toArray
+      val stringBuilder = new java.lang.StringBuilder()
+      var continue = true
+      while (continue) {
+        val (found, i, p) = GetInt.fast(arr, position)
+        if (!found) continue = false
+        else if (i == 0) {
+          position = p
+          continue = false
+        }
+        else {
+          stringBuilder.append(CubeString.charMapping(UChar(i)))
+          position = p
+        }
+      }
+      stringBuilder.toString -> bytes.drop(position)
+    }
     private def uchars(bytes: ByteString): (String, ByteString) = {
       val (a, b) = go(bytes, List.empty)
       (a.map(CubeString.charMapping).reverse.mkString, b)
@@ -111,7 +161,7 @@ object PongParser {
       case ByteString.empty =>
         None
       case something =>
-        val (forStr, rest) = uchars(bytes)
+        val (forStr, rest) = ucharsFast(bytes)
         Option((forStr, ByteString(rest.toArray)))
     }
   }

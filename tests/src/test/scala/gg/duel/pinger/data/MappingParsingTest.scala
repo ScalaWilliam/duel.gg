@@ -13,7 +13,7 @@ class MappingParsingTest extends WordSpecLike with Matchers with Inspectors {
     override def apply(left: ByteString): MatchResult = {
       val output = Try(PongParser.matchers apply left)
       MatchResult(
-        output.isSuccess && output.get == expected,
+        output.get == expected,
         s"""Failed to transform data into $expected - $output""",
         s"""Successfully transformed data into $expected - $output"""
       )

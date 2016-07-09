@@ -16,12 +16,12 @@ object PingPongProcessor {
   sealed trait ReceiveResult
   case class BadHash(server: Server, time: Long, fullMessage: ByteString, expectedHash: ByteString, haveHash: ByteString) extends ReceiveResult
   case class ReceivedBytes(server: Server, time: Long, message: ByteString) extends ReceiveResult {
-    def toSauerBytes = SauerBytes(server, time, message.toVector)
+    def toSauerBytes = SauerBytes(server, time, message)
     def toBytes = SauerBytesBinary.toBytes(toSauerBytes)
   }
   object ReceivedBytes {
     def fromSauerBytes(sauerBytes: SauerBytes) =
-      ReceivedBytes(sauerBytes.server, sauerBytes.time, ByteString(sauerBytes.message.toArray))
+      ReceivedBytes(sauerBytes.server, sauerBytes.time, sauerBytes.message)
   }
   case class Ping(server: Server)
   case class Ready(on: InetSocketAddress)
