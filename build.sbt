@@ -10,7 +10,8 @@ lazy val root = Project(
     pingerCore,
     pingerService,
     gamesQuery,
-    gameEnricher
+    gameEnricher,
+    web
   ).aggregate(
   gameEvaluator,
   pongParser,
@@ -18,7 +19,8 @@ lazy val root = Project(
   pingerCore,
   pingerService,
   gamesQuery,
-gameEnricher
+gameEnricher,
+  web
 )
 
 lazy val api = Project(
@@ -125,3 +127,9 @@ lazy val pongParser = Project(
     "commons-validator" % "commons-validator" % "1.4.1" exclude("commons-logging", "commons-logging"),
     "org.scalatest" %% "scalatest" % "2.2.5" % "test"
   ))
+
+lazy val web = project
+  .enablePlugins(PlayScala)
+  .settings(
+    version := "5.0"
+  )
