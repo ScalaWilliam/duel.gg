@@ -1,4 +1,4 @@
-package models.servers
+package gg.duel.pingerservice
 
 import gg.duel.pinger.data.Server
 

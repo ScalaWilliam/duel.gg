@@ -1,8 +1,8 @@
-package lib.gj
+package gg.duel.pingerservice
 
-import java.io.{FileInputStream, ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, FileInputStream}
 
-import org.scalatest.{WordSpec, Matchers}
+import org.scalatest.{Matchers, WordSpec}
 
 class ReadGameJournalSpec extends WordSpec with Matchers {
   def testGames = GamesJournalReader.fromInputStream(getClass.getResourceAsStream("/test-journal.txt"))

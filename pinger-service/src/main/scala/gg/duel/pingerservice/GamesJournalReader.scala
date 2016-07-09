@@ -1,8 +1,8 @@
-package lib.gj
+package gg.duel.pingerservice
 
 import java.io.InputStream
 
-import play.api.libs.json.{Json, JsObject}
+import play.api.libs.json.{JsObject, Json}
 
 import scala.io.Codec
 

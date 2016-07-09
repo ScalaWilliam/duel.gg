@@ -1,20 +1,18 @@
-package services
+package gg.duel.pingerservice
 
-import java.io.{File, FileOutputStream, FileWriter}
-import java.time.{LocalDateTime, ZonedDateTime}
-import java.util.zip.{Deflater, DeflaterOutputStream}
+import java.io.File
+import java.time.LocalDateTime
 import javax.inject._
 
-import akka.actor.{Kill, ActorSystem}
+import akka.actor.{ActorSystem, Kill}
 import gg.duel.pinger.data.SauerBytes
-import gg.duel.pinger.data.journal.{JournalWriter, SauerBytesWriter}
+import gg.duel.pinger.data.journal.JournalWriter
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton
-class JournallingService @Inject()(applicationLifecycle: ApplicationLifecycle)(implicit actorSystem: ActorSystem,
+class JournallingService (implicit actorSystem: ActorSystem,
 executionContext: ExecutionContext) {
 
   import akka.actor.ActorDSL._
@@ -36,9 +34,9 @@ executionContext: ExecutionContext) {
 
   actorSystem.eventStream.subscribe(myActor, classOf[SauerBytes])
 
-  applicationLifecycle.addStopHook(() => Future {
+  def stop(): Unit = {
     myActor ! Kill
     jw.close()
-  })
+  }
 
 }

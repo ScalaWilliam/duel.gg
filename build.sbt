@@ -60,20 +60,19 @@ lazy val pingerJournalReader = Project(
 lazy val pingerService = Project(
   id = "pinger-service",
   base = file("pinger-service"))
-  .enablePlugins(PlayScala)
+  .enablePlugins(JavaServerAppPackaging)
   .dependsOn(pingerCore)
-  .settings(name := "pingerservice")
   .settings(libraryDependencies ++= Seq(
     scalaAsync,
-    h2,
     filters,
-    akkaAgent,
-    reactiveRabbit,
-    akkaStream
+    akkaAgent
   ))
   .settings(
     includeGitStamp,
-    dontDocument
+    dontDocument,
+    name := "pinger-service",
+    version := "5.0",
+    mainClass := Some("gg.duel.pingerservice.PingerServiceApp")
   )
 
 lazy val pongParser = Project(
@@ -105,3 +104,8 @@ lazy val tests = project
     libraryDependencies += scalatest,
     libraryDependencies += akkaTestkit
   )
+
+cancelable in Global := true
+
+fork in run := true
+

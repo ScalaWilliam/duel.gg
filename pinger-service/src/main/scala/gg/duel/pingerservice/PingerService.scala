@@ -1,14 +1,13 @@
-package services
+package gg.duel.pingerservice
 
 import javax.inject.{Inject, Singleton}
 
 import akka.actor.ActorDSL._
 import akka.actor.{ActorSystem, Kill}
 import akka.agent.Agent
-import gg.duel.pinger.mulprocess.{NewProcessor, LiveProcessor}
+import gg.duel.pinger.mulprocess.{LiveProcessor, NewProcessor}
 import gg.duel.pinger.service.PingPongProcessor.{Ping, Ready, ReceivedBytes}
 import gg.duel.pinger.service.{PingPongProcessorActor, PingPongProcessorState}
-import modules.ServerManager
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Concurrent
@@ -18,13 +17,11 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
  * Created on 13/07/2015.
  */
-@Singleton
-class PingerService @Inject()
+class PingerService
 (serverProvider: ServerManager,
   gamesManager: GamesManagerService)(
   implicit executionContext: ExecutionContext,
-  actorSystem: ActorSystem,
-  applicationLifecycle: ApplicationLifecycle
+  actorSystem: ActorSystem
   ) {
 
   val (enumerator, channel) = Concurrent.broadcast[Event]
@@ -108,9 +105,9 @@ class PingerService @Inject()
     }
 
   })
-  applicationLifecycle.addStopHook(() => Future {
+  def stop(): Unit = {
     conactor ! Kill
-  })
+  }
   def push(e: gg.duel.pinger.mulprocess.Event): Unit = {
     actorSystem.eventStream.publish(e)
   }

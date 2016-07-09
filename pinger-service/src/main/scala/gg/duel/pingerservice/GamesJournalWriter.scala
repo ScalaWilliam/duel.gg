@@ -1,4 +1,4 @@
-package lib.gj
+package gg.duel.pingerservice
 
 import java.io.OutputStream
 

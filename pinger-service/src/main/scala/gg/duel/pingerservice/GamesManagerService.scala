@@ -1,24 +1,21 @@
-package services
+package gg.duel.pingerservice
 
 import java.io.{File, FileInputStream, FileOutputStream}
 import javax.inject.{Inject, Singleton}
 
 import akka.agent.Agent
+import com.typesafe.config.Config
 import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
-import lib.gj.{GamesJournalReader, GamesJournalWriter}
-import models.games.GamesContainer
 import play.api.Configuration
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.Json
 
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton
-class GamesManagerService @Inject()(configuration: Configuration)(implicit executionContext: ExecutionContext, applicationLifecycle: ApplicationLifecycle) {
+class GamesManagerService (filePath: String)(implicit executionContext: ExecutionContext) {
   val gamesA = Agent(GamesContainer.empty)
   import concurrent.blocking
-  val filePath = configuration.getString("gg.duel.pinger-service.games.path").getOrElse("games.txt")
   val f = new File(filePath)
   val outputFileStream = new FileOutputStream(f, true)
   val dw = new GamesJournalWriter(outputFileStream)
@@ -41,9 +38,9 @@ class GamesManagerService @Inject()(configuration: Configuration)(implicit execu
     gamesA.alter(_.withGame(ctf.startTimeText, Json.parse(ctf.toJson)))
   }
 
-  applicationLifecycle.addStopHook(() => Future {
+  def stop(): Unit = {
     outputFileStream.close()
-  })
+  }
 
 }
 

@@ -1,4 +1,4 @@
-package models.games
+package gg.duel.pingerservice
 
 import play.api.libs.json.JsValue
 

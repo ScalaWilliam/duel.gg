@@ -1,4 +1,4 @@
-package modules
+package gg.duel.pingerservice
 
 import javax.inject._
 
@@ -6,7 +6,6 @@ import akka.actor.ActorSystem
 import akka.agent.Agent
 import gg.duel.pinger.data.Server
 import gg.duel.pinger.masterserver.MasterserverClient
-import models.servers.Servers
 import play.api.inject.ApplicationLifecycle
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,7 +16,6 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ServerManager @Inject()()(implicit
                                executionContext: ExecutionContext,
-                                applicationLifecycle: ApplicationLifecycle,
                                 actorSystem: ActorSystem
                                 ) {
 
@@ -36,8 +34,8 @@ class ServerManager @Inject()()(implicit
 
   def servers: Servers = serversA.get()
 
-  applicationLifecycle.addStopHook(() => Future {
+  def stop(): Unit = {
     updateServers.cancel()
-  })
+  }
 
 }
