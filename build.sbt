@@ -12,7 +12,6 @@ lazy val root = Project(
     tests,
     masterserverClient,
     duelParser,
-    ctfParser,
     pingerJournal
   ).aggregate(
   pongParser,
@@ -23,14 +22,12 @@ lazy val root = Project(
   tests,
   masterserverClient,
   duelParser,
-  ctfParser,
   pingerJournal
 )
 
 lazy val gameEnricher = Project(
   id = "game-enricher",
   base = file("game-enricher"))
-  .dependsOn(ctfParser)
   .dependsOn(duelParser)
 
 lazy val pingerCore = Project(
@@ -42,7 +39,6 @@ lazy val pingerCore = Project(
     akkaSlf4j
   ))
   .dependsOn(pongParser)
-  .dependsOn(ctfParser)
   .dependsOn(duelParser)
 
 lazy val pingerJournal = Project(
@@ -92,8 +88,7 @@ lazy val tests = project
     pingerService,
     gameEnricher,
     masterserverClient,
-    duelParser,
-    ctfParser
+    duelParser
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -113,15 +108,6 @@ lazy val masterserverClient = Project(
 lazy val duelParser = Project(
   id = "duel-parser",
   base = file("duel-parser")
-).dependsOn(pongParser)
-  .settings(libraryDependencies ++= Seq(
-    scalactic,
-    json
-  ))
-
-lazy val ctfParser = Project(
-  id = "ctf-parser",
-  base = file("ctf-parser")
 ).dependsOn(pongParser)
   .settings(libraryDependencies ++= Seq(
     scalactic,

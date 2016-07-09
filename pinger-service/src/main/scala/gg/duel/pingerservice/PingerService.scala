@@ -1,18 +1,15 @@
 package gg.duel.pingerservice
 
-import javax.inject.{Inject, Singleton}
-
 import akka.actor.ActorDSL._
 import akka.actor.{ActorSystem, Kill}
 import akka.agent.Agent
 import gg.duel.pinger.mulprocess.{LiveProcessor, NewProcessor}
 import gg.duel.pinger.service.PingPongProcessor.{Ping, Ready, ReceivedBytes}
 import gg.duel.pinger.service.{PingPongProcessorActor, PingPongProcessorState}
-import play.api.inject.ApplicationLifecycle
 import play.api.libs.EventSource.Event
 import play.api.libs.iteratee.Concurrent
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 /**
  * Created on 13/07/2015.
@@ -72,7 +69,7 @@ class PingerService
           case r: ReceivedBytes =>
             context.system.eventStream.publish(r.toSauerBytes)
             currentState.receiveBytes(r) match {
-              case (events, duelO, ctfO, nextNewProcessor) =>
+              case (events, duelO, nextNewProcessor) =>
 
                 for {
                   previousServerState <- currentState.sIteratorState.mIteratorState.serverStates.get(r.server)
@@ -95,10 +92,8 @@ class PingerService
                   push(e)
                 }
                 duelO.foreach(duel => gamesManager.addDuel(duel))
-                ctfO.foreach(ctf => gamesManager.addCtf(ctf))
                 currentState = nextNewProcessor
                 ourState.send(nextNewProcessor)
-
 
             }
         }

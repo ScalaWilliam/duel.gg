@@ -55,7 +55,7 @@ class MultiplexedDuelReaderSpec extends WordSpec with Matchers with Inspectors {
       }
 
       val foundGames = gotStates.collect{
-        case MFoundGame(_, CompletedGame(Left(game),_),_) => game
+        case MFoundGame(_, CompletedGame(game,_),_) => game
       }
 //      foundGames foreach println
       forExactly(1, foundGames) {

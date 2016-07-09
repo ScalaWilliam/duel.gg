@@ -1,17 +1,16 @@
 package gg.duel.pinger.data.journal
 
-import java.io.{BufferedInputStream, File, FileInputStream}
+import java.io.{BufferedInputStream, File}
 import java.net.URL
-import java.util.zip.{GZIPInputStream, InflaterInputStream, Deflater, DeflaterInputStream}
+import java.util.zip.GZIPInputStream
 
 import gg.duel.pinger.analytics.MultiplexedReader.{CompletedGame, SFoundGame, SIteratorState}
-import gg.duel.pinger.analytics.ctf.data.SimpleCompletedCTF
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
 import gg.duel.pinger.data.SauerBytes
 import gg.duel.pinger.data.journal.JournalReader.Game
 
 object JournalReader {
-  type Game = Either[SimpleCompletedDuel, SimpleCompletedCTF]
+  type Game = SimpleCompletedDuel
 }
 
 class JournalReader(url: URL) {
