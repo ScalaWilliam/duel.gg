@@ -68,7 +68,6 @@ lazy val pingerService = Project(
     akkaAgent
   ))
   .settings(
-    includeGitStamp,
     dontDocument,
     name := "pinger-service",
     version := "5.0",
