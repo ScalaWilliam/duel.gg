@@ -51,24 +51,6 @@ object PongParser {
     }
   }
 
-  object GetUchars {
-
-    def uchars(bytes: ByteString): Vector[(Int, ByteString)] = {
-      go(bytes, Vector.empty)
-    }
-
-    @tailrec
-    private def go(bytes: ByteString, accumulation: Vector[(Int, ByteString)]): Vector[(Int, ByteString)] = {
-      bytes match {
-        case GetInt(GetUChar(value), rest) => go(rest, accumulation :+ (value, rest))
-        case ByteString.empty => accumulation
-      }
-    }
-
-    def unapply(bytes: ByteString): Option[Vector[Int]] =
-      Option(uchars(bytes).map(_._1))
-  }
-
   object GetInts {
     def ints(bytes: ByteString): List[(Int, ByteString)] = {
       bytes match {
@@ -102,21 +84,35 @@ object PongParser {
       0x43F, 0x442, 0x444, 0x446, 0x447, 0x448, 0x449, 0x44A, 0x44B, 0x44C, 0x44D, 0x44E, 0x44F, 0x454, 0x490, 0x491
     )
 
-    private val itsSize = intToInt.size
+    private val itsSize = intToInt.length
 
     def mapping(from: Int): Int = if ( from < itsSize ) intToInt(from) else from
+
+    def charMapping(from: Int): Char = mapping(from).toChar
 
   }
 
   object GetString {
-    val mapper = (x: (Int, ByteString)) => CubeString.mapping(x._1).toChar
+    private def uchars(bytes: ByteString): (String, ByteString) = {
+      val (a, b) = go(bytes, List.empty)
+      (a.map(CubeString.charMapping).reverse.mkString, b)
+    }
+
+    @tailrec
+    private def go(bytes: ByteString, accumulation: List[Int]): (List[Int], ByteString) = {
+      bytes match {
+        case GetInt(0, rest) => (accumulation, rest)
+        case GetInt(value, rest) => go(rest, UChar(value) +: accumulation)
+        case other => (accumulation, other)
+      }
+    }
 
     def unapply(bytes: ByteString): Option[(String, ByteString)] = bytes match {
       case ByteString.empty =>
         None
       case something =>
-        val (forStr, rest) = GetUchars.uchars(bytes).span(i => i._1 > 0)
-        Option((forStr.map(mapper).mkString, ByteString(rest.take(1).flatMap(_._2).toArray)))
+        val (forStr, rest) = uchars(bytes)
+        Option((forStr, ByteString(rest.toArray)))
     }
   }
 
