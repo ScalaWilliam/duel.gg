@@ -16,7 +16,7 @@ object CommonSettingsPlugin extends AutoPlugin {
     resolvers += Resolver.mavenLocal,
     libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.5" % "test"
   )
-  object autoImport {
+  object autoImport extends Dependencies {
     val includeGitStamp = com.atlassian.labs.gitstamp.GitStampPlugin.gitStampSettings
     val dontDocument = Seq(
       publishArtifact in (Compile, packageDoc) := false,
