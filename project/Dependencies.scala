@@ -9,9 +9,6 @@ trait Dependencies {
   val akkaAgent = "com.typesafe.akka" %% "akka-agent" % akkaVersion
   val logback = "ch.qos.logback" % "logback-classic" % "1.1.3"
   val scalaAsync = "org.scala-lang.modules" %% "scala-async" % "0.9.5"
-  val postgres = "org.postgresql" % "postgresql" % "9.4-1204-jdbc42"
-  val playSlick = "com.typesafe.play" %% "play-slick" % "1.1.0"
-  val akkaStream = "com.typesafe.akka" %% "akka-stream-experimental" % "1.0"
   val jodaTime = "joda-time" % "joda-time" % "2.9.4"
   val jodaConvert = "org.joda" % "joda-convert" % "1.8.1"
   val commonsValidator = "commons-validator" % "commons-validator" % "1.5.1" exclude("commons-logging", "commons-logging")

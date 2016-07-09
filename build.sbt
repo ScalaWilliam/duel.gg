@@ -4,35 +4,34 @@ lazy val root = Project(
   id = "duelgg",
   base = file("."))
   .dependsOn(
-    gameEvaluator,
     pongParser,
     pingerCore,
     pingerService,
     gameEnricher,
     web,
-    tests
+    tests,
+    masterserverClient,
+    duelParser,
+    ctfParser,
+    pingerJournal
   ).aggregate(
-  gameEvaluator,
   pongParser,
   pingerCore,
   pingerService,
   gameEnricher,
   web,
-  tests
+  tests,
+  masterserverClient,
+  duelParser,
+  ctfParser,
+  pingerJournal
 )
-
-lazy val gameEvaluator = Project(
-  id = "game-evaluator",
-  base = file("game-evaluator"))
-  .dependsOn(pongParser)
-  .settings(libraryDependencies ++= Seq(
-    scalactic, scalatest, json
-  ))
 
 lazy val gameEnricher = Project(
   id = "game-enricher",
   base = file("game-enricher"))
-  .dependsOn(gameEvaluator)
+  .dependsOn(ctfParser)
+  .dependsOn(duelParser)
 
 lazy val pingerCore = Project(
   id = "pinger-core",
@@ -40,21 +39,16 @@ lazy val pingerCore = Project(
   .settings(libraryDependencies ++= Seq(
     logback,
     akkaActor,
-    akkaSlf4j,
-    scalatest
+    akkaSlf4j
   ))
-  .dependsOn(pongParser, gameEvaluator)
+  .dependsOn(pongParser)
+  .dependsOn(ctfParser)
+  .dependsOn(duelParser)
 
-lazy val pingerJournalReader = Project(
-  id = "pinger-journal-reader",
-  base = file("pinger-journal-reader")
-).settings(libraryDependencies ++= Seq(
-  scalaAsync,
-  postgres,
-  playSlick,
-  akkaStream,
-  json
-))
+lazy val pingerJournal = Project(
+  id = "pinger-journal",
+  base = file("pinger-journal")
+)
   .dependsOn(pingerCore)
 
 lazy val pingerService = Project(
@@ -62,6 +56,8 @@ lazy val pingerService = Project(
   base = file("pinger-service"))
   .enablePlugins(JavaServerAppPackaging)
   .dependsOn(pingerCore)
+  .dependsOn(pingerJournal)
+  .dependsOn(masterserverClient)
   .settings(libraryDependencies ++= Seq(
     scalaAsync,
     filters,
@@ -81,31 +77,53 @@ lazy val pongParser = Project(
     akkaActor,
     jodaTime,
     jodaConvert,
-    commonsValidator,
-    scalatest
+    commonsValidator
   ))
 
 lazy val web = project
   .enablePlugins(PlayScala)
   .dependsOn(gameEnricher)
-  .settings(
-    version := "5.0"
-  )
+  .settings(version := "5.0")
 
 lazy val tests = project
   .dependsOn(
-    gameEvaluator,
     pongParser,
     pingerCore,
     pingerService,
-    gameEnricher
+    gameEnricher,
+    masterserverClient,
+    duelParser,
+    ctfParser
   )
   .settings(
-    libraryDependencies += scalatest,
-    libraryDependencies += akkaTestkit
-  )
+    libraryDependencies ++= Seq(
+      scalatest,
+      akkaTestkit
+    ))
 
 cancelable in Global := true
 
 fork in run := true
 
+lazy val masterserverClient = Project(
+  id = "masterserver-client",
+  base = file("masterserver-client")
+)
+
+lazy val duelParser = Project(
+  id = "duel-parser",
+  base = file("duel-parser")
+).dependsOn(pongParser)
+  .settings(libraryDependencies ++= Seq(
+    scalactic,
+    json
+  ))
+
+lazy val ctfParser = Project(
+  id = "ctf-parser",
+  base = file("ctf-parser")
+).dependsOn(pongParser)
+  .settings(libraryDependencies ++= Seq(
+    scalactic,
+    json
+  ))
