@@ -111,7 +111,7 @@ case class GameNode(om: ObjectMapper, gameNode: ObjectNode, plainGameEnricher: L
 
   def asJson = om.writeValueAsString(gameNode)
 
-  def asPrettyJson = om.writerWithDefaultPrettyPrinter[ObjectWriter]().writeValueAsString(gameNode)
+  def asPrettyJson = om.writerWithDefaultPrettyPrinter().writeValueAsString(gameNode)
 
   def isClanWar = teams.nonEmpty && teams.flatMap(_.clan).toSet.size == 2
 
