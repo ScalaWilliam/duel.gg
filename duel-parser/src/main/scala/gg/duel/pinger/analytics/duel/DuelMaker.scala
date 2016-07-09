@@ -2,9 +2,9 @@ package gg.duel.pinger.analytics.duel
 
 import gg.duel.pinger.analytics.CleanupDescription
 import gg.duel.pinger.analytics.duel.BetterDuelState.StateTransition
+import gg.duel.pinger.data.ModesList
 import gg.duel.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
-import gg.duel.pinger.data.ParsedPongs.{PartialPlayerExtInfo, PlayerExtInfo, ParsedMessage}
-import gg.duel.pinger.data.{ModesList, Server}
+import gg.duel.pinger.data.ParsedPongs.{ParsedMessage, PartialPlayerExtInfo, PlayerExtInfo}
 import org.scalactic._
 
 trait BetterDuelState {

@@ -98,7 +98,7 @@ lazy val tests = project
 
 cancelable in Global := true
 
-fork in run := true
+fork in Global in run := true
 
 lazy val masterserverClient = Project(
   id = "masterserver-client",

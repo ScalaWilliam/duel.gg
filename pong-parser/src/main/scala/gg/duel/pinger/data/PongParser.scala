@@ -3,6 +3,8 @@ package gg.duel.pinger.data
 import akka.util.ByteString
 import gg.duel.pinger.data.ParsedPongs._
 
+import scala.annotation.tailrec
+
 /** 01/02/14 */
 object PongParser {
 
@@ -25,20 +27,25 @@ object PongParser {
       Option(int & 0xFF)
   }
 
+  object UChar {
+    def apply(byte: Byte) = byte.toChar & 0xFF
+    def apply(int: Int): Int = int & 0xFF
+  }
+
   object ##:: {
     def unapply(from: ByteString): Option[(Byte, ByteString)] =
-      for { ht @ (head, tail) <- Option(from.splitAt(1))
-        if head.nonEmpty } yield (head.head, tail)
+      if ( from.isEmpty ) None
+      else Some(from.head -> from.tail)
   }
 
   object GetInt {
     def unapply(bytes: ByteString): Option[(Int, ByteString)] = bytes match {
-      case -127 ##:: GetUChar(m) ##:: GetUChar(n) ##:: GetUChar(o) ##:: GetUChar(p) ##:: rest =>
-        Option(((m | (n << 8)) | o << 16) | (p << 24), rest)
+      case n ##:: rest if n != -127 && n != -128 =>
+        Option((n.toInt, rest))
       case -128 ##:: GetUChar(m) ##:: n ##:: rest =>
         Option(m | (n << 8), rest)
-      case n ##:: rest =>
-        Option((n.toInt, rest))
+      case -127 ##:: GetUChar(m) ##:: GetUChar(n) ##:: GetUChar(o) ##:: GetUChar(p) ##:: rest =>
+        Option(((m | (n << 8)) | o << 16) | (p << 24), rest)
       case ByteString.empty =>
         None
     }
@@ -46,14 +53,19 @@ object PongParser {
 
   object GetUchars {
 
-    def uchars(bytes: ByteString): List[(Int, ByteString)] = {
+    def uchars(bytes: ByteString): Vector[(Int, ByteString)] = {
+      go(bytes, Vector.empty)
+    }
+
+    @tailrec
+    private def go(bytes: ByteString, accumulation: Vector[(Int, ByteString)]): Vector[(Int, ByteString)] = {
       bytes match {
-        case GetInt(GetUChar(value), rest) => (value, rest) :: uchars(rest)
-        case ByteString.empty => Nil
+        case GetInt(GetUChar(value), rest) => go(rest, accumulation :+ (value, rest))
+        case ByteString.empty => accumulation
       }
     }
 
-    def unapply(bytes: ByteString): Option[List[Int]] =
+    def unapply(bytes: ByteString): Option[Vector[Int]] =
       Option(uchars(bytes).map(_._1))
   }
 
@@ -70,7 +82,8 @@ object PongParser {
   }
 
   object CubeString {
-    val mapping: PartialFunction[Int, Int] = List[Int](
+
+    val intToInt = Array[Int](
       0, 192, 193, 194, 195, 196, 197, 198, 199, 9, 10, 11, 12, 13, 200, 201,
       202, 203, 204, 205, 206, 207, 209, 210, 211, 212, 213, 214, 216, 217, 218, 219,
       32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
@@ -87,9 +100,11 @@ object PongParser {
       0x413, 0x414, 0x416, 0x417, 0x418, 0x419, 0x41B, 0x41F, 0x423, 0x424, 0x426, 0x427, 0x428, 0x429, 0x42A, 0x42B,
       0x42C, 0x42D, 0x42E, 0x42F, 0x431, 0x432, 0x433, 0x434, 0x436, 0x437, 0x438, 0x439, 0x43A, 0x43B, 0x43C, 0x43D,
       0x43F, 0x442, 0x444, 0x446, 0x447, 0x448, 0x449, 0x44A, 0x44B, 0x44C, 0x44D, 0x44E, 0x44F, 0x454, 0x490, 0x491
-    ).orElse {
-      case x: Int => x.asInstanceOf[Int]
-    }
+    )
+
+    private val itsSize = intToInt.size
+
+    def mapping(from: Int): Int = if ( from < itsSize ) intToInt(from) else from
 
   }
 
