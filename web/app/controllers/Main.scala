@@ -1,7 +1,16 @@
 package controllers
 
-import play.api.mvc.Controller
+import javax.inject.Inject
 
-class Main() extends Controller {
-  def index = TODO
+import play.api.mvc.{Action, Controller}
+import services.GameService
+
+import scala.concurrent.ExecutionContext
+
+class Main @Inject()(gameService: GameService)(implicit executionContext: ExecutionContext) extends Controller {
+  def index = Action.async {
+    gameService.games.map { games =>
+      Ok(games.mkString("\n"))
+    }
+  }
 }
