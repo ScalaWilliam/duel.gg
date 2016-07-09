@@ -1,7 +1,7 @@
 package gg.duel.pingerservice
 
 import akka.actor.ActorSystem
-
+import scala.concurrent.ExecutionContext.Implicits.global
 /**
   * Created by me on 09/07/2016.
   */
