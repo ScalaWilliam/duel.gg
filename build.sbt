@@ -87,6 +87,7 @@ lazy val pongParser = Project(
 
 lazy val web = project
   .enablePlugins(PlayScala)
+  .dependsOn(gameEnricher)
   .settings(
     version := "5.0"
   )

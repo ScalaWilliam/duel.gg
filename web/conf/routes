@@ -1,1 +1,3 @@
-GET / @controllers.Main.index
+GET        /                       @controllers.Main.index
+GET        /data/duels.tsv         @controllers.RawData.asTsv
+GET        /data/duels.json        @controllers.RawData.asJson

@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext
 class Main @Inject()(gameService: GameService)(implicit executionContext: ExecutionContext) extends Controller {
   def index = Action.async {
     gameService.games.map { games =>
-      Ok(games.mkString("\n"))
+      Ok(games.takeRight(5).mkString("\n"))
     }
   }
 }

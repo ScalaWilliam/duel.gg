@@ -6,7 +6,7 @@ import gg.duel.enricher.GameNode
   * Created by William on 08/11/2015.
   */
 object LookingUp {
-  def mock = new BasicLookingUp(
+  def mock = BasicLookingUp(
     demoLookup = _ => Option("abc"),
     clanLookup = _ => Option("woop"),
     countryLookup = _ => Option("GB" -> "United Kingdom")
