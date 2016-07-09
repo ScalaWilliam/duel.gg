@@ -39,47 +39,33 @@ object PongParser {
   }
 
   object GetInt {
-    /**
-      * Do the logic and return info on where to do the split
-      */
-    def fast(array: Array[Byte], position: Int): (Boolean, Int, Int) = {
-      if (array.length > position) {
-        val first = array(position)
-        if (first == -128 && array.length > position + 2) {
-          val second = UChar(array(position + 1))
-          val third = array(position + 2)
-          val r = second | (third << 8)
-          (true, r, position + 3)
-        } else if (first == -127 && array.length > position + 4) {
-          val m = UChar(array(position  +1 ))
-          val n = UChar(array(position  +2 ))
-          val o = UChar(array(position  +3 ))
-          val p = UChar(array(position  +4 ))
+
+    def fastbs(data: ByteString, pos: Int): Option[(Int, Int)] = {
+      if ( data.length <= pos ) None
+      else {
+        val first = data(pos)
+        if (first == -128 && data.size >= pos + 3) {
+          val a = UChar(data(pos + 1))
+          val b = UChar(data(pos + 2))
+          val r = a | (b << 8)
+          Some(r -> 3)
+        } else if (first == -127 && data.size >= pos + 5) {
+          val m = UChar(data(pos + 1))
+          val n = UChar(data(pos + 2))
+          val o = UChar(data(pos + 3))
+          val p = UChar(data(pos + 4))
           val r = ((m | (n << 8)) | o << 16) | (p << 24)
-          (true, r, position + 5)
-        } else {
-          (true, first.toInt, position + 1)
-        }
-      } else {
-        (false, 0, 0)
+          Some(r -> 5)
+        } else Some(first.toInt -> 1)
       }
     }
+
     def unapply(bytes: ByteString): Option[(Int, ByteString)] = {
-      val a = bytes.toArray
-      val (found, i, p) = fast(a, 0)
-        if ( found) Some((i, ByteString(a.drop(p))))
-        else None
+      fastbs(bytes, 0) match {
+        case Some((i, p)) => Some(i -> bytes.drop(p))
+        case None => None
       }
-//      bytes match {
-//        case n ##:: rest if n != -127 && n != -128 =>
-//          Some((n.toInt, rest))
-//        case -128 ##:: GetUChar(m) ##:: n ##:: rest =>
-//          Some(m | (n << 8), rest)
-//        case -127 ##:: GetUChar(m) ##:: GetUChar(n) ##:: GetUChar(o) ##:: GetUChar(p) ##:: rest =>
-//          Some(((m | (n << 8)) | o << 16) | (p << 24), rest)
-//        case ByteString.empty =>
-//          None
-//      }
+    }
   }
 
   object GetInts {
@@ -124,45 +110,29 @@ object PongParser {
   }
 
   object GetString {
-    private def ucharsFast(bytes: ByteString): (String, ByteString) = {
-      var position = 0
-      val arr = bytes.toArray
-      val stringBuilder = new java.lang.StringBuilder()
-      var continue = true
-      while (continue) {
-        val (found, i, p) = GetInt.fast(arr, position)
-        if (!found) continue = false
-        else if (i == 0) {
-          position = p
-          continue = false
-        }
-        else {
-          stringBuilder.append(CubeString.charMapping(UChar(i)))
-          position = p
-        }
-      }
-      stringBuilder.toString -> bytes.drop(position)
-    }
-    private def uchars(bytes: ByteString): (String, ByteString) = {
-      val (a, b) = go(bytes, List.empty)
-      (a.map(CubeString.charMapping).reverse.mkString, b)
-    }
 
     @tailrec
-    private def go(bytes: ByteString, accumulation: List[Int]): (List[Int], ByteString) = {
-      bytes match {
-        case GetInt(0, rest) => (accumulation, rest)
-        case GetInt(value, rest) => go(rest, UChar(value) +: accumulation)
-        case other => (accumulation, other)
+    private def build(stringBuilder: java.lang.StringBuilder, byteString: ByteString, position: Int): Int = {
+      GetInt.fastbs(byteString, position) match {
+        case Some((0, consumed)) => consumed + position
+        case Some((n, consumed)) =>
+          stringBuilder.append(CubeString.charMapping(UChar(n)))
+          build(stringBuilder, byteString, position + consumed)
+        case None => position
       }
+    }
+
+    def ucharsSuperFast(byteString: ByteString): (String, Int) = {
+      val stringBuilder = new java.lang.StringBuilder()
+      val len = build(stringBuilder, byteString, 0)
+      stringBuilder.toString -> len
     }
 
     def unapply(bytes: ByteString): Option[(String, ByteString)] = bytes match {
-      case ByteString.empty =>
-        None
+      case ByteString.empty => None
       case something =>
-        val (forStr, rest) = ucharsFast(bytes)
-        Option((forStr, ByteString(rest.toArray)))
+        val (str, pos) = ucharsSuperFast(bytes)
+        Some(str -> bytes.drop(pos))
     }
   }
 
@@ -201,12 +171,17 @@ object PongParser {
   object GetPlayerCns {
     def unapply(List: ByteString): Option[PlayerCns] = List match {
       case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: -10 >>: GetInts(ids) =>
-        Option(PlayerCns(version, ids.toList))
+        Option(PlayerCns(version, ids))
       case _ => None
     }
   }
 
   object GetIp {
+    def get(from: ByteString, offset: Int): Option[(String, Int)] = {
+      if ( from.length >= offset + 3 )
+        Option(s"${UChar(from(offset))}.${UChar(from(offset + 1))}.${UChar(from(offset+2))}.x", offset + 3)
+      else None
+    }
     def unapply(List: ByteString): Option[(String, ByteString)] = List match {
       case GetUChar(a) ##:: GetUChar(b) ##:: GetUChar(c) ##:: rest =>
         Option(s"$a.$b.$c.x", rest)
@@ -277,6 +252,7 @@ object PongParser {
         None
       case _ => None
     }
+
   }
 
   object GetTeamScores {
@@ -286,7 +262,7 @@ object PongParser {
       case 0 >>: 2 >>: -1 >>: `ack` >>: version >>: 0 >>: gamemode >>: remain >>: scores =>
         val ret = GetTeamScore.many(scores)
         val ascores = ret.map(_._1)
-        Option(TeamScores(version, gamemode, remain, ascores.toList))
+        Option(TeamScores(version, gamemode, remain, ascores))
       case _ =>
         None
     }
@@ -307,7 +283,7 @@ object PongParser {
         val collected = GetInts.ints(rest).take(numBases)
         val baseScores = collected.map(_._1)
         val leftOvers = collected.lastOption.map(_._2).getOrElse(ByteString.empty)
-        Option((TeamScore(name, score, baseMap = true, baseScores.toList), leftOvers))
+        Option((TeamScore(name, score, baseMap = true, baseScores), leftOvers))
       case _ =>
         None
     }

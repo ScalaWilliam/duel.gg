@@ -13,7 +13,7 @@ object ReaderApp extends App {
   val br = new JournalReader(fah.toFile)
   try {
     val start = System.currentTimeMillis()
-    br.getGamesIterator.take(10).foreach(println)
+    br.getGamesIterator.take(15).foreach(println)
     val end = System.currentTimeMillis()
     println((end - start)/1000)
   } finally br.close()
