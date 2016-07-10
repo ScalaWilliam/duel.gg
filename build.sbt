@@ -124,5 +124,5 @@ lazy val pingerJournalReader =
     .enablePlugins(JavaAppPackaging)
     .dependsOn(pingerJournal)
     .settings(
-      mainClass := Some("gg.duel.pinger.ReaderApp")
+      mainClass in Compile := Some("gg.duel.pinger.ReaderApp")
     )
