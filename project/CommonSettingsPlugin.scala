@@ -6,7 +6,7 @@ object CommonSettingsPlugin extends AutoPlugin {
   override def projectSettings = Seq(
     scalaVersion := "2.11.8",
     organization := "gg.duel",
-    version := "4.0-SNAPSHOT",
+    version := "5.0-SNAPSHOT",
     updateOptions := updateOptions.value.withCachedResolution(true),
     scalacOptions := Seq(
       "-unchecked", "-deprecation", "-encoding", "utf8", "-feature",

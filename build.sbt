@@ -12,7 +12,8 @@ lazy val root = Project(
     tests,
     masterserverClient,
     duelParser,
-    pingerJournal
+    pingerJournal,
+    pingerJournalReader
   ).aggregate(
   pongParser,
   pingerCore,
@@ -22,7 +23,8 @@ lazy val root = Project(
   tests,
   masterserverClient,
   duelParser,
-  pingerJournal
+  pingerJournal,
+  pingerJournalReader
 )
 
 lazy val gameEnricher = Project(
@@ -113,3 +115,14 @@ lazy val duelParser = Project(
     scalactic,
     json
   ))
+
+lazy val pingerJournalReader =
+  Project(
+    id = "pinger-journal-reader",
+    base = file("pinger-journal-reader")
+  )
+    .enablePlugins(JavaAppPackaging)
+    .dependsOn(pingerJournal)
+    .settings(
+      mainClass := Some("gg.duel.pinger.ReaderApp")
+    )
