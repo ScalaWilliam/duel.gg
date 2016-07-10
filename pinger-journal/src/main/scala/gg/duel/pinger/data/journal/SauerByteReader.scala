@@ -31,7 +31,7 @@ case class EfficientSauerByteReader(inputStream: DataInputStream) extends SauerB
   def close(): Unit = inputStream.close()
 
   def calcip(a: Byte, b: Byte, c: Byte, d: Byte): String = {
-    a + "." + b + "." + c + "." + d
+    (a & 0xFF) + "." + (b & 0xFF) + "." + (c & 0xFF) + "." + (d & 0xFF)
   }
 
   override def readNext(): Option[SauerBytes] = {
