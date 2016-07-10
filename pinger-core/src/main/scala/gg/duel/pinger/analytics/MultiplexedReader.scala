@@ -53,10 +53,9 @@ object MultiplexedReader {
       case sauerBytes =>
         /** Note: Multiple parsedMessages from a single SauerBytes CANNOT lead to a CompletedDuel. Impossibru. **/
         /** We're short-circuiting here! **/
-        sauerBytesToParsedMessages(sauerBytes).scanLeft(mIteratorState)(_.next(_)).lastOption match {
-          case Some(state @ MFoundGame(_, game, _)) => SFoundGame(state, game)
-          case Some(state) => SProcessing(state)
-          case None => SProcessing(mIteratorState)
+        sauerBytesToParsedMessages(sauerBytes).foldLeft(mIteratorState)(_.next(_)) match {
+          case state @ MFoundGame(_, game, _) => SFoundGame(state, game)
+          case state => SProcessing(state)
         }
     }
     def mIteratorState: MIteratorState

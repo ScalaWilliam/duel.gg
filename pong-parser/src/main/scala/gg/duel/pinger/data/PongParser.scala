@@ -1,18 +1,10 @@
 package gg.duel.pinger.data
 
-import java.util.function.Supplier
-
 import akka.util.ByteString
 import gg.duel.pinger.data.ParsedPongs._
 
-import scala.annotation.tailrec
-
 /** 01/02/14 */
 object PongParser {
-
-  def threadLocal[T](f: => T): ThreadLocal[T] =  ThreadLocal.withInitial[T](new Supplier[T] {
-    override def get(): T = f
-  })
 
   val matchers: PartialFunction[ByteString, Any] = {
     case GetRelaxedPlayerExtInfo(x) => x
@@ -44,116 +36,13 @@ object PongParser {
       else Some(from.head,from.tail)
   }
 
-  class CubeReader(val data: ByteString) {
-    val count = data.length
-    var pos = 0
-    def nextString(): String = {
-      val stringBuilder = new java.lang.StringBuilder()
-      var res = nextInt()
-      while ( res != 0 && res != Int.MinValue ) {
-        stringBuilder.append(CubeString.charMapping(UChar(res.toChar)))
-        res = nextInt()
-      }
-      stringBuilder.toString
-    }
-    def nextIp(): String = {
-      GetIp.get(data, pos).map(_._1).getOrElse("")
-    }
-    def nextInt(): Int = {
-      if ( count <= pos ) Int.MinValue
-      else {
-        val first = data(pos)
-        if (first == -128 && count >= pos + 3) {
-          val a = UChar(data(pos + 1))
-          val b = UChar(data(pos + 2))
-          val r = a | (b << 8)
-          pos = pos + 3
-          r
-        } else if (first == -127 && count >= pos + 5) {
-          val m = UChar(data(pos + 1))
-          val n = UChar(data(pos + 2))
-          val o = UChar(data(pos + 3))
-          val p = UChar(data(pos + 4))
-          val r = ((m | (n << 8)) | o << 16) | (p << 24)
-          pos = pos + 5
-          r
-        } else {
-          pos = pos + 1
-          first.toInt
-        }
-      }
-    }
-  }
 
   object GetInt {
-
-    def fastbs(data: ByteString, pos: Int): Option[(Int, Int)] = {
-      val count = data.length
-      if ( count <= pos ) None
-      else {
-        val first = data(pos)
-        if (first == -128 && count >= pos + 3) {
-          val a = UChar(data(pos + 1))
-          val b = UChar(data(pos + 2))
-          val r = a | (b << 8)
-          Some(r,3)
-        } else if (first == -127 && count >= pos + 5) {
-          val m = UChar(data(pos + 1))
-          val n = UChar(data(pos + 2))
-          val o = UChar(data(pos + 3))
-          val p = UChar(data(pos + 4))
-          val r = ((m | (n << 8)) | o << 16) | (p << 24)
-          Some(r, 5)
-        } else Some(first.toInt, 1)
-      }
-    }
-    def fastbs2(data: ByteString, pos: Int, v: Array[Boolean], g: Array[Int]): Unit = {
-      val count = data.length
-      if ( count <= pos ) v(0) = false
-      else {
-        val first = data(pos)
-        if (first == -128 && count >= pos + 3) {
-          val a = UChar(data(pos + 1))
-          val b = UChar(data(pos + 2))
-          val r = a | (b << 8)
-          v(0) = true
-          g(0) = r
-          g(1) = 3
-        } else if (first == -127 && count >= pos + 5) {
-          val m = UChar(data(pos + 1))
-          val n = UChar(data(pos + 2))
-          val o = UChar(data(pos + 3))
-          val p = UChar(data(pos + 4))
-          val r = ((m | (n << 8)) | o << 16) | (p << 24)
-          v(0) = true
-          g(0) = r
-          g(1) = 5
-        } else {
-          v(0) = true
-          g(0) = first.toInt
-          g(1) = 1
-        }
-      }
-    }
-
-    @tailrec
-    def getn(arr: Array[Int], data: ByteString, read_position: Int, total_required: Int, write_position: Int): Int = {
-      if ( total_required == 0 ) read_position
-      else fastbs(data, read_position) match {
-        case Some((got_value, moved_position)) =>
-          arr(write_position) = got_value
-          getn(arr, data, read_position + moved_position, total_required - 1, write_position + 1)
-        case None =>
-          read_position
-      }
-    }
-
     def unapply(bytes: ByteString): Option[(Int, ByteString)] = {
-      val v = Array(false)
-      val g = Array(0, 0)
-      fastbs2(bytes, 0, v, g)
-      if ( v(0) ) Some((g(0), bytes.drop(g(1))))
-      else None
+      val cr = new CubeReader(bytes)
+      val result = cr.nextInt()
+      if ( result == Int.MinValue ) None else
+        Some((result, cr.rest))
     }
   }
 
@@ -199,49 +88,56 @@ object PongParser {
   }
 
   object GetString {
-
-    @tailrec
-    private def build(b: Array[Boolean], i: Array[Int], stringBuilder: java.lang.StringBuilder, byteString: ByteString, position: Int): Int = {
-      GetInt.fastbs2(byteString, position, b, i)
-      if (b(0)) {
-        val result = i(0)
-        val consumed = i(1)
-        if (result == 0) consumed + position
-        else {
-          stringBuilder.append(CubeString.charMapping(UChar(result)))
-          build(b, i, stringBuilder, byteString, position + consumed)
-        }
-      } else position
-    }
-
-    def ucharsSuperFast(byteString: ByteString, position: Int = 0): (String, Int) = {
-      val stringBuilder = new java.lang.StringBuilder()
-      val len = build(Array.fill(1)(false), Array.fill(2)(0), stringBuilder, byteString, position)
-      stringBuilder.toString -> len
-    }
-
     def unapply(bytes: ByteString): Option[(String, ByteString)] = bytes match {
       case ByteString.empty => None
       case something =>
-        val (str, pos) = ucharsSuperFast(bytes)
-        Some(str -> bytes.drop(pos))
+        val cr = new CubeReader(bytes)
+        val str = cr.nextString()
+        Some((str, cr.rest))
+    }
+  }
+
+  object GetLongString {
+    def unapply(bytes: ByteString): Option[(String, ByteString)] = bytes match {
+      case ByteString.empty => None
+      case something =>
+        val cr = new CubeReader(bytes)
+        val str = cr.nextString(64)
+        Some((str, cr.rest))
     }
   }
 
   val >>##:: = GetString
+  val >>##::: = GetLongString
 
   val >>: = GetInt
 
   object GetServerInfoReply {
-    def unapply(List: ByteString): Option[ServerInfoReply] = List match {
-      case 1 >>: 1 >>: 1 >>: clients >>: numattrs >>: protocol >>: gamemode >>:
-        remain >>: maxclients >>: pass >>: gamepaused >>:
-        gamespeed >>: mapname >>##:: desc >>##:: rest if numattrs == 7 =>
-        Option(ServerInfoReply(clients, protocol, gamemode, remain, maxclients, Option(gamepaused), Option(gamespeed), mapname, desc))
-      case 1 >>: 1 >>: 1 >>: clients >>: numattrs >>: protocol >>: gamemode >>:
-        remain >>: maxclients >>: pass >>: mapname >>##:: desc >>##:: rest if numattrs == 5 =>
-        Option(ServerInfoReply(clients, protocol, gamemode, remain, maxclients, None, None, mapname, desc))
-      case _ => None
+    def unapply(List: ByteString): Option[ServerInfoReply] = {
+      val cubeReader = new CubeReader(List)
+      val isOk = cubeReader.nextInt() == 1 && cubeReader.nextInt() == 1 && cubeReader.nextInt() == 1
+      if ( !isOk ) None else {
+        val clients = cubeReader.nextInt()
+        val numattrs = cubeReader.nextInt()
+        val protocol = cubeReader.nextInt()
+        val gamemode = cubeReader.nextInt()
+        val remain = cubeReader.nextInt()
+        val maxclients = cubeReader.nextInt()
+        cubeReader.nextInt()
+        if ( numattrs == 7 ) {
+          val gamepaused = cubeReader.nextInt()
+          val gamespeed = cubeReader.nextInt()
+          val mapname = cubeReader.nextString()
+          val desc = cubeReader.nextString(64)
+          Some(ServerInfoReply(clients, protocol, gamemode, remain, maxclients, Option(gamepaused), Option(gamespeed), mapname, desc))
+        } else if ( numattrs == 5 ) {
+          val mapname = cubeReader.nextString()
+          val desc = cubeReader.nextString(64)
+          Some(ServerInfoReply(clients, protocol, gamemode, remain, maxclients, None, None, mapname, desc))
+        } else {
+          None
+        }
+      }
     }
   }
 
@@ -347,20 +243,6 @@ object PongParser {
         gun = cr.nextInt(), privilege =  cr.nextInt(), state = cr.nextInt(), ip = cr.nextIp()
       ))
     }
-    def unapply2(list: ByteString): Option[PlayerExtInfo] = list match {
-      case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: -11 >>:
-        cn >>: ping >>: name >>##:: team >>##:: frags >>: flags >>: deaths >>:
-        teamkills >>: accuracy >>: health >>: armour >>: gun >>: privilege >>: state
-        >>: ip >~: _ =>
-        val vinfo = PlayerExtInfo(version, cn, ping, name, team,
-          frags, deaths, teamkills, accuracy, health, armour, gun, privilege, state, ip)
-        Option(vinfo)
-      case 0 >>: 1 >>: -1 >>: `ack` >>: 105 >>: 0 >>: -10 >>: _ =>
-        None
-      case 0 >>: 1 >>: -1 >>: `ack` >>: other =>
-        None
-      case _ => None
-    }
 
   }
 
@@ -406,3 +288,5 @@ object PongParser {
   }
 
 }
+
+

@@ -46,19 +46,24 @@ object SauerBytesBinary {
   }
 
 
+
+
   def fromBytes(bytes: Array[Byte]): SauerBytes = {
     val byteBuffer =
       ByteBuffer
         .wrap(bytes)
         .order(ByteOrder.BIG_ENDIAN)
+    fromBuffer(byteBuffer)
+  }
+  def fromBuffer(byteBuffer: ByteBuffer): SauerBytes = {
 
     val time = byteBuffer.getLong
 
     val ip = IP(
-      (byteBuffer.get.toInt & 0xFF) + "." +
-      (byteBuffer.get.toInt & 0xFF) + "." +
-      (byteBuffer.get.toInt & 0xFF) + "." +
-      (byteBuffer.get.toInt & 0xFF)
+      (byteBuffer.get.toShort & 0xFF).toShort + "." +
+      (byteBuffer.get.toShort & 0xFF).toShort + "." +
+      (byteBuffer.get.toShort & 0xFF).toShort + "." +
+      (byteBuffer.get.toShort & 0xFF).toShort
     )
 
     val port = byteBuffer.getInt

@@ -1,6 +1,6 @@
 package gg.duel.pinger.data.journal
 
-import java.io.{File, FileInputStream, FileOutputStream}
+import java.io._
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 
 import akka.util.ByteString
@@ -44,6 +44,17 @@ class JournalReaderWriterTest extends WordSpec with Matchers {
       for { _ <- 1 to 1000 } bw.writeSauerBytes(B)
       val br = new SauerByteArrayReader(bw.buffer.toArray)
       br.toIterator.toList should have size 1000
+    }
+    "Work together with the data one" in {
+      val bw = new SauerBytesBufferWriter()
+      for { _ <- 1 to 1000 } bw.writeSauerBytes(B)
+      val br = new EfficientSauerByteReader(new DataInputStream(new ByteArrayInputStream(bw.buffer.toArray)))
+      val l = br.toIterator.toList
+
+      l should have size 1000
+      l.head shouldBe B
+      l.toSet should have size 1
+
     }
   }
 

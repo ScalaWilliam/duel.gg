@@ -7,6 +7,8 @@ import gg.duel.pinger.data.{ModesList, Server}
 import org.scalactic.Accumulation._
 import org.scalactic._
 
+import scala.collection.immutable.Queue
+
 object Duel {
 
   def beginDuelParsedMessage(parsedMessage: ParsedMessage): BetterDuelState Or Every[DuelParseError] = {
@@ -35,7 +37,7 @@ object Duel {
 
     withGood(clients, duelModeName, hasEnoughTime) { (_, modeName, _) =>
       val gameHeader = GameHeader(startTime, message, s"${server.ip.ip}:${server.port}", modeName, message.mapname)
-      val duelAccumulation = DuelAccumulation(List.empty)
+      val duelAccumulation = DuelAccumulation(Queue.empty)
       TransitionalBetterDuel(
         gameHeader = gameHeader,
         duelAccumulation = duelAccumulation,

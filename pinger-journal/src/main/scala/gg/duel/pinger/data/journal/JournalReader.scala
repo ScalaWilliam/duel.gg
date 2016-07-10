@@ -1,6 +1,6 @@
 package gg.duel.pinger.data.journal
 
-import java.io.{BufferedInputStream, File}
+import java.io.{BufferedInputStream, DataInputStream, File}
 import java.net.URL
 import java.util.zip.GZIPInputStream
 
@@ -60,7 +60,7 @@ class JournalReader(url: URL) {
   }
 
   def getSauerBytes: Iterator[SauerBytes] = {
-    new SauerByteInputStreamReader(is).toIterator
+    new EfficientSauerByteReader(new DataInputStream(is)).toIterator
   }
 
   def getParsedMessages: Iterator[ParsedMessage] = {

@@ -2,7 +2,7 @@ package gg.duel.pinger
 
 import java.nio.file.{Files, Paths}
 
-import gg.duel.pinger.data.journal.{FilterJournalReader, JournalReader}
+import gg.duel.pinger.data.journal.JournalReader
 
 object ReaderApp extends App {
 
@@ -10,13 +10,11 @@ object ReaderApp extends App {
     throw new IllegalArgumentException(s"Could not find a file that exists from arguments ${args.toList}")
   }
 
-  val br = new JournalReader(fah.toFile) //, KeepRecord.readFromFile(KeepRecord.pathFor(fah)).servers)
+  val br = new JournalReader(fah.toFile)
   try {
     val start = System.currentTimeMillis()
-    br.getGamesIterator.take(100).foreach(println)
+    br.getGamesIterator.map(_.toJson).foreach(println)
     val end = System.currentTimeMillis()
-    println((end - start)/1000)
   } finally br.close()
 
 }
-// 63 & 229

@@ -8,6 +8,8 @@ import gg.duel.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoRepl
 import gg.duel.pinger.data.ParsedPongs.{ParsedMessage, PartialPlayerExtInfo, PlayerExtInfo}
 import org.scalactic._
 
+import scala.collection.immutable.Queue
+
 trait BetterDuelState {
   def gameHeader: GameHeader
   def next: StateTransition
@@ -37,7 +39,7 @@ case class Accuracy(accuracy: Int)
 
 case class LogItem(playerId: PlayerId, remaining: SecondsRemaining, frags: Frags, weapon: Weapon, accuracy: Accuracy)
 
-case class DuelAccumulation(playerStatistics: List[LogItem])
+case class DuelAccumulation(playerStatistics: Queue[LogItem])
 
 
 object BetterDuelState {
@@ -66,7 +68,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
         accuracy = Accuracy(info.accuracy)
       )
       val newAccummulation = duelAccumulation.copy(
-        playerStatistics = duelAccumulation.playerStatistics :+ logItem
+        playerStatistics = duelAccumulation.playerStatistics.enqueue(logItem)
       )
       Good(this.copy(duelAccumulation = newAccummulation))
     // dealing with PSL Thomas bullshit
@@ -171,7 +173,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
       simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
       duration = durationMinutes,
       serverDescription = CleanupDescription(gameHeader.startMessage.description),
-      playedAt = duelAccumulation.playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted,
+      playedAt = duelAccumulation.playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted.toList,
       startTimeText = gameHeader.startTimeText,
       startTime = gameHeader.startTime,
       map = gameHeader.map,
@@ -235,7 +237,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
       SimpleCompletedDuel(
         simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
         duration = durationMinutes,
-        playedAt = playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted,
+        playedAt = playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted.toList,
         serverDescription = CleanupDescription(gameHeader.startMessage.description),
         startTimeText = gameHeader.startTimeText,
         startTime = gameHeader.startTime,
