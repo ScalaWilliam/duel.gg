@@ -1,7 +1,8 @@
 package gg.duel.pinger.analytics
 
+import gg.duel.pinger.analytics.duel.DuelParseError._
 import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZFoundDuel, ZIteratorState, ZRejectedDuelState, ZRejectedGameState}
-import gg.duel.pinger.analytics.duel.StubGenerator
+import gg.duel.pinger.analytics.duel.{DuelParseError, StubGenerator}
 import org.scalatest.{Matchers, WordSpec}
 
 class DuelMakerSpec extends WordSpec with Matchers {
@@ -26,7 +27,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
       states(
         pei("lol", 1, "123")
       ) shouldFailWith {
-        _.duelCause.toString should include("Input not a Converted")
+        _.duelCause should contain(InputNotConvertedServerInfoReply)
       }
     }
 
@@ -35,7 +36,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
       states(
         csr(0, 3, 10, "academy")
       ) shouldFailWith {
-        _.duelCause.toString should include("Expected 2 or more clients")
+        _.duelCause should contain (ExpectedMoreThan2Clients(0))
       }
     }
 
@@ -44,7 +45,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
       states(
         csr(2, 3, 120, "academy")
       ) shouldFailWith {
-        _.duelCause.toString should include("Time remaining not enough")
+        _.duelCause should contain(RemainingTimeExpected(540, 120))
       }
     }
 
@@ -53,7 +54,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
       states(
         csr(2, 2, 600, "academy")
       ) shouldFailWith {
-        _.duelCause.toString should include("not a duel mode")
+        _.duelCause should contain(NonDuelMode)
       }
     }
 
@@ -63,7 +64,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
         csr(2, 2, 600, "academy"),
         csr(1, 2, 500, "academy")
       ) shouldFailWith {
-        _.duelCause.toString should include("Expected 2 or more clients")
+        _.duelCause should contain (ExpectedMoreThan2Clients(1))
       }
     }
 
@@ -84,7 +85,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
         7 * 60 -> csr(2, 3, 600 - (7 * 60), "academy"),
         8 * 60 -> csr(2, 2, 500, "tartech")
       )
-      result shouldFailWithDuel {_.cause.toString should include("Expected at least 8 minutes") }
+      result shouldFailWithDuel {_.cause should contain (Expected8MinutesToDuel(6,360))}
     }
 
     "Fail for other reasons if game was over 8 minutes" in {
@@ -105,9 +106,11 @@ class DuelMakerSpec extends WordSpec with Matchers {
         4 * 60 -> csr(2, 2, 500, "tartech")
       )
       result shouldFailWithDuel { r =>
-        val cause = s"${r.cause}"
-        cause should not include "expected at least 8 minutes"
-        cause should include("Could not find a log item to say that both players finished the game")
+        val em = classOf[Expected8MinutesToDuel].getSimpleName.replaceAllLiterally("$", "")
+
+        r.cause.toString should not include (em)
+
+        r.cause should contain (CouldNotFindProofThatThePlayersFinished)
       }
     }
 
@@ -132,8 +135,7 @@ class DuelMakerSpec extends WordSpec with Matchers {
         4 * 60 -> csr(2, 2, 500, "tartech")
       )
       result shouldFailWithDuel { r =>
-        val cause = s"${r.cause}"
-        cause should include("Expected exactly two players")
+        r.cause should contain (ExpectedExactly2Players(List.empty))
       }
     }
 

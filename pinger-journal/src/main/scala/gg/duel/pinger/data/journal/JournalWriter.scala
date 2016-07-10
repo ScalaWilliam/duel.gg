@@ -13,12 +13,16 @@ class JournalWriter(target: File) {
 
   val theFile = new FileOutputStream(target)
 
-  val compressedFile = new GZIPOutputStream(theFile, true)
+  val compressedFile = {
+    if (target.getAbsolutePath.endsWith(".gz"))
+      new GZIPOutputStream(theFile, true)
+    else theFile
+  }
 
   val sauerBytesWriter = new SauerBytesOutputStreamWriter(compressedFile)
 
   def close(): Unit = {
-    compressedFile.finish()
+    compressedFile.flush()
     compressedFile.close()
     theFile.close()
   }

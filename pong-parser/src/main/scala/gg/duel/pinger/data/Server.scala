@@ -20,6 +20,12 @@ case class Server(ip: IP, port: Int) {
 }
 
 object Server {
+  val prtRegex = """Server\(IP\(([^,]+)\),([\d]+)\)""".r
+  def fromPrinter(string: String): Option[Server] = {
+    PartialFunction.condOpt(string) {
+      case prtRegex(ip, port) => Server(ip, port.toInt)
+    }
+  }
   def stub = Server(
     ip = "127.0.0.1",
     port = 2234

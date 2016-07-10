@@ -23,7 +23,7 @@ class JournalReaderWriterTest extends WordSpec with Matchers {
 
   "Journal reader and writer" must {
     "Work together" in {
-      val targetFile = File.createTempFile("temp-file-name", ".sbj")
+      val targetFile = File.createTempFile("temp-file-name", ".sbj.gz")
       targetFile.deleteOnExit()
       val jw = new JournalWriter(targetFile)
       //      jw.write(A)

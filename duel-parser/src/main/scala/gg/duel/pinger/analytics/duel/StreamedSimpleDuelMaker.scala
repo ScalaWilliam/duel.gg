@@ -28,8 +28,8 @@ object StreamedSimpleDuelMaker {
           ZInDuelState(Some(parsedMessage), transitionalDuel)
       }
   }
-  case class ZRejectedDuelState(lastMessage: Option[ParsedMessage], cause: Every[org.scalactic.ErrorMessage]) extends ZIteratorState with GoesToOutOfState
-  case class ZRejectedGameState(lastMessage: Option[ParsedMessage], cause: Every[org.scalactic.ErrorMessage], duelCause: Every[org.scalactic.ErrorMessage]) extends ZIteratorState with GoesToOutOfState
+  case class ZRejectedDuelState(lastMessage: Option[ParsedMessage], cause: Every[DuelParseError]) extends ZIteratorState with GoesToOutOfState
+  case class ZRejectedGameState(lastMessage: Option[ParsedMessage], cause: Every[DuelParseError], duelCause: Every[DuelParseError]) extends ZIteratorState with GoesToOutOfState
   case object ZOutOfGameState extends ZIteratorState {
     override def lastMessage = None
     override def next: Processor = m => {

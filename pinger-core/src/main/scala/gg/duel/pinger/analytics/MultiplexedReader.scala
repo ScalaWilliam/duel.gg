@@ -39,7 +39,7 @@ object MultiplexedReader {
   def sauerBytesToParsedMessages(sauerBytes: SauerBytes): List[ParsedMessage] = {
     val byteString = ByteString(sauerBytes.message.toArray)
     for {
-      parsedObjects <- Try(Extractor.extract(byteString)).toOption.toList
+      parsedObjects <- Try(Extractor.extractDuel(byteString)).toOption.toList
       parsedObject <- parsedObjects
     } yield ParsedMessage(sauerBytes.server, sauerBytes.time, parsedObject)
   }

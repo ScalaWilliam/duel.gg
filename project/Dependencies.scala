@@ -5,6 +5,7 @@ trait Dependencies {
   val scalatest = "org.scalatest" %% "scalatest" % "2.2.6" % "test"
   val akkaTestkit = "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test"
   val akkaSlf4j = "com.typesafe.akka" %% "akka-slf4j" % akkaVersion exclude("commons-logging", "commons-logging")
+  val lz4 = "net.jpountz.lz4" % "lz4" % "1.3"
   val akkaActor = "com.typesafe.akka" %% "akka-actor" % akkaVersion
   val akkaAgent = "com.typesafe.akka" %% "akka-agent" % akkaVersion
   val logback = "ch.qos.logback" % "logback-classic" % "1.1.3"

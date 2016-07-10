@@ -11,7 +11,13 @@ object ParsedPongs {
   }
 
   case class ServerInfoReply(clients: Int, protocol: Int, gamemode: Int, remain: Int, maxclients: Int,
-                             gamepaused: Option[Int], gamespeed: Option[Int], mapname: String, description: String)
+                             gamepaused: Option[Int], gamespeed: Option[Int], mapname: String, description: String) {
+    def converted = ConvertedServerInfoReply(
+      clients = clients, protocol = protocol, gamemode = gamemode,
+      remain = remain, maxclients = maxclients, gamepaused = gamepaused.getOrElse(0) != 0,
+      gamespeed = gamespeed.getOrElse(100), mapname = mapname, description = description
+    )
+  }
   case class Uptime(version: Int, totalsecs: Int)
   case class HopmodUptime(uptime: Uptime, hopmodVersion: Int, hopmodRevision: Int, buildTime: String)
   case class PlayerCns(version: Int, cns: List[Int])

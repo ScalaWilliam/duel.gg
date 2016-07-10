@@ -2,6 +2,7 @@ package gg.duel.pinger.analytics.duel
 
 import gg.duel.pinger.analytics.CleanupDescription
 import gg.duel.pinger.analytics.duel.BetterDuelState.StateTransition
+import gg.duel.pinger.analytics.duel.DuelParseError._
 import gg.duel.pinger.data.ModesList
 import gg.duel.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import gg.duel.pinger.data.ParsedPongs.{ParsedMessage, PartialPlayerExtInfo, PlayerExtInfo}
@@ -46,7 +47,7 @@ object BetterDuelState {
   def isSwitch(from: ConvertedServerInfoReply, to: ConvertedServerInfoReply) =
     from.remain < to.remain || from.mapname != to.mapname || from.gamemode != to.gamemode
 
-  type StateTransition = PartialFunction[ParsedMessage, BetterDuelState Or Every[ErrorMessage]]
+  type StateTransition = PartialFunction[ParsedMessage, BetterDuelState Or Every[DuelParseError]]
 
 }
 
@@ -85,7 +86,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
           // psl override - in case they don't send enough data, we'll wait one more tick
           // they send thomas extinfo sometimes instead of the usual extinfo
           // and some packets go haywre as well. you guys fucked up.
-          if (reasons.toList.exists(_ contains "log item to say that both players finished the game")
+          if (reasons.toList.contains(CouldNotFindProofThatThePlayersFinished)
             && (gameHeader.startMessage.description contains "PSL")) {
             Good(this)
           } else {
@@ -106,13 +107,13 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
     val activePlayers = duelAccumulation.playerStatistics.map(_.playerId).toSet
     activePlayers.toList match {
       case first :: second :: Nil => Good(List(first, second))
-      case other => Bad(One(s"Expected exactly two players, got: $other"))
+      case other => Bad(One(ExpectedExactly2Players(other.map(_.name))))
     }
   }
 
   def startedSecondsOr = {
     if (duelAccumulation.playerStatistics.isEmpty) {
-      Bad(One("Player log empty"))
+      Bad(One(PlayerLogEmpty))
     } else {
       Good(duelAccumulation.playerStatistics.map(_.remaining).map(_.seconds).max)
     }
@@ -122,14 +123,14 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
       duelAccumulation.playerStatistics.exists(logItem =>
         logItem.remaining.seconds == startedSeconds &&
           logItem.playerId == playerId))
-    if (bv) Good(Unit) else Bad(One("Could not find a log item to say that all the players started the game"))
+    if (bv) Good(Unit) else Bad(One(CouldNotFindLogItemToSayAllPlayersStarted))
   }
   def allPlayersFinishedOr(nextMessage: Option[ConvertedServerInfoReply]) = {
     val bv = duelAccumulation.playerStatistics.map(_.playerId).forall(playerId =>
       duelAccumulation.playerStatistics.exists(logItem =>
         logItem.remaining.seconds <= 3 &&
           logItem.playerId == playerId))
-    if (bv) Good(Unit) else Bad(One(s"Could not find a log item to say that both players finished the game ($nextMessage)"))
+    if (bv) Good(Unit) else Bad(One(CouldNotFindProofThatThePlayersFinished))
   }
 
   def formPlayers(players: List[PlayerId]) = {
@@ -154,17 +155,17 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
       duelAccumulation.playerStatistics.exists(logItem =>
         Math.abs(logItem.remaining.seconds - timeRemaining.seconds) <= 5 &&
           logItem.playerId == playerId))
-    if (bv) Good(Unit) else Bad(One(s"Players seem to have disappeared"))
+    if (bv) Good(Unit) else Bad(One(PlayersDisappeared))
   }
 
-  def liveDuel: LiveDuel Or Every[ErrorMessage] = {
+  def liveDuel: LiveDuel Or Every[DuelParseError] = {
     for {
       twoPlayers <- twoPlayersOr
       startedSeconds <- startedSecondsOr
       bothPlayersStarted <- allPlayersStartedOr(startedSeconds )
       _ <- allPlayersStillHere
       durationMinutes = saidDurationMinutes
-      isADuelGame <- if ( Set("ffa", "instagib", "efficiency") contains gameHeader.mode ) Good(true) else Bad(One(s"Found mode ${gameHeader.mode} in game, rejecting."))
+      isADuelGame <- if ( Set("ffa", "instagib", "efficiency") contains gameHeader.mode ) Good(true) else Bad(One(FoundModeRejecting(gameHeader.mode)))
       players = formPlayers(twoPlayers)
     } yield LiveDuel(
       simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
@@ -191,10 +192,10 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
     val durationMinutes = Math.ceil(durationSeconds / 60.0).toInt
     val foundDurationSeconds = durationSeconds - duelAccumulation.playerStatistics.last.remaining.seconds
     val foundDurationMinutes = Math.ceil(foundDurationSeconds / 60.0).toInt
-    if (foundDurationMinutes >= 8 ) Good(foundDurationMinutes) else Bad(One(s"Expected at least 8 minutes to duel, found $foundDurationMinutes (${foundDurationSeconds}s)"))
+    if (foundDurationMinutes >= 8 ) Good(foundDurationMinutes) else Bad(One(Expected8MinutesToDuel(foundDurationMinutes, foundDurationSeconds)))
   }
 
-  def completeDuel(nextMessage: Option[ConvertedServerInfoReply]): SimpleCompletedDuel Or Every[ErrorMessage] = {
+  def completeDuel(nextMessage: Option[ConvertedServerInfoReply]): SimpleCompletedDuel Or Every[DuelParseError] = {
     import duelAccumulation.playerStatistics
     for {
       twoPlayers <- twoPlayersOr
@@ -208,14 +209,14 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
         if (gameHeader.mode == "efficiency" && players.forall(_._2.frags >= 10))
           Good(Unit)
         else if (gameHeader.mode == "efficiency")
-          Bad(One(s"in efficiency both frags to be >=10, got ${players.map(_._2.frags)}"))
+          Bad(One(EfficiencyExpectFragsOver10(players.map(_._2.frags))))
         else Good(Unit)
       }
       isValidInstagibGame <- {
         if (gameHeader.mode == "instagib" && players.forall(_._2.frags >= 20))
           Good(Unit)
         else if (gameHeader.mode == "instagib")
-          Bad(One(s"In instagib expect both frags to be >= 20, got ${players.map(_._2.frags)}"))
+          Bad(One(InstaExpectFragsOver20(players.map(_._2.frags))))
         else Good(Unit)
       }
       isValidFFAGame <- {
@@ -223,7 +224,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
         if (gameHeader.mode == "ffa" && sum >= 15)
           Good(Unit)
         else if (gameHeader.mode == "ffa")
-          Bad(One(s"In ffa expect sum of frags to be >= 15, got , got $sum"))
+          Bad(One(FFAExpectSum15(sum)))
         else Good(Unit)
       }
       winner = if (players.map(_._2.frags).toSet.size == 1) None

@@ -54,11 +54,13 @@ object SauerBytesBinary {
 
     val time = byteBuffer.getLong
 
-    val ip =
-      Iterator
-        .fill(4)(byteBuffer.get)
-        .map(_.toInt & 0xFF)
-        .mkString(".")
+    val ip = IP(
+      (byteBuffer.get.toInt & 0xFF) + "." +
+      (byteBuffer.get.toInt & 0xFF) + "." +
+      (byteBuffer.get.toInt & 0xFF) + "." +
+      (byteBuffer.get.toInt & 0xFF)
+    )
+
     val port = byteBuffer.getInt
 
     val receivedBytes = byteBuffer.array().drop(byteBuffer.position)

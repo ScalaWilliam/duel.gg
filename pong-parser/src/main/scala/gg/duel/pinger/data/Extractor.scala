@@ -20,4 +20,13 @@ object Extractor {
     }
   }
 
+  def extractDuel: PartialFunction[ByteString, Seq[Any]] = {
+
+    {
+      case GetServerInfoReply(x) => Seq(x) ++ Seq(ConvertServerInfoReply.convert(x))
+      case GetRelaxedPlayerExtInfo(x) => Seq(x)
+      case _ => Seq.empty
+    }
+  }
+
 }
