@@ -11,7 +11,7 @@ class JournalWriter(target: File) {
     sauerBytesWriter.writeSauerBytes(sauerBytes)
   }
 
-  val theFile = new FileOutputStream(target)
+  val theFile = new FileOutputStream(target, true)
 
   val compressedFile = {
     if (target.getAbsolutePath.endsWith(".gz"))
