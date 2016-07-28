@@ -97,18 +97,7 @@ object PongParser {
     }
   }
 
-  object GetLongString {
-    def unapply(bytes: ByteString): Option[(String, ByteString)] = bytes match {
-      case ByteString.empty => None
-      case something =>
-        val cr = new CubeReader(bytes)
-        val str = cr.nextString(64)
-        Some((str, cr.rest))
-    }
-  }
-
   val >>##:: = GetString
-  val >>##::: = GetLongString
 
   val >>: = GetInt
 

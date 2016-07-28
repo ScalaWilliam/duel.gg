@@ -73,6 +73,6 @@ object StubGenerator {
     4 * 60 -> csr(2, 2, 500, "tartech")
   )
 
-  val validSequenceCompletedDuel = timedStates(validSequence :_*).last.asInstanceOf[ZFoundDuel].completedDuel
+  def validSequenceCompletedDuel = timedStates(validSequence :_*).last.asInstanceOf[ZFoundDuel].completedDuel
   
 }

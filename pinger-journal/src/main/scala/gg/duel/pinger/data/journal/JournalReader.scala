@@ -24,9 +24,9 @@ class JournalReader(url: URL) {
   def this(file: File) = this(file.toURI.toURL)
   val fis = url.openStream()
   val gis = if ( url.toString.endsWith(".gz"))
-    new GZIPInputStream(fis)
+    new GZIPInputStream(fis, 67108864)
   else fis
-  val is = new BufferedInputStream(gis)
+  val is = new BufferedInputStream(gis, 16777216)
 
   def getGames: Vector[Game] = {
     getSauerBytes
@@ -61,10 +61,6 @@ class JournalReader(url: URL) {
 
   def getSauerBytes: Iterator[SauerBytes] = {
     new EfficientSauerByteReader(new DataInputStream(is)).toIterator
-  }
-
-  def getParsedMessages: Iterator[ParsedMessage] = {
-    getSauerBytes.flatMap(MultiplexedReader.sauerBytesToParsedMessages)
   }
 
 }

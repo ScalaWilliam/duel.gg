@@ -3,6 +3,8 @@ package gg.duel.pinger.data
 import akka.util.ByteString
 import gg.duel.pinger.data.PongParser.{CubeString, GetIp, UChar}
 
+import scala.util.DynamicVariable
+
 /**
   * Created by me on 10/07/2016.
   */
@@ -50,4 +52,7 @@ class CubeReader(val data: ByteString) {
       }
     }
   }
+}
+
+object CubeReader {
 }

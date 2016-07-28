@@ -15,7 +15,7 @@ class RawToExtracted extends Act {
       for {
         obj <- Extractor.extract.lift.apply(message)
         item <- obj
-        parsedMessage = ParsedMessage(Server(server.ip.ip, server.port), time, item)
+        parsedMessage = ParsedMessage(server, time, item)
         extractedMessage = ExtractedMessage(server, time, item)
       } {
         context.parent ! extractedMessage

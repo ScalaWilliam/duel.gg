@@ -7,17 +7,31 @@ import gg.duel.pinger.data.ParsedPongs.ParsedMessage
 import gg.duel.pinger.data.{Extractor, SauerBytes, Server}
 
 import scala.util.Try
+import scala.util.control.NonFatal
 
 object MultiplexedReader {
+
+  case class ServerStates(map: Map[Server, ZIteratorState]) {
+    def updated(server: Server, zIteratorState: ZIteratorState): ServerStates =
+      copy(map = map.updated(server, zIteratorState))
+
+    def get(server: Server): Option[ZIteratorState] = map.get(server)
+  }
+
+  object ServerStates {
+    def empty: ServerStates = ServerStates(map = Map.empty)
+  }
+
   /** ParsedMessage ==> MFoundGame(_, CompletedDuel) **/
   type MProcessor = ParsedMessage => MIteratorState
-  sealed trait MIteratorState {
+
+  sealed trait  MIteratorState {
     def next: MProcessor = {
-      case parsedMessage @ ParsedMessage(server, _, _) =>
+      case parsedMessage@ParsedMessage(server, _, _) =>
         serverStates.get(server) match {
           case Some(state) =>
             state.next.apply(parsedMessage) match {
-              case nextState @ ZFoundDuel(_, completedDuel) =>
+              case nextState@ZFoundDuel(_, completedDuel) =>
                 MFoundGame(serverStates.updated(server, nextState), CompletedGame(completedDuel), Option(server, nextState))
               case nextState =>
                 MProcessing(serverStates.updated(server, nextState), Option(server, nextState))
@@ -26,49 +40,78 @@ object MultiplexedReader {
             MProcessing(serverStates.updated(server, ZOutOfGameState), Option(server, ZOutOfGameState)).next.apply(parsedMessage)
         }
     }
-    def serverStates: Map[Server, ZIteratorState]
+
+    def serverStates: ServerStates
+
     def lastUpdatedState: Option[(Server, ZIteratorState)]
   }
-  case class MProcessing(serverStates: Map[Server, ZIteratorState], lastUpdatedState: Option[(Server, ZIteratorState)]) extends MIteratorState
+
+  case class MProcessing(serverStates: ServerStates, lastUpdatedState: Option[(Server, ZIteratorState)]) extends MIteratorState
+
   case object MInitial extends MIteratorState {
-    override val serverStates = Map.empty[Server, ZIteratorState]
+    override val serverStates = ServerStates.empty
     override val lastUpdatedState = None
   }
 
-  case class MFoundGame(serverStates: Map[Server, ZIteratorState], completedGame: CompletedGame, lastUpdatedState: Option[(Server, ZIteratorState)]) extends MIteratorState
-  def sauerBytesToParsedMessages(sauerBytes: SauerBytes): List[ParsedMessage] = {
-    val byteString = ByteString(sauerBytes.message.toArray)
-    for {
-      parsedObjects <- Try(Extractor.extractDuel(byteString)).toOption.toList
-      parsedObject <- parsedObjects
-    } yield ParsedMessage(sauerBytes.server, sauerBytes.time, parsedObject)
+  case class MFoundGame(serverStates: ServerStates, completedGame: CompletedGame, lastUpdatedState: Option[(Server, ZIteratorState)]) extends MIteratorState
+
+  val messageCache = new ThreadLocal[java.util.Map[Server, (SauerBytes, List[ParsedMessage])]] {
+    override def initialValue(): java.util.Map[Server, (SauerBytes, List[ParsedMessage])] = new java.util.HashMap()
   }
+
+  private def sauerBytesToParsedMessages(sauerBytes: SauerBytes): List[ParsedMessage] = {
+    Option(messageCache.get().get(sauerBytes.server)) match {
+      case Some((`sauerBytes`, l)) => l
+      case _ =>
+        val result = try {
+          Extractor
+            .extractDuel
+            .applyOrElse(sauerBytes.message, (_: ByteString) => Nil)
+            .map(parsedObject => ParsedMessage(sauerBytes.server, sauerBytes.time, parsedObject))
+        } catch {
+          case NonFatal(e) => List.empty
+        }
+        messageCache.get().put(sauerBytes.server, (sauerBytes, result))
+        result
+    }
+  }
+
   def multiplexParsedMessagesStates(parsedMessages: Iterator[ParsedMessage]): Iterator[MIteratorState] = {
     parsedMessages.scanLeft(MInitial: MIteratorState)(_.next(_))
   }
+
   /** SauerBytes ==> SFoundGame(_, Seq(CompletedDuel)) **/
   type SProcessor = SauerBytes => SIteratorState
+
   sealed trait SIteratorState {
     def next: SProcessor = {
       case sauerBytes =>
+
         /** Note: Multiple parsedMessages from a single SauerBytes CANNOT lead to a CompletedDuel. Impossibru. **/
         /** We're short-circuiting here! **/
         sauerBytesToParsedMessages(sauerBytes).foldLeft(mIteratorState)(_.next(_)) match {
-          case state @ MFoundGame(_, game, _) => SFoundGame(state, game)
+          case state@MFoundGame(_, game, _) => SFoundGame(state, game)
           case state => SProcessing(state)
         }
     }
+
     def mIteratorState: MIteratorState
   }
+
   object SIteratorState {
     def empty: SIteratorState = SInitial
   }
+
   case object SInitial extends SIteratorState {
     override val mIteratorState = MInitial
   }
+
   case class CompletedGame(game: SimpleCompletedDuel, metaId: Option[String] = None)
+
   case class SFoundGame(mIteratorState: MIteratorState, completedGame: CompletedGame) extends SIteratorState
+
   case class SProcessing(mIteratorState: MIteratorState) extends SIteratorState
+
   def multiplexSecond(inputs: Iterator[SauerBytes]): Iterator[CompletedGame] = {
     inputs.scanLeft(SInitial: SIteratorState)(_.next(_)).collect {
       case SFoundGame(_, completedGame) => completedGame

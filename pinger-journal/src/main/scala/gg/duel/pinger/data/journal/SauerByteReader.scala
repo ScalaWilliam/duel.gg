@@ -23,22 +23,18 @@ trait SauerByteReader {
   }
 
   def toIterator =
-    Iterator.continually(readNext).takeWhile(_.isDefined).flatMap(_.toIterator)
+    Iterator.continually(readNext).takeWhile(_.isDefined).map(_.get)
 
 }
 
 case class EfficientSauerByteReader(inputStream: DataInputStream) extends SauerByteReader {
   def close(): Unit = inputStream.close()
 
-  def calcip(a: Byte, b: Byte, c: Byte, d: Byte): String = {
-    (a & 0xFF) + "." + (b & 0xFF) + "." + (c & 0xFF) + "." + (d & 0xFF)
-  }
-
   override def readNext(): Option[SauerBytes] = {
     try {
       val lengthBytes = inputStream.readShort()
       val time = inputStream.readLong()
-      val ip = IP(calcip(inputStream.read().toByte, inputStream.read().toByte, inputStream.read().toByte, inputStream.read().toByte))
+      val ip = IP(inputStream.readInt())
       val port = inputStream.readInt()
       val cnt = lengthBytes - 8 - 4 - 4
       val arr = Array.fill[Byte](cnt)(0)
