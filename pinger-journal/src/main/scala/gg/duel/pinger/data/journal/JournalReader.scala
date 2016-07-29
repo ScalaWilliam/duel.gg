@@ -27,7 +27,7 @@ class JournalReader(url: URL) {
   val gis = if (url.toString.endsWith(".gz"))
     new GZIPInputStream(fis, 131072)
   else fis
-  val is = new BufferedInputStream(gis, 131072)
+  val is = new BufferedInputStream(gis, if (gis.isInstanceOf[GZIPInputStream]) 131072 else 32768)
 
   def getGames: Vector[Game] = {
     getSauerBytes
