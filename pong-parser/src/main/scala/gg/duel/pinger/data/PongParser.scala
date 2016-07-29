@@ -26,7 +26,7 @@ object PongParser {
   }
 
   object UChar {
-    def apply(byte: Byte) = byte.toChar & 0xFF
+    def apply(byte: Byte): Int = byte.toChar & 0xFF
     def apply(int: Int): Int = int & 0xFF
   }
 
@@ -97,7 +97,18 @@ object PongParser {
     }
   }
 
+  object GetLazyString {
+    def unapply(bytes: ByteString): Option[(String, ByteString)] = bytes match {
+      case ByteString.empty => None
+      case something =>
+        val cr = new CubeReader(bytes)
+        val str = cr.nextString()
+        Some((str, cr.rest))
+    }
+  }
+
   val >>##:: = GetString
+  val >>##::: = GetLazyString
 
   val >>: = GetInt
 
@@ -117,11 +128,11 @@ object PongParser {
           val gamepaused = cubeReader.nextInt()
           val gamespeed = cubeReader.nextInt()
           val mapname = cubeReader.nextString()
-          val desc = cubeReader.nextString(64)
+          val desc = cubeReader.nextString()
           Some(ServerInfoReply(clients, protocol, gamemode, remain, maxclients, Option(gamepaused), Option(gamespeed), mapname, desc))
         } else if ( numattrs == 5 ) {
           val mapname = cubeReader.nextString()
-          val desc = cubeReader.nextString(64)
+          val desc = cubeReader.nextString()
           Some(ServerInfoReply(clients, protocol, gamemode, remain, maxclients, None, None, mapname, desc))
         } else {
           None
@@ -176,7 +187,7 @@ object PongParser {
           case _ => None
         }.takeWhile(_.nonEmpty).toList.flatten.lastOption
         ititi.flatMap {
-          case name >>##:: team >>##:: frags >>: flags >>: deaths >>:
+          case name >>##::: team >>##::: frags >>: flags >>: deaths >>:
             teamkills >>: accuracy >>: health >>: armour >>: gun >>: privilege >>: state
             >>: ip >~: ByteString.empty =>
             Option(PartialPlayerExtInfo(PlayerExtInfo(version, -1, -1, name, team, frags, deaths, teamkills, accuracy, health, armour, gun, privilege, state, ip)))
@@ -203,7 +214,7 @@ object PongParser {
   object GetPlayerExtInfo {
     def unapply(list: ByteString): Option[PlayerExtInfo] = list match {
       case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: -11 >>:
-        cn >>: ping >>: name >>##:: team >>##:: frags >>: flags >>: deaths >>:
+        cn >>: ping >>: name >>##::: team >>##::: frags >>: flags >>: deaths >>:
         teamkills >>: accuracy >>: health >>: armour >>: gun >>: privilege >>: state
         >>: ip >~: ByteString.empty =>
         Option(PlayerExtInfo(version, cn, ping, name, team, frags, deaths, teamkills, accuracy, health, armour,

@@ -6,38 +6,58 @@ import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZFoundDuel, ZItera
 import gg.duel.pinger.data.ParsedPongs.ParsedMessage
 import gg.duel.pinger.data.{Extractor, SauerBytes, Server}
 
-import scala.util.Try
 import scala.util.control.NonFatal
 
-object MultiplexedReader {
+sealed trait ServerStates {
+  def updated(server: Server, zIteratorState: ZIteratorState): ServerStates
 
-  case class ServerStates(map: Map[Server, ZIteratorState]) {
+  def get(server: Server): Option[ZIteratorState]
+}
+
+object ServerStates {
+  case class ServerStatesImmutable(map: Map[Server, ZIteratorState]) extends ServerStates {
     def updated(server: Server, zIteratorState: ZIteratorState): ServerStates =
       copy(map = map.updated(server, zIteratorState))
 
     def get(server: Server): Option[ZIteratorState] = map.get(server)
   }
 
-  object ServerStates {
-    def empty: ServerStates = ServerStates(map = Map.empty)
+  class ServerStatesMutable extends ServerStates {
+    private val map: java.util.Map[Server, ZIteratorState] = new java.util.HashMap()
+
+    override def updated(server: Server, zIteratorState: ZIteratorState): ServerStates = {
+      map.put(server, zIteratorState)
+      this
+    }
+
+    override def get(server: Server): Option[ZIteratorState] = {
+      Option(map.get(server))
+    }
   }
+
+  def immutable: ServerStates = ServerStatesImmutable(Map.empty)
+
+  def mutable: ServerStates = new ServerStatesMutable
+}
+object MultiplexedReader {
+
 
   /** ParsedMessage ==> MFoundGame(_, CompletedDuel) **/
   type MProcessor = ParsedMessage => MIteratorState
 
-  sealed trait  MIteratorState {
+  sealed trait MIteratorState {
     def next: MProcessor = {
       case parsedMessage@ParsedMessage(server, _, _) =>
         serverStates.get(server) match {
           case Some(state) =>
             state.next.apply(parsedMessage) match {
               case nextState@ZFoundDuel(_, completedDuel) =>
-                MFoundGame(serverStates.updated(server, nextState), CompletedGame(completedDuel), Option(server, nextState))
+                MFoundGame(serverStates.updated(server, nextState), CompletedGame(completedDuel), Some(server, nextState))
               case nextState =>
-                MProcessing(serverStates.updated(server, nextState), Option(server, nextState))
+                MProcessing(serverStates.updated(server, nextState), Some(server, nextState))
             }
           case None =>
-            MProcessing(serverStates.updated(server, ZOutOfGameState), Option(server, ZOutOfGameState)).next.apply(parsedMessage)
+            MProcessing(serverStates.updated(server, ZOutOfGameState), Some(server, ZOutOfGameState)).next.apply(parsedMessage)
         }
     }
 
@@ -49,7 +69,7 @@ object MultiplexedReader {
   case class MProcessing(serverStates: ServerStates, lastUpdatedState: Option[(Server, ZIteratorState)]) extends MIteratorState
 
   case object MInitial extends MIteratorState {
-    override val serverStates = ServerStates.empty
+    override val serverStates = ServerStates.mutable
     override val lastUpdatedState = None
   }
 
@@ -60,20 +80,15 @@ object MultiplexedReader {
   }
 
   private def sauerBytesToParsedMessages(sauerBytes: SauerBytes): List[ParsedMessage] = {
-    Option(messageCache.get().get(sauerBytes.server)) match {
-      case Some((`sauerBytes`, l)) => l
-      case _ =>
-        val result = try {
-          Extractor
-            .extractDuel
-            .applyOrElse(sauerBytes.message, (_: ByteString) => Nil)
-            .map(parsedObject => ParsedMessage(sauerBytes.server, sauerBytes.time, parsedObject))
-        } catch {
-          case NonFatal(e) => List.empty
-        }
-        messageCache.get().put(sauerBytes.server, (sauerBytes, result))
-        result
+    val result = try {
+      Extractor
+        .extractDuel
+        .applyOrElse(sauerBytes.message, (_: ByteString) => Nil)
+        .map(parsedObject => ParsedMessage(sauerBytes.server, sauerBytes.time, parsedObject))
+    } catch {
+      case NonFatal(e) => List.empty
     }
+    result
   }
 
   def multiplexParsedMessagesStates(parsedMessages: Iterator[ParsedMessage]): Iterator[MIteratorState] = {

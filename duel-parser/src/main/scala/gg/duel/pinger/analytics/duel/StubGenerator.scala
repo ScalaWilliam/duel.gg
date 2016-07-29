@@ -74,5 +74,5 @@ object StubGenerator {
   )
 
   def validSequenceCompletedDuel = timedStates(validSequence :_*).last.asInstanceOf[ZFoundDuel].completedDuel
-  
+
 }

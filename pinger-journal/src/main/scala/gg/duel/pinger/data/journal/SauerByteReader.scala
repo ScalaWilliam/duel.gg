@@ -11,44 +11,46 @@ import gg.duel.pinger.data.{IP, SauerBytes, SauerBytesBinary, Server}
   */
 trait SauerByteReader {
 
-  protected def get(numBytes: Int): Option[Array[Byte]]
+  protected def get(numBytes: Int): Array[Byte]
 
-  protected def readNext: Option[SauerBytes] = {
+  protected def readNext: SauerBytes = {
     for {
-      lengthBytes <- get(2) // get the short
+      lengthBytes <- Option(get(2)) // get the short
       length = ByteBuffer.wrap(lengthBytes).order(ByteOrder.BIG_ENDIAN).getShort
-      data <- get(length)
+      data <- Option(get(length))
       if data.length == length
     } yield SauerBytesBinary.fromBytes(data)
-  }
+  }.orNull
 
   def toIterator =
-    Iterator.continually(readNext).takeWhile(_.isDefined).map(_.get)
+    Iterator.continually(readNext).takeWhile(_ != null)
 
 }
 
 case class EfficientSauerByteReader(inputStream: DataInputStream) extends SauerByteReader {
   def close(): Unit = inputStream.close()
 
-  override def readNext(): Option[SauerBytes] = {
+  var BUFFER_SIZE = 1024
+
+  private val tmpArr = Array.fill[Byte](BUFFER_SIZE)(Byte.MinValue)
+
+  override def readNext(): SauerBytes = {
     try {
       val lengthBytes = inputStream.readShort()
       val time = inputStream.readLong()
       val ip = IP(inputStream.readInt())
       val port = inputStream.readInt()
       val cnt = lengthBytes - 8 - 4 - 4
-      val arr = Array.fill[Byte](cnt)(0)
-      inputStream.read(arr, 0, cnt)
-
-      Some(SauerBytes(
+      inputStream.read(tmpArr, 0, cnt)
+      SauerBytes(
         server = Server(ip, port),
         time = time,
-        message = ByteString(arr)
-      ))
+        message = ByteString.fromArray(tmpArr, 0, cnt)
+      )
     } catch {
-      case e: java.io.EOFException => None
+      case e: java.io.EOFException => null
     }
   }
 
-  override protected def get(numBytes: Int): Option[Array[Byte]] = ???
+  override protected def get(numBytes: Int): Array[Byte] = ???
 }

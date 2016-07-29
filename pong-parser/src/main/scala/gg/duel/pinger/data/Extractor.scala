@@ -23,8 +23,8 @@ object Extractor {
   val extractDuel: PartialFunction[ByteString, List[Any]] = {
 
     {
-      case GetServerInfoReply(x) => List(x, ConvertServerInfoReply.convert(x))
-      case GetRelaxedPlayerExtInfo(x) => List(x)
+      case GetServerInfoReply(x) => x :: ConvertServerInfoReply.convert(x) :: Nil
+      case GetRelaxedPlayerExtInfo(x) => x :: Nil
     }
   }
 

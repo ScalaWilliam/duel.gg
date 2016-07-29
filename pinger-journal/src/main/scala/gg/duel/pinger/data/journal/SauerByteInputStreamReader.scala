@@ -8,17 +8,18 @@ import java.nio.ByteBuffer
  */
 class SauerByteInputStreamReader(inputStream: InputStream) extends SauerByteReader {
 
-  override def get(num: Int): Option[Array[Byte]] = {
+  override def get(num: Int): Array[Byte] = {
     try {
-      if (num == 0) return None
+      if (num == 0) return null
       require(num > 0, s"$num was < 0")
+      // todo can be more efficient here too
       val byteBufferArray = ByteBuffer.allocate(num).array()
       val bytesRead = inputStream.read(byteBufferArray, 0, num)
-      if (bytesRead == -1) return None
+      if (bytesRead == -1) return null
       require(bytesRead == num, s"Read $bytesRead bytes, expected $num bytes")
-      Option(byteBufferArray)
+      byteBufferArray
     } catch {
-      case _: EOFException => None
+      case _: EOFException => null
     }
   }
 
