@@ -1,6 +1,6 @@
 package gg.duel.pinger.analytics.duel
 
-import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZFoundDuel, ZIteratorState}
+import gg.duel.pinger.analytics.duel.ZIteratorState.ZFoundDuel
 import gg.duel.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import gg.duel.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
 import gg.duel.pinger.data.Server
@@ -73,6 +73,6 @@ object StubGenerator {
     4 * 60 -> csr(2, 2, 500, "tartech")
   )
 
-  val validSequenceCompletedDuel = timedStates(validSequence :_*).last.asInstanceOf[ZFoundDuel].completedDuel
-  
+  def validSequenceCompletedDuel = timedStates(validSequence :_*).last.asInstanceOf[ZFoundDuel].completedDuel
+
 }

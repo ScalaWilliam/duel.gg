@@ -13,4 +13,5 @@ trait Dependencies {
   val jodaTime = "joda-time" % "joda-time" % "2.9.4"
   val jodaConvert = "org.joda" % "joda-convert" % "1.8.1"
   val commonsValidator = "commons-validator" % "commons-validator" % "1.5.1" exclude("commons-logging", "commons-logging")
+  val gsCollections = "com.goldmansachs" % "gs-collections" % "7.0.3"
 }

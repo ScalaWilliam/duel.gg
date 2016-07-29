@@ -6,11 +6,11 @@ package gg.duel.pinger.data.journal
 class SauerByteArrayReader(list: Array[Byte]) extends SauerByteReader {
   var latestList = list
 
-  override def get(num: Int): Option[Array[Byte]] = {
+  override def get(num: Int): Array[Byte] = {
     val (start, end) = latestList.splitAt(num)
     latestList = end
-    if (start.length == num) Option(start)
-    else None
+    if (start.length == num) start
+    else null
   }
 
 }

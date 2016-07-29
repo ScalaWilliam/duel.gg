@@ -10,22 +10,21 @@ object Extractor {
 
     {
       case GetRelaxedPlayerExtInfo(x) => Seq(x)
-      case GetServerInfoReply(x) => Seq(x) ++ Seq(ConvertServerInfoReply.convert(x))
+      case GetServerInfoReply(x) => x +: Seq(ConvertServerInfoReply.convert(x))
       case GetPlayerCns(x) => Seq(x)
       case GetHopmodUptime(x) => Seq(x) ++ Seq(ConvertHopmodUptime.convert(x))
-      case GetTeamScores(x) => Seq(x) ++ ConvertTeamScore.convert(x)
+      case GetTeamScores(x) => x +: ConvertTeamScore.convert(x)
       case GetUptime(x) => Seq(x)
       case GetThomasModExtInfo(x) => Seq(x)
       case CheckOlderClient(x) => Seq(x)
     }
   }
 
-  def extractDuel: PartialFunction[ByteString, Seq[Any]] = {
+  val extractDuel: PartialFunction[ByteString, Any] = {
 
     {
-      case GetServerInfoReply(x) => Seq(x) ++ Seq(ConvertServerInfoReply.convert(x))
-      case GetRelaxedPlayerExtInfo(x) => Seq(x)
-      case _ => Seq.empty
+      case GetServerInfoReply(x) => ConvertServerInfoReply.convert(x)
+      case GetRelaxedPlayerExtInfo(x) => x
     }
   }
 

@@ -8,9 +8,9 @@ object ReaderApp extends App {
 
   val br = new JournalReader(fah)
   try {
-    val start = System.currentTimeMillis()
-    br.getGamesIterator.map(_.toJson).foreach(println)
-    val end = System.currentTimeMillis()
+//    println(br.getGamesIterator.map(_.toJson).toStream.size)
+//        br.getGamesIterator.map(_.toJson).foreach(println)
+        println(br.getGamesIterator.toStream.count(_ => true)) //.foreach(println)
   } finally br.close()
 
 }

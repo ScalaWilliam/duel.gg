@@ -26,14 +26,15 @@ object PongParser {
   }
 
   object UChar {
-    def apply(byte: Byte) = byte.toChar & 0xFF
+    def apply(byte: Byte): Int = byte.toChar & 0xFF
+
     def apply(int: Int): Int = int & 0xFF
   }
 
   object ##:: {
     def unapply(from: ByteString): Option[(Byte, ByteString)] =
-      if ( from.isEmpty ) None
-      else Some(from.head,from.tail)
+      if (from.isEmpty) None
+      else Some(from.head, from.tail)
   }
 
 
@@ -41,7 +42,8 @@ object PongParser {
     def unapply(bytes: ByteString): Option[(Int, ByteString)] = {
       val cr = new CubeReader(bytes)
       val result = cr.nextInt()
-      if ( result == Int.MinValue ) None else
+      if (result == Int.MinValue) None
+      else
         Some((result, cr.rest))
     }
   }
@@ -81,7 +83,7 @@ object PongParser {
 
     private val itsSize = intToInt.length
 
-    def mapping(from: Int): Int = if ( from < itsSize ) intToInt(from) else from
+    def mapping(from: Int): Int = if (from < itsSize) intToInt(from) else from
 
     def charMapping(from: Int): Char = mapping(from).toChar
 
@@ -97,26 +99,40 @@ object PongParser {
     }
   }
 
-  object GetLongString {
-    def unapply(bytes: ByteString): Option[(String, ByteString)] = bytes match {
-      case ByteString.empty => None
-      case something =>
-        val cr = new CubeReader(bytes)
-        val str = cr.nextString(64)
-        Some((str, cr.rest))
-    }
-  }
-
   val >>##:: = GetString
-  val >>##::: = GetLongString
 
   val >>: = GetInt
 
+  sealed trait EffServerInfoReply
+
+  case class ConvertedEffServerInfoReply()
+
   object GetServerInfoReply {
-    def unapply(List: ByteString): Option[ServerInfoReply] = {
-      val cubeReader = new CubeReader(List)
-      val isOk = cubeReader.nextInt() == 1 && cubeReader.nextInt() == 1 && cubeReader.nextInt() == 1
-      if ( !isOk ) None else {
+    def isServerInfoReply(bytes: ByteString): Boolean = {
+      bytes.length > 10 && bytes(0) == 1 && bytes(1) == 1 && bytes(2) == 1
+    }
+
+    def hasNoPlayers(bytes: ByteString): Boolean = {
+      bytes.length > 10 && bytes(3) == 0
+    }
+
+    def isServerInfoReply(arr: Array[Byte], p: Int): Boolean = {
+      arr(p) == 1 && arr(p + 1) == 1 && arr(p + 2) == 1
+    }
+
+    def hasNoPlayers(arr: Array[Byte], p: Int): Boolean = {
+      arr(p + 3) == 0
+    }
+
+    def isDuel(bytes: ByteString): Boolean = {
+      ModesList.duelModes.contains(bytes(4))
+    }
+
+    def unapply(bytes: ByteString): Option[ServerInfoReply] = {
+      if (!isServerInfoReply(bytes)) None
+      else {
+        val cubeReader = new CubeReader(bytes)
+        cubeReader.inc(3)
         val clients = cubeReader.nextInt()
         val numattrs = cubeReader.nextInt()
         val protocol = cubeReader.nextInt()
@@ -124,15 +140,15 @@ object PongParser {
         val remain = cubeReader.nextInt()
         val maxclients = cubeReader.nextInt()
         cubeReader.nextInt()
-        if ( numattrs == 7 ) {
+        if (numattrs == 7) {
           val gamepaused = cubeReader.nextInt()
           val gamespeed = cubeReader.nextInt()
           val mapname = cubeReader.nextString()
-          val desc = cubeReader.nextString(64)
+          val desc = cubeReader.nextString()
           Some(ServerInfoReply(clients, protocol, gamemode, remain, maxclients, Option(gamepaused), Option(gamespeed), mapname, desc))
-        } else if ( numattrs == 5 ) {
+        } else if (numattrs == 5) {
           val mapname = cubeReader.nextString()
-          val desc = cubeReader.nextString(64)
+          val desc = cubeReader.nextString()
           Some(ServerInfoReply(clients, protocol, gamemode, remain, maxclients, None, None, mapname, desc))
         } else {
           None
@@ -142,6 +158,7 @@ object PongParser {
   }
 
   val ack = -1
+
   object GetHopmodUptime {
     def unapply(List: ByteString): Option[HopmodUptime] = List match {
       case 0 >>: 0 >>: -1 >>: `ack` >>: version >>: totalsecs >>: isHopmod >>: hopmodVersion >>: hopmodRevision >>: buildTime >>##:: ByteString.empty =>
@@ -149,6 +166,7 @@ object PongParser {
       case _ => None
     }
   }
+
   object GetUptime {
     def unapply(List: ByteString): Option[Uptime] = List match {
       case 0 >>: 0 >>: -1 >>: `ack` >>: version >>: totalsecs >>: ByteString.empty =>
@@ -156,6 +174,7 @@ object PongParser {
       case _ => None
     }
   }
+
   object GetPlayerCns {
     def unapply(List: ByteString): Option[PlayerCns] = List match {
       case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: -10 >>: GetInts(ids) =>
@@ -166,10 +185,11 @@ object PongParser {
 
   object GetIp {
     def get(from: ByteString, offset: Int): Option[(String, Int)] = {
-      if ( from.length >= offset + 3 )
-        Option(s"${UChar(from(offset))}.${UChar(from(offset + 1))}.${UChar(from(offset+2))}.x", offset + 3)
+      if (from.length >= offset + 3)
+        Option(s"${UChar(from(offset))}.${UChar(from(offset + 1))}.${UChar(from(offset + 2))}.x", offset + 3)
       else None
     }
+
     def unapply(List: ByteString): Option[(String, ByteString)] = List match {
       case GetUChar(a) ##:: GetUChar(b) ##:: GetUChar(c) ##:: rest =>
         Option(s"$a.$b.$c.x", rest)
@@ -177,10 +197,12 @@ object PongParser {
         None
     }
   }
+
   val >~: = GetIp
+
   object GetThomasModExtInfo {
     def unapply(list: ByteString): Option[PartialPlayerExtInfo] = list match {
-      case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: (rest @ (-3 >>: _)) =>
+      case 0 >>: 1 >>: -1 >>: `ack` >>: version >>: 0 >>: (rest@(-3 >>: _)) =>
         val ititi = Iterator.iterate(Option(rest)) {
           case Some(-3 >>: _ >>: _ >>: _ >>: _ >>: _ >>: _ >>: _ >>: other) =>
             Some(other)
@@ -191,10 +213,10 @@ object PongParser {
             teamkills >>: accuracy >>: health >>: armour >>: gun >>: privilege >>: state
             >>: ip >~: ByteString.empty =>
             Option(PartialPlayerExtInfo(PlayerExtInfo(version, -1, -1, name, team, frags, deaths, teamkills, accuracy, health, armour, gun, privilege, state, ip)))
-//          case name >>##:: team >>##:: frags >>: other =>
-//            Option(PartialPlayerExtInfo(PlayerExtInfo(version, -1, -1, name, team, frags, -1, -1, -1, -1, -1, -1, -1, -1, ".")))
+          //          case name >>##:: team >>##:: frags >>: other =>
+          //            Option(PartialPlayerExtInfo(PlayerExtInfo(version, -1, -1, name, team, frags, -1, -1, -1, -1, -1, -1, -1, -1, ".")))
           case c =>
-//            println(s"Failed here ==> $c");
+            //            println(s"Failed here ==> $c");
             None
         }
       case x =>
@@ -227,21 +249,32 @@ object PongParser {
 
   object GetRelaxedPlayerExtInfo {
 
+    def isRelaxedInfo(bytes: ByteString): Boolean = {
+      bytes.length > 10 && bytes(0) == 0 && bytes(1) == 1 & bytes(2) == -1 && bytes(3) == ack
+    }
+
     def unapply(list: ByteString): Option[PlayerExtInfo] = {
-      val cr = new CubeReader(list)
-      var isOk = cr.nextInt() == 0 && cr.nextInt() == 1 && cr.nextInt() == -1 && cr.nextInt() == ack
-      val version = cr.nextInt()
-      isOk = isOk && cr.nextInt() == 0 && cr.nextInt() == -11
-      val cn = cr.nextInt()
-      val ping = cr.nextInt()
-      val name = cr.nextString()
-      val team = cr.nextString()
-      if ( !isOk ) None else Some(PlayerExtInfo(
-        version = version, cn = cn, ping = ping, name = name, team = team,
-        frags = cr.nextInt(), deaths = {cr.nextInt(); cr.nextInt()},
-        teamkills = cr.nextInt(), accuracy = cr.nextInt(), health = cr.nextInt(), armour =  cr.nextInt(),
-        gun = cr.nextInt(), privilege =  cr.nextInt(), state = cr.nextInt(), ip = cr.nextIp()
-      ))
+      if (!isRelaxedInfo(list)) None
+      else {
+        val cr = new CubeReader(list)
+        cr.inc(4)
+        val version = cr.nextInt()
+        val isOk = cr.nextInt() == 0 && cr.nextInt() == -11
+        val cn = cr.nextInt()
+        val ping = cr.nextInt()
+        val name = cr.nextString()
+        val team = cr.nextString()
+        if (!isOk) None
+        else Some(PlayerExtInfo(
+          version = version, cn = cn, ping = ping, name = name, team = team,
+          frags = cr.nextInt(), deaths = {
+            cr.nextInt()
+            cr.nextInt()
+          },
+          teamkills = cr.nextInt(), accuracy = cr.nextInt(), health = cr.nextInt(), armour = cr.nextInt(),
+          gun = cr.nextInt(), privilege = cr.nextInt(), state = cr.nextInt(), ip = cr.nextIp()
+        ))
+      }
     }
 
   }

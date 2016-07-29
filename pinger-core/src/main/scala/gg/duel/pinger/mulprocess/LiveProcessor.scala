@@ -1,10 +1,11 @@
 package gg.duel.pinger.mulprocess
 
-import gg.duel.pinger.analytics.duel.{TransitionalBetterDuel, LiveDuel}
-import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker._
+import gg.duel.pinger.analytics.duel.ZIteratorState.{ZFoundDuel, ZInDuelState}
+import gg.duel.pinger.analytics.duel.{LiveDuel, TransitionalBetterDuel, ZIteratorState}
 import gg.duel.pinger.data.Server
 
 case class Event(data: String, id: Option[String], name: Option[String])
+
 case class LiveProcessor(liveGames: Map[Server, LiveDuel]) {
   def cleanUp: Option[(List[Event], LiveProcessor)] = {
     val removeServers = liveGames.toList.collect { case (server, ld)
@@ -14,7 +15,7 @@ case class LiveProcessor(liveGames: Map[Server, LiveDuel]) {
     }.toSet
     PartialFunction.condOpt(removeServers) {
       case rs if rs.nonEmpty =>
-        val events = removeServers.toList.map{ server =>
+        val events = removeServers.toList.map { server =>
           liveGames(server) match {
             case liveDuel =>
               Event(
@@ -27,6 +28,7 @@ case class LiveProcessor(liveGames: Map[Server, LiveDuel]) {
         (events, copy(liveGames = liveGames -- rs))
     }
   }
+
   def stateChange(server: Server, previousState: ZIteratorState, currentState: ZIteratorState): Option[(Option[Event], LiveProcessor)] = {
     currentState match {
       case ZInDuelState(_, td: TransitionalBetterDuel) =>
@@ -45,7 +47,9 @@ case class LiveProcessor(liveGames: Map[Server, LiveDuel]) {
           id = Option(scd.startTimeText),
           name = Option("duel")
         )
-        Option { Option(newEvent) -> copy(liveGames = liveGames - server) }
+        Option {
+          Option(newEvent) -> copy(liveGames = liveGames - server)
+        }
       case _: ZIteratorState if liveGames.contains(server) =>
         liveGames(server) match {
           case liveDuel =>
@@ -62,6 +66,7 @@ case class LiveProcessor(liveGames: Map[Server, LiveDuel]) {
     }
   }
 }
+
 object LiveProcessor {
   def empty = LiveProcessor(liveGames = Map.empty)
 }

@@ -38,7 +38,8 @@ lazy val pingerCore = Project(
   .settings(libraryDependencies ++= Seq(
     logback,
     akkaActor,
-    akkaSlf4j
+    akkaSlf4j,
+    gsCollections
   ))
   .dependsOn(pongParser)
   .dependsOn(duelParser)

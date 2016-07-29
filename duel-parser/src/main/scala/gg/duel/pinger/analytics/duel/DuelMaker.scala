@@ -8,10 +8,9 @@ import gg.duel.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoRepl
 import gg.duel.pinger.data.ParsedPongs.{ParsedMessage, PartialPlayerExtInfo, PlayerExtInfo}
 import org.scalactic._
 
-import scala.collection.immutable.Queue
-
 trait BetterDuelState {
   def gameHeader: GameHeader
+
   def next: StateTransition
 }
 
@@ -39,7 +38,25 @@ case class Accuracy(accuracy: Int)
 
 case class LogItem(playerId: PlayerId, remaining: SecondsRemaining, frags: Frags, weapon: Weapon, accuracy: Accuracy)
 
-case class DuelAccumulation(playerStatistics: Queue[LogItem])
+case class DuelAccumulation(private val playerStatistics: List[LogItem]) {
+  def isEmpty = playerStatistics.isEmpty
+
+  def view = playerStatistics.view
+
+  def forPlayer(playerId: PlayerId) = copy(playerStatistics = view.filter(_.playerId == playerId).toList)
+
+  def playerIds = playerStatistics.view.map(_.playerId).toSet
+
+  def append(logItem: LogItem): DuelAccumulation = copy(playerStatistics = logItem +: playerStatistics)
+
+  def earliest: LogItem = playerStatistics.last
+
+  def latest: LogItem = playerStatistics.head
+}
+
+object DuelAccumulation {
+  def empty = DuelAccumulation(Nil)
+}
 
 
 object BetterDuelState {
@@ -67,17 +84,15 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
         weapon = Weapon(ModesList.guns.getOrElse(info.gun, "unknown")),
         accuracy = Accuracy(info.accuracy)
       )
-      val newAccummulation = duelAccumulation.copy(
-        playerStatistics = duelAccumulation.playerStatistics.enqueue(logItem)
-      )
+      val newAccummulation = duelAccumulation.append(logItem)
       Good(this.copy(duelAccumulation = newAccummulation))
     // dealing with PSL Thomas bullshit
     // sends -3 followed by 7 ints, and possibly several times - overriding parts of the player info, such as name.
     // so we'll override with a valid player ID
     case ParsedMessage(s, time, PartialPlayerExtInfo(ino)) if ino.state <= 3 && isRunning =>
-      duelAccumulation.playerStatistics.find(ps => ps.playerId.ip == ino.ip && ps.playerId.name.endsWith(ino.name)) match {
-        case Some(playerAccummulation) =>
-          next.apply(ParsedMessage(s, time, ino.copy(name = playerAccummulation.playerId.name)))
+      duelAccumulation.view.reverse.find(ps => ps.playerId.ip == ino.ip && ps.playerId.name.endsWith(ino.name)) match {
+        case Some(logItem) =>
+          next.apply(ParsedMessage(s, time, ino.copy(name = logItem.playerId.name)))
         case None =>
           // we'll let it pass through, but it might cause the game to fail silently
           Good(this)
@@ -106,46 +121,47 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
   }
 
   def twoPlayersOr = {
-    val activePlayers = duelAccumulation.playerStatistics.map(_.playerId).toSet
-    activePlayers.toList match {
+    duelAccumulation.playerIds.toList match {
       case first :: second :: Nil => Good(List(first, second))
       case other => Bad(One(ExpectedExactly2Players(other.map(_.name))))
     }
   }
 
   def startedSecondsOr = {
-    if (duelAccumulation.playerStatistics.isEmpty) {
+    if (duelAccumulation.isEmpty) {
       Bad(One(PlayerLogEmpty))
     } else {
-      Good(duelAccumulation.playerStatistics.map(_.remaining).map(_.seconds).max)
+      Good(duelAccumulation.view.map(_.remaining).map(_.seconds).max)
     }
   }
+
   def allPlayersStartedOr(startedSeconds: Int) = {
-    val bv = duelAccumulation.playerStatistics.map(_.playerId).forall(playerId =>
-      duelAccumulation.playerStatistics.exists(logItem =>
+    val bv = duelAccumulation.playerIds.forall(playerId =>
+      duelAccumulation.view.exists(logItem =>
         logItem.remaining.seconds == startedSeconds &&
           logItem.playerId == playerId))
     if (bv) Good(Unit) else Bad(One(CouldNotFindLogItemToSayAllPlayersStarted))
   }
+
   def allPlayersFinishedOr(nextMessage: Option[ConvertedServerInfoReply]) = {
-    val bv = duelAccumulation.playerStatistics.map(_.playerId).forall(playerId =>
-      duelAccumulation.playerStatistics.exists(logItem =>
+    val bv = duelAccumulation.playerIds.forall(playerId =>
+      duelAccumulation.view.exists(logItem =>
         logItem.remaining.seconds <= 3 &&
           logItem.playerId == playerId))
     if (bv) Good(Unit) else Bad(One(CouldNotFindProofThatThePlayersFinished))
   }
 
   def formPlayers(players: List[PlayerId]) = {
-    val durationSeconds = duelAccumulation.playerStatistics.head.remaining.seconds
+    val durationSeconds = duelAccumulation.earliest.remaining.seconds
     for {
       playerId@PlayerId(name, ip) <- players
-      hisStats = duelAccumulation.playerStatistics.filter(_.playerId == playerId)
+      hisStats = duelAccumulation.forPlayer(playerId)
       simplePlayerStatistics = SimplePlayerStatistics(
-        name, ip, accuracy = hisStats.last.accuracy.accuracy,
-        frags = hisStats.last.frags.frags,
-        weapon = hisStats.groupBy(_.weapon).toList.sortBy(_._2.size).head._1.weapon,
+        name, ip, accuracy = hisStats.latest.accuracy.accuracy,
+        frags = hisStats.latest.frags.frags,
+        weapon = hisStats.view.groupBy(_.weapon).toList.sortBy(_._2.size).head._1.weapon,
         fragLog = {
-          val first = hisStats.groupBy(stat => Math.ceil((durationSeconds - stat.remaining.seconds) / 60.0)).mapValues(_.minBy(_.remaining.seconds)).toList.sortBy(_._1)
+          val first = hisStats.view.groupBy(stat => Math.ceil((durationSeconds - stat.remaining.seconds) / 60.0)).mapValues(_.minBy(_.remaining.seconds)).toList.sortBy(_._1)
           first.map(eh => eh._1.toInt -> eh._2.frags.frags).filterNot(_._1 == 0)
         }
       )
@@ -153,8 +169,8 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
   }
 
   def allPlayersStillHere = {
-    val bv = duelAccumulation.playerStatistics.map(_.playerId).forall(playerId =>
-      duelAccumulation.playerStatistics.exists(logItem =>
+    val bv = duelAccumulation.playerIds.forall(playerId =>
+      duelAccumulation.view.exists(logItem =>
         Math.abs(logItem.remaining.seconds - timeRemaining.seconds) <= 5 &&
           logItem.playerId == playerId))
     if (bv) Good(Unit) else Bad(One(PlayersDisappeared))
@@ -164,16 +180,16 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
     for {
       twoPlayers <- twoPlayersOr
       startedSeconds <- startedSecondsOr
-      bothPlayersStarted <- allPlayersStartedOr(startedSeconds )
+      bothPlayersStarted <- allPlayersStartedOr(startedSeconds)
       _ <- allPlayersStillHere
       durationMinutes = saidDurationMinutes
-      isADuelGame <- if ( Set("ffa", "instagib", "efficiency") contains gameHeader.mode ) Good(true) else Bad(One(FoundModeRejecting(gameHeader.mode)))
+      isADuelGame <- if (Set("ffa", "instagib", "efficiency") contains gameHeader.mode) Good(true) else Bad(One(FoundModeRejecting(gameHeader.mode)))
       players = formPlayers(twoPlayers)
     } yield LiveDuel(
       simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
       duration = durationMinutes,
       serverDescription = CleanupDescription(gameHeader.startMessage.description),
-      playedAt = duelAccumulation.playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted.toList,
+      playedAt = duelAccumulation.view.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted.toList,
       startTimeText = gameHeader.startTimeText,
       startTime = gameHeader.startTime,
       map = gameHeader.map,
@@ -185,20 +201,18 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
   }
 
   def saidDurationMinutes = {
-    val durationSeconds = duelAccumulation.playerStatistics.head.remaining.seconds
+    val durationSeconds = duelAccumulation.earliest.remaining.seconds
     Math.ceil(durationSeconds / 60.0).toInt
   }
 
   def calculatedDurationMinutesOr = {
-    val durationSeconds = duelAccumulation.playerStatistics.head.remaining.seconds
-    val durationMinutes = Math.ceil(durationSeconds / 60.0).toInt
-    val foundDurationSeconds = durationSeconds - duelAccumulation.playerStatistics.last.remaining.seconds
+    val durationSeconds = duelAccumulation.earliest.remaining.seconds
+    val foundDurationSeconds = durationSeconds - duelAccumulation.latest.remaining.seconds
     val foundDurationMinutes = Math.ceil(foundDurationSeconds / 60.0).toInt
-    if (foundDurationMinutes >= 8 ) Good(foundDurationMinutes) else Bad(One(Expected8MinutesToDuel(foundDurationMinutes, foundDurationSeconds)))
+    if (foundDurationMinutes >= 8) Good(foundDurationMinutes) else Bad(One(Expected8MinutesToDuel(foundDurationMinutes, foundDurationSeconds)))
   }
 
   def completeDuel(nextMessage: Option[ConvertedServerInfoReply]): SimpleCompletedDuel Or Every[DuelParseError] = {
-    import duelAccumulation.playerStatistics
     for {
       twoPlayers <- twoPlayersOr
       startedSeconds <- startedSecondsOr
@@ -237,7 +251,7 @@ case class TransitionalBetterDuel(gameHeader: GameHeader, isRunning: Boolean, ti
       SimpleCompletedDuel(
         simpleId = s"${gameHeader.startTimeText}::${gameHeader.server}".replaceAll("[^a-zA-Z0-9\\.:-]", ""),
         duration = durationMinutes,
-        playedAt = playerStatistics.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted.toList,
+        playedAt = duelAccumulation.view.map(_.remaining.seconds).map(t => (t / 60) + 1).distinct.sorted.toList,
         serverDescription = CleanupDescription(gameHeader.startMessage.description),
         startTimeText = gameHeader.startTimeText,
         startTime = gameHeader.startTime,

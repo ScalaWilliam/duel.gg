@@ -1,6 +1,7 @@
 package gg.duel.pinger.mulprocess
 
-import gg.duel.pinger.analytics.MultiplexedReader.{CompletedGame, SFoundGame, SIteratorState}
+import gg.duel.pinger.analytics.SIteratorState
+import gg.duel.pinger.analytics.SIteratorState.{CompletedGame, SFoundGame}
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
 import gg.duel.pinger.service.PingPongProcessor.ReceivedBytes
 

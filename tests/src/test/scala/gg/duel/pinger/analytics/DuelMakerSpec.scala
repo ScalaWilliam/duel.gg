@@ -3,11 +3,25 @@ package gg.duel.pinger.analytics
 import gg.duel.pinger.analytics.duel.DuelParseError._
 import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZFoundDuel, ZIteratorState, ZRejectedDuelState, ZRejectedGameState}
 import gg.duel.pinger.analytics.duel.{DuelParseError, StubGenerator}
+import org.scalatest.enablers.Containing
 import org.scalatest.{Matchers, WordSpec}
 
 class DuelMakerSpec extends WordSpec with Matchers {
 
   import StubGenerator._
+
+  implicit val conts = new Containing[DuelParseError] {
+    implicit val cnt = implicitly[Containing[List[DuelParseError]]]
+    override def contains(container: DuelParseError, element: Any): Boolean = {
+      cnt.contains(container.toList, element)
+    }
+
+    override def containsOneOf(container: DuelParseError, elements: Seq[Any]): Boolean =
+      cnt.containsOneOf(container.toList, elements)
+
+    override def containsNoneOf(container: DuelParseError, elements: Seq[Any]): Boolean =
+      cnt.containsNoneOf(container.toList, elements)
+  }
 
   implicit class failedAdder(input: List[ZIteratorState]) {
     def shouldFailWith[T](f: ZRejectedGameState => T) = {
@@ -36,7 +50,9 @@ class DuelMakerSpec extends WordSpec with Matchers {
       states(
         csr(0, 3, 10, "academy")
       ) shouldFailWith {
-        _.duelCause should contain (ExpectedMoreThan2Clients(0))
+        q =>
+          println(q)
+          q.duelCause should contain (ExpectedMoreThan2Clients(0))
       }
     }
 
