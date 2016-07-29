@@ -80,6 +80,10 @@ class CubeReader(val data: ByteString) {
     GetIp.get(data, pos).map(_._1).getOrElse("")
   }
 
+  def inc(num: Int): Unit = {
+    pos = pos + num
+  }
+
   def nextInt(): Int = {
     if (count <= pos) Int.MinValue
     else {

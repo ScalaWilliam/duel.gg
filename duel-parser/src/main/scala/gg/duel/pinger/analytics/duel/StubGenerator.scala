@@ -1,6 +1,6 @@
 package gg.duel.pinger.analytics.duel
 
-import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZFoundDuel, ZIteratorState}
+import gg.duel.pinger.analytics.duel.ZIteratorState.ZFoundDuel
 import gg.duel.pinger.data.ParsedPongs.ConvertedMessages.ConvertedServerInfoReply
 import gg.duel.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}
 import gg.duel.pinger.data.Server

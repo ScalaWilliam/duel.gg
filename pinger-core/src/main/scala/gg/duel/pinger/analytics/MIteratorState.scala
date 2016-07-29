@@ -2,7 +2,8 @@ package gg.duel.pinger.analytics
 
 import gg.duel.pinger.analytics.MIteratorState.{MFoundGame, MProcessing}
 import gg.duel.pinger.analytics.SIteratorState.CompletedGame
-import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.{ZFoundDuel, ZIteratorState, ZOutOfGameState}
+import gg.duel.pinger.analytics.duel.ZIteratorState
+import gg.duel.pinger.analytics.duel.ZIteratorState.{ZFoundDuel, ZOutOfGameState}
 import gg.duel.pinger.data.ParsedPongs.ParsedMessage
 import gg.duel.pinger.data.Server
 
@@ -23,6 +24,12 @@ object MIteratorState {
 }
 
 sealed trait MIteratorState {
+
+  def step: MIteratorState = this match {
+    case m: MFoundGame => MProcessing(m.serverStates, None)
+    case o => o
+  }
+
   def next: ParsedMessage => MIteratorState = {
     case parsedMessage@ParsedMessage(server, _, _) =>
       serverStates.get(server) match {

@@ -4,7 +4,9 @@ import java.io.{DataInputStream, InputStream}
 import java.nio.{ByteBuffer, ByteOrder}
 
 import akka.util.ByteString
-import gg.duel.pinger.data.{IP, SauerBytes, SauerBytesBinary, Server}
+import gg.duel.pinger.data._
+
+import scala.annotation.tailrec
 
 /**
   * Created by William on 27/10/2015.
@@ -34,23 +36,18 @@ case class EfficientSauerByteReader(inputStream: DataInputStream) extends SauerB
 
   private val tmpArr = Array.fill[Byte](BUFFER_SIZE)(Byte.MinValue)
 
-  override def readNext(): SauerBytes = {
+  final override def readNext(): SauerBytes = {
     try {
       val lengthBytes = inputStream.readShort()
-      val time = inputStream.readLong()
-      val ip = IP(inputStream.readInt())
-      val port = inputStream.readInt()
-      val cnt = lengthBytes - 8 - 4 - 4
-      inputStream.read(tmpArr, 0, cnt)
-      SauerBytes(
-        server = Server(ip, port),
-        time = time,
-        message = ByteString.fromArray(tmpArr, 0, cnt)
-      )
+      inputStream.readFully(tmpArr, 0, lengthBytes)
+      SauerBytes.fromArray(tmpArr, lengthBytes)
     } catch {
       case e: java.io.EOFException => null
     }
   }
 
   override protected def get(numBytes: Int): Array[Byte] = ???
+}
+
+object EfficientSauerByteReader {
 }

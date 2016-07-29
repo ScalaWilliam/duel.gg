@@ -4,7 +4,9 @@ object ModesList {
 
   case class Weapon(num: Int)
 
-  val guns = List("fist", "shotgun", "minigun", "rocket launcher", "rifle", "grenade launcher", "pistol", "fireball", "iceball", "slimeball", "bite", "barrel").zipWithIndex.map{_.swap}.toMap
+  val guns = List("fist", "shotgun", "minigun", "rocket launcher", "rifle", "grenade launcher", "pistol", "fireball", "iceball", "slimeball", "bite", "barrel").zipWithIndex.map {
+    _.swap
+  }.toMap
 
   object ModeParams extends Enumeration {
     val M_TEAM, M_NOITEMS, M_NOAMMO, M_INSTA, M_EFFICIENCY, M_TACTICS, M_CAPTURE, M_REGEN, M_CTF, M_PROTECT, M_HOLD,
@@ -63,5 +65,7 @@ object ModesList {
       mode("efficiency collect", M_NOITEMS | M_EFFICIENCY | M_COLLECT | M_TEAM, "Efficiency Skull Collector: Frag \fs\f3the enemy team\fr to drop \fs\f3skulls\fr. Collect them and bring them to \fs\f3the enemy base\fr to score points for \fs\f1your team\fr. You spawn with all weapons and armour. There are no items.")
     )
   }
-  
+
+  val duelModes = modes.filter(m => Set("ffa", "instagib", "efficiency").contains(m._2.name)).keySet
+
 }

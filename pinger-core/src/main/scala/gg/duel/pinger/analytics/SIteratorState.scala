@@ -3,7 +3,8 @@ package gg.duel.pinger.analytics
 import gg.duel.pinger.analytics.MIteratorState.{MFoundGame, MInitial}
 import gg.duel.pinger.analytics.SIteratorState.{SFoundGame, SProcessing}
 import gg.duel.pinger.analytics.duel.SimpleCompletedDuel
-import gg.duel.pinger.data.SauerBytes
+import gg.duel.pinger.analytics.duel.ZIteratorState.{ZOutOfGameState, ZRejectedDuelState}
+import gg.duel.pinger.data.{PongParser, SauerBytes}
 
 /**
   * Created by me on 29/07/2016.
@@ -33,11 +34,26 @@ sealed trait SIteratorState {
   def next: SauerBytes => SIteratorState = {
     case sauerBytes =>
 
-      /** Note: Multiple parsedMessages from a single SauerBytes CANNOT lead to a CompletedDuel. Impossibru. **/
-      /** We're short-circuiting here! **/
-      MultiplexedReader.sauerBytesToParsedMessages(sauerBytes).foldLeft(mIteratorState)(_.next(_)) match {
-        case state@MFoundGame(_, game, _) => SFoundGame(state, game)
-        case state => SProcessing(state)
+      def ignore2 = PongParser.GetServerInfoReply.isServerInfoReply(sauerBytes.message) &&
+        PongParser.GetServerInfoReply.hasNoPlayers(sauerBytes.message)
+
+      // OPTIMIZATION: if we're out of a duel then there's no good reason to parse the relaxed info at all.
+      def ignore = PongParser.GetRelaxedPlayerExtInfo.isRelaxedInfo(sauerBytes.message) &&
+        mIteratorState.serverStates.get(sauerBytes.server).exists {
+          case _: ZRejectedDuelState => true
+          case ZOutOfGameState => true
+          case _ => false
+        }
+
+      if (ignore2 || ignore) SProcessing(mIteratorState.step)
+      else {
+        MultiplexedReader.sauerBytesToParsedMessages(sauerBytes) match {
+          case Some(message) => mIteratorState.next(message) match {
+            case state@MFoundGame(_, game, _) => SFoundGame(state, game)
+            case state => SProcessing(state)
+          }
+          case None => SProcessing(mIteratorState.step)
+        }
       }
   }
 

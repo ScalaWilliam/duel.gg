@@ -1,6 +1,6 @@
 package gg.duel.pinger.analytics
 
-import gg.duel.pinger.analytics.duel.StreamedSimpleDuelMaker.ZIteratorState
+import gg.duel.pinger.analytics.duel.ZIteratorState
 import gg.duel.pinger.data.Server
 
 /**
