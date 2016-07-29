@@ -1,6 +1,7 @@
 package gg.duel.pinger.analytics
 
-import gg.duel.pinger.analytics.MultiplexedReader.{MIteratorState, CompletedGame, MFoundGame}
+import gg.duel.pinger.analytics.MIteratorState.MFoundGame
+import gg.duel.pinger.analytics.SIteratorState.CompletedGame
 import gg.duel.pinger.analytics.duel.StubGenerator
 import org.scalatest.{Inspectors, Matchers, WordSpec}
 import gg.duel.pinger.data.ParsedPongs.{ParsedMessage, PlayerExtInfo}

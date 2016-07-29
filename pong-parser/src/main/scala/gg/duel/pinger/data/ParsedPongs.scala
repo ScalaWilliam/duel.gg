@@ -10,7 +10,7 @@ object ParsedPongs {
     override def toString = s"ParsedMessage($server, $stringTime, $message)"
   }
 
-  case class ServerInfoReply(clients: Int, protocol: Int, gamemode: Int, remain: Int, maxclients: Int,
+  private[data] case class ServerInfoReply(clients: Int, protocol: Int, gamemode: Int, remain: Int, maxclients: Int,
                              gamepaused: Option[Int], gamespeed: Option[Int], mapname: String, description: String) {
     def converted = ConvertedServerInfoReply(
       clients = clients, protocol = protocol, gamemode = gamemode,
@@ -44,89 +44,6 @@ object ParsedPongs {
 
     case class ConvertedTeamScore(scoreNum: Int, version: Int, gamemode: Int, remain: Int, name: String, score: Int, baseMap: Boolean, baseScores: List[Int])
 
-  }
-  object TypedMessages {
-
-    case class ParsedTypedMessage[T](server: Server, time: Long, message: T)
-    trait ParsedTypedMessageConversion[T] {
-      def unapply(m: ParsedMessage): Option[ParsedTypedMessage[T]]
-    }
-
-
-    object ParsedTypedMessages {
-      object ParsedTypedMessageConvertedServerInfoReply extends ParsedTypedMessageConversion[ConvertedServerInfoReply] {
-        def unapply(m: ParsedMessage): Option[ParsedTypedMessage[ConvertedServerInfoReply]] = Option(m).collect {
-          case ParsedMessage(server, time, message: ConvertedServerInfoReply) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-      object ParsedTypedMessageConvertedHopmodUptime extends ParsedTypedMessageConversion[ConvertedHopmodUptime] {
-        def unapply(m: ParsedMessage): Option[ParsedTypedMessage[ConvertedHopmodUptime]] = Option(m).collect {
-          case ParsedMessage(server, time, message: ConvertedHopmodUptime) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-      object ParsedTypedMessageConvertedTeamScore extends ParsedTypedMessageConversion[ConvertedTeamScore] {
-        def unapply(m: ParsedMessage): Option[ParsedTypedMessage[ConvertedTeamScore]] = Option(m).collect {
-          case ParsedMessage(server, time, message: ConvertedTeamScore) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-      object ParsedTypedMessageConvertedThomasExt extends ParsedTypedMessageConversion[ConvertedThomasExt] {
-        def unapply(m: ParsedMessage): Option[ParsedTypedMessage[ConvertedThomasExt]] = Option(m).collect {
-          case ParsedMessage(server, time, message: ConvertedThomasExt) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-      object ParsedTypedMessageServerInfoReply extends ParsedTypedMessageConversion[ServerInfoReply] {
-        def unapply(m: ParsedMessage): Option[ParsedTypedMessage[ServerInfoReply]] = Option(m).collect {
-          case ParsedMessage(server, time, message: ServerInfoReply) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-      object ParsedTypedMessageHopmodUptime extends ParsedTypedMessageConversion[HopmodUptime] {
-        def unapply(m: ParsedMessage): Option[ParsedTypedMessage[HopmodUptime]] = Option(m).collect {
-          case ParsedMessage(server, time, message: HopmodUptime) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-      object ParsedTypedMessageOlderClient extends ParsedTypedMessageConversion[OlderClient] {
-        def unapply(m: ParsedMessage): Option[ParsedTypedMessage[OlderClient]] = Option(m).collect {
-          case ParsedMessage(server, time, message: OlderClient) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-      object ParsedTypedMessagePlayerCns extends ParsedTypedMessageConversion[PlayerCns] {
-        def unapply(m: ParsedMessage): Option[ParsedTypedMessage[PlayerCns]] = Option(m).collect {
-          case ParsedMessage(server, time, message: PlayerCns) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-      object ParsedTypedMessagePlayerExtInfo extends ParsedTypedMessageConversion[PlayerExtInfo] {
-        def unapply(m: ParsedMessage): Option[ParsedTypedMessage[PlayerExtInfo]] = Option(m).collect {
-          case ParsedMessage(server, time, message: PlayerExtInfo) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-      object ParsedTypedMessageTeamScores extends ParsedTypedMessageConversion[TeamScores] {
-        def unapply(m: ParsedMessage): Option[ParsedTypedMessage[TeamScores]] = Option(m).collect {
-          case ParsedMessage(server, time, message: TeamScores) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-      object ParsedTypedMessageThomasExt extends ParsedTypedMessageConversion[ThomasExt] {
-        def unapply(m: ParsedMessage): Option[ParsedTypedMessage[ThomasExt]] = Option(m).collect {
-          case ParsedMessage(server, time, message: ThomasExt) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-      object ParsedTypedMessageUptime extends ParsedTypedMessageConversion[Uptime] {
-        override def unapply(m: ParsedMessage): Option[ParsedTypedMessage[Uptime]] = Option(m).collect {
-          case ParsedMessage(server, time, message: Uptime) =>
-            ParsedTypedMessage(server, time, message)
-        }
-      }
-    }
   }
 
   object Conversions {

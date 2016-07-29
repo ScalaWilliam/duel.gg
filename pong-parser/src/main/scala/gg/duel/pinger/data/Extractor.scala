@@ -20,11 +20,11 @@ object Extractor {
     }
   }
 
-  val extractDuel: PartialFunction[ByteString, List[Any]] = {
+  val extractDuel: PartialFunction[ByteString, Any] = {
 
     {
-      case GetServerInfoReply(x) => x :: ConvertServerInfoReply.convert(x) :: Nil
-      case GetRelaxedPlayerExtInfo(x) => x :: Nil
+      case GetServerInfoReply(x) => ConvertServerInfoReply.convert(x)
+      case GetRelaxedPlayerExtInfo(x) => x
     }
   }
 
